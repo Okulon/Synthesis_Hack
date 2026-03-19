@@ -224,6 +224,9 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Forge:** **15** tests (14 unit + 1 fork; fork uses public Base RPC by default).
 - **Deploy + verify** still **owner action** (needs keys + `BASE_SEPOLIA_RPC_URL`).
 
+### Commit
+- **`c3f8c11`** — *submodules, Base/Uniswap fork test, Foundry CI, MIT license* (includes `.gitmodules`, [`contracts/lib/`](../contracts/lib/) submodules, CI, fork + pause tests, LICENSE, doc touch-ups).
+
 ### Next session
 1. **Base Sepolia** deploy, Basescan verify, **`VAULT_ADDRESS`** in README + `config/chain/contracts.yaml`.
 2. Off-chain **agent** stub: read vault + apply **bands** + optional `rebalance` calldata.
@@ -231,14 +234,38 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-19 — Off-chain agent CLI (bands + RPC)
+
+### Goal
+- First **vertical slice** for the executor path: load **band policy** from YAML, read **vault weights** + **NAV** from chain via RPC, compare to **local target weights**, print **skip vs would-trade** (dry-run; no txs).
+
+### Human decisions
+- **Node (ESM) + viem** under [`apps/agent/`](../apps/agent/) — small surface, no Python env; matches typical web3 tooling.
+- **Targets** live in gitignored [`config/local/targets.json`](../config/local/) (copy from example) so judges don’t need DB for the demo.
+
+### Agent / automation
+- [`apps/agent/`](../apps/agent/): `npm run plan` — loads `.env`, [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml), optional `config/local/targets.json`.
+- **Drift** metric: `absolute_pp` from config; **min notional** gate vs `drift * NAV` (USDC-scale rough).
+
+### Reality checks
+- **No** swap calldata / Uniswap API yet — next increment after live vault address + routes.
+- **Votes DB / trust aggregation** still out of scope for this stub.
+
+### Next session
+1. **Deploy** vault; set `VAULT_ADDRESS` + `CHAIN_RPC_URL`; run `npm run plan` against Sepolia.
+2. Add **route builder** (Uniswap API or quoter) → `SwapStep[]` preview for `rebalance`.
+3. Optional: **`Governor` + timelock** or document EOA bootstrap.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` — **push after this session** should include **`.gitmodules`**, submodules under `contracts/lib/`, new tests, CI workflow, LICENSE, doc updates.
-- **Now building:** **`DAOVault`** with oracles + guardian pause + governance roles; **Forge: 15 tests** (incl. Base fork Uniswap pool smoke).
-- **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only; **deploy** blocked on your **private key + RPC** (not in repo).
+- **Branch / commit:** `main` @ **`c3f8c11`** (submodules + fork test + CI + LICENSE); **ahead/behind remote** — confirm with `git status` before each session.
+- **Now building:** **`DAOVault`** on-chain; **Forge: 15 tests**; **off-chain agent** dry-run in [`apps/agent/`](../apps/agent/).
+- **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only; **deploy** needs your **RPC + keys** (not in repo).
 - **Next 3 tasks:**
-  1. **Base Sepolia** deploy + verify + env addresses in README / `config/chain/contracts.yaml`.
-  2. **Agent** vertical slice (votes → aggregate → bands → `rebalance` calldata).
+  1. **Base Sepolia** deploy + verify + **`VAULT_ADDRESS`** in README / `config/chain/contracts.yaml` + `.env`.
+  2. **`npm run plan`** on deployed vault; tune `config/local/targets.json`; then **swap / `rebalance` calldata** generation.
   3. **Governor + ERC20Votes + timelock** (or document bootstrap EOA → timelock handoff).
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** profit split bias unless upgraded.
 - **Tracks (provisional):** Open Track + Uniswap + MetaMask Delegations.

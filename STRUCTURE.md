@@ -40,7 +40,7 @@ vault/
 └── checklist.md              # Implementation checklist
 
 contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
-apps/agent/   (or services/) # Off-chain executor: read chain + config, plan swaps
+apps/agent/                   # Node (viem): dry-run plan — RPC + bands + local targets (`npm run plan`)
 apps/bot/     (optional)     # Telegram webhook / long-poll service
 ```
 

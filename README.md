@@ -4,7 +4,7 @@
 
 Built for **[The Synthesis](https://synthesis.md/)** hackathon (agentic × Ethereum).
 
-> **Status:** Foundry **`DAOVault`** + tests in [`contracts/`](contracts/README.md); **agent / vote pipeline and Base Sepolia deploy addresses** still to wire. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
+> **Status:** Foundry **`DAOVault`** + tests in [`contracts/`](contracts/README.md); **dry-run agent** in [`apps/agent/`](apps/agent/README.md) (bands + targets JSON); **deploy addresses + vote DB + swap calldata** still to wire. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
 
 ---
 
@@ -24,6 +24,7 @@ Full problem/solution and MVP scope: [**docs/PROJECT_SPEC.md**](docs/PROJECT_SPE
 
 ```
 contracts/      # Foundry: DAOVault + tests (see contracts/README.md)
+apps/agent/     # Node: `npm run plan` — vault weights vs targets + band policy (dry-run)
 docs/           # Spec, build log, governance model, checklist
 vault/          # Vault spec + checklist
 config/         # Non-secret agent defaults (YAML); see config/README.md
@@ -31,7 +32,7 @@ config/         # Non-secret agent defaults (YAML); see config/README.md
 ```
 
 `contracts/` — Foundry vault (`forge build` / `forge test`); see [`contracts/README.md`](contracts/README.md).  
-Coming: agent service, optional Telegram bot.
+`apps/agent/` — [`apps/agent/README.md`](apps/agent/README.md). Optional Telegram bot later.
 
 ---
 
@@ -56,6 +57,14 @@ Coming: agent service, optional Telegram bot.
 cd contracts && forge build && forge test
 ```
 
+Dry-run rebalance planner (needs `CHAIN_RPC_URL`, `VAULT_ADDRESS` in `.env`):
+
+```bash
+cd apps/agent && npm install && npm run plan
+```
+
+Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.example.json) to `config/local/targets.json` and set real token addresses.
+
 Deploy + verify: [`contracts/script/DeployDAOVault.s.sol`](contracts/script/DeployDAOVault.s.sol) — set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, and `BASESCAN_API_KEY` (for verification). Example:
 ```bash
 cd contracts
@@ -71,6 +80,7 @@ Then set `VAULT_ADDRESS` (and optional `GUARDIAN_ADDRESS`) in `.env` and documen
 | Doc | Purpose |
 |-----|---------|
 | [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture diagrams |
+| [apps/agent/README.md](apps/agent/README.md) | Dry-run planner (`npm run plan`) — bands + RPC + local targets |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |
 | [TRACKS.md](TRACKS.md) | Synthesis prize tracks we target + fit notes |
 | [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md) | MVP, rebalance bands, backlog |

@@ -1,0 +1,8 @@
+{
+  "cycleId": 0,
+  "comment": "Copy to config/local/targets.json (gitignored). Weights are 0-1 and are normalized to sum to 1.",
+  "targets": {
+    "0x0000000000000000000000000000000000000001": 0.5,
+    "0x0000000000000000000000000000000000000002": 0.5
+  }
+}

@@ -61,6 +61,7 @@ _Last reviewed: 2026-03-19._
 
 ## 4 — Off-chain agent & integrations
 
+- [x] **Dry-run planner** — [`apps/agent`](../apps/agent/README.md) (`npm run plan`): RPC + [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) + local targets JSON; prints skip / would_trade (no txs yet)
 - [ ] **Vote ingestion**: signed payloads / bot commands / mini-app — source of truth = DB +/or chain, not chat alone
 - [ ] **Aggregation**: weighted target portfolio (`trust × share` or MVP simplification)
 - [ ] **Trust v0**: one benchmark, one update rule, logged per cycle (even if “manual cycle” for demo)
