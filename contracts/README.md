@@ -8,13 +8,21 @@ Foundry project implementing [`../vault/spec.md`](../vault/spec.md).
 
 ## Dependencies
 
-Vendor libs live under `lib/` (OpenZeppelin `v5.0.2`, `forge-std`). To refresh with `forge install` instead:
+Libs are **git submodules** under `lib/` (OpenZeppelin `v5.0.2`, `forge-std`). From repo root:
+
+```bash
+git submodule update --init --recursive
+```
+
+OpenZeppelin also vendors nested submodules (`lib/erc4626-tests`, nested `forge-std`); **`--recursive`** is required for a clean `forge build`.
+
+To reinstall from scratch:
 
 ```bash
 cd contracts
 rm -rf lib/openzeppelin-contracts lib/forge-std
-forge install OpenZeppelin/openzeppelin-contracts@v5.0.2 --no-commit
-forge install foundry-rs/forge-std --no-commit
+forge install OpenZeppelin/openzeppelin-contracts@v5.0.2
+forge install foundry-rs/forge-std
 ```
 
 ## Commands
@@ -25,11 +33,18 @@ forge build
 forge test
 ```
 
-Deploy (example — set `PRIVATE_KEY` and RPC in env):
+**Fork test (Base mainnet — hits public RPC):** reads Uniswap V3 factory + USDC/WETH pool liquidity on a Base fork (`test/UniswapBaseFork.t.sol`). Override RPC with `BASE_MAINNET_RPC_URL` in `.env` if needed.
+
+## Deploy & verify (Base Sepolia)
+
+Set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, and `BASESCAN_API_KEY` (verification). Optional: `GUARDIAN_ADDRESS`.
 
 ```bash
-forge script script/DeployDAOVault.s.sol:DeployDAOVault --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast
+forge script script/DeployDAOVault.s.sol:DeployDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
 ```
+
+Copy the logged `DAOVault` address into the root **README**, **`config/chain/contracts.yaml`**, and `VAULT_ADDRESS` in `.env`.
 
 ## Contracts
 

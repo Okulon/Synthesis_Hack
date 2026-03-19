@@ -19,7 +19,7 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 - [x] **ERC-4626** vs **custom** — **custom** multi-asset (`DAOVault.sol`; mint **virtual offset**, not full 4626 surface)
 - [x] **MVP asset count** — **multi-asset** allowlisted ERC-20s from day one
 - [x] **`totalNAV()`** — governance **`navPricePerFullToken1e18`** (abstract **1e18** unit); see [`contracts/README.md`](../contracts/README.md)
-- [ ] **Mid-cycle deposits** — still **undocumented** in prose ([`spec.md` §3](spec.md) / README)
+- [x] **Mid-cycle deposits** — **documented** in [`spec.md` §3](spec.md) (hackathon default + P&L caveat)
 - [x] **`assetOut`** — allowlisted token present in **`trackedAssets`** (after at least one deposit of that asset)
 
 ---
@@ -111,9 +111,9 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 - [ ] Non-allowlisted **asset** / **router** explicit reverts
 - [x] **`rebalance`** gated to **executor**
 - [x] **`pauseAll`** blocks redeem (`test_pause_all_blocks_redeem`)
-- [ ] **`pauseTrading`** blocks rebalance but **not** redeem — explicit test
+- [x] **`pauseTrading`** blocks rebalance but **not** redeem — see `test_pause_trading_blocks_rebalance_but_not_redeem`
 - [x] **`closeCycle`** emits
-- [ ] (Fork) **Base** + one real **Uniswap** swap smoke test
+- [x] (Fork) **Base** + Uniswap V3 **factory/pool** smoke test ([`test/UniswapBaseFork.t.sol`](../contracts/test/UniswapBaseFork.t.sol); swaps are calldata-built off-chain per spec)
 
 ---
 

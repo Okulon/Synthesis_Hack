@@ -39,6 +39,8 @@
 
 **MVP simplification (optional):** disallow deposits mid-rebalance window or document **no dilution fix** for the demo — align with `PROJECT_SPEC` open decisions.
 
+**Hackathon default:** treat **mid-cycle deposits as allowed** unless you explicitly pause deposits for the demo window; if allowed, **Tier A** P&L and trust splits should either exclude new deposits from the cycle boundary math or document a deliberate simplification (e.g. “small TVL / short cycles so dilution is negligible”) in `BUILD_LOG` / README.
+
 ---
 
 ## 4 — Withdrawals & “redeem to single asset”

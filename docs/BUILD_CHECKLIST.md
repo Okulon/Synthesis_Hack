@@ -14,7 +14,7 @@ _Last reviewed: 2026-03-19._
 - [x] **Config scaffold** — [`config/`](../config/) (`agent/`, `chain/`, `dex/`, `rebalancing/`, `governance/`, `trust/`, `telegram/`, `integrations/`, `logging/`, `security/`)
 - [x] **`.gitignore`** — root (`.env`, `config/local/`, common artifacts)
 - [x] **`.env.example`** — secret **names** only; `cp .env.example .env` documented there
-- [ ] `git add` / **commit** + **push** current docs + config (working tree was dirty after initial commit)
+- [x] `git add` / **commit** + **push** current docs + config (ongoing; use submodules for `contracts/lib`)
 
 ---
 
@@ -32,7 +32,7 @@ _Last reviewed: 2026-03-19._
 - [x] Root **README**: problem, MVP demo steps, env vars (names only), links to docs
 - [x] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, etc.)
 - [x] **No secrets in git** — `.env.example` + [`config/README.md`](../config/README.md)
-- [ ] License file (if required by hackathon / your preference)
+- [x] License file — [`LICENSE`](../LICENSE) (MIT)
 - [x] **First commit** on repo (`Initial Commit`); **follow-up commit** needed for latest files (see **§ P**)
 
 ---

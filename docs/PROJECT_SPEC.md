@@ -3,7 +3,7 @@
 **Working name:** DAO Agent  
 **Elevator pitch:** A pooled treasury where stakeholders vote on target portfolio weights; an autonomous executor rebalances on-chain within governance caps; influence and (eventually) profit skew reflect **trust** earned from past voting performance — without giving the agent unchecked custody.
 
-**Status:** Pre-implementation. **Hackathon MVP** below is the build target; full mechanics are a north star.
+**Status:** **On-chain vault** (`contracts/`) implemented with tests; off-chain agent + vote DB + deploy addresses are the remaining MVP slice. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
 Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps), [`vault/spec.md`](../vault/spec.md) (on-chain vault design).
 

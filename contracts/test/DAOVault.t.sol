@@ -250,6 +250,28 @@ contract DAOVaultTest is Test {
         vm.stopPrank();
     }
 
+    function test_pause_trading_blocks_rebalance_but_not_redeem() public {
+        vm.startPrank(alice);
+        tokenA.approve(address(vault), 100 ether);
+        vault.deposit(address(tokenA), 100 ether, alice);
+        vm.stopPrank();
+
+        vault.setPause(false, true, false);
+        assertTrue(vault.pauseTrading());
+
+        tokenA.mint(address(vault), 50 ether);
+        DAOVault.SwapStep[] memory steps = new DAOVault.SwapStep[](0);
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(DAOVault.Paused.selector);
+        vault.rebalance(steps);
+
+        vm.startPrank(alice);
+        uint256 shares = vault.balanceOf(alice);
+        vault.redeemToSingleAsset(shares, address(tokenA), 0, new DAOVault.SwapStep[](0));
+        vm.stopPrank();
+        assertEq(vault.balanceOf(alice), 0);
+    }
+
     function test_rebalance_only_executor() public {
         tokenA.mint(address(vault), 50 ether);
         DAOVault.SwapStep[] memory steps = new DAOVault.SwapStep[](0);

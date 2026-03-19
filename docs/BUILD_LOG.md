@@ -205,14 +205,40 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-19 — Submodules, fork smoke, CI, docs
+
+### Goal
+- Make **`contracts/lib/`** reproducible for clones; add **Base + Uniswap** fork coverage; refresh README / BUILD_LOG / checklist; **MIT** license.
+
+### Human decisions
+- **Fork test:** assert **Uniswap V3 factory + pool** liquidity on Base fork (router `exactInputSingle` ABI differs on Base deployments; vault uses **off-chain calldata** anyway).
+
+### Agent / automation
+- **`forge install`** → **git submodules** (`contracts/lib/openzeppelin-contracts`, `contracts/lib/forge-std`); root [`.gitmodules`](../.gitmodules).
+- **`test/UniswapBaseFork.t.sol`:** factory `getPool` + `slot0` / `liquidity` on USDC/WETH **0.3%** pool.
+- **`test_pause_trading_blocks_rebalance_but_not_redeem`** in [`DAOVault.t.sol`](../contracts/test/DAOVault.t.sol).
+- [`.github/workflows/foundry.yml`](../.github/workflows/foundry.yml) — `forge build` + `forge test` with `submodules: recursive`.
+- [`LICENSE`](../LICENSE) (MIT); README clone + deploy **`--verify`**; [`.env.example`](../.env.example) `BASESCAN_API_KEY` / `BASE_MAINNET_RPC_URL`; [`vault/spec.md`](../vault/spec.md) §3 mid-cycle default; [`vault/checklist.md`](../vault/checklist.md) synced.
+
+### Reality checks
+- **Forge:** **15** tests (14 unit + 1 fork; fork uses public Base RPC by default).
+- **Deploy + verify** still **owner action** (needs keys + `BASE_SEPOLIA_RPC_URL`).
+
+### Next session
+1. **Base Sepolia** deploy, Basescan verify, **`VAULT_ADDRESS`** in README + `config/chain/contracts.yaml`.
+2. Off-chain **agent** stub: read vault + apply **bands** + optional `rebalance` calldata.
+3. Optional: **`Governor` + `ERC20Votes` + timelock** or document bootstrap EOA.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` @ **`ac32f2f`** locally; **uncommitted** work includes full [`contracts/`](../contracts/) tree (Foundry + vendored `lib/`), `docs/VAULT_ORACLE_AND_GOVERNANCE.md`, and edits to **`.env.example`**, README, STRUCTURE, **BUILD_LOG**, `vault/checklist.md`, `vault/spec.md`.
-- **Now building:** **`DAOVault`** with **Chainlink-style oracles** + **guardian-only** emergency pause + **governance-only** unpause and all other params; **Forge: 13 tests** passing.
-- **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only.
+- **Branch / commit:** `main` — **push after this session** should include **`.gitmodules`**, submodules under `contracts/lib/`, new tests, CI workflow, LICENSE, doc updates.
+- **Now building:** **`DAOVault`** with oracles + guardian pause + governance roles; **Forge: 15 tests** (incl. Base fork Uniswap pool smoke).
+- **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only; **deploy** blocked on your **private key + RPC** (not in repo).
 - **Next 3 tasks:**
-  1. **Commit & push** (including `contracts/lib` — decide submodule vs strip nested `.git` before public repo if needed).
-  2. **Base Sepolia** deploy + verify + env addresses.
+  1. **Base Sepolia** deploy + verify + env addresses in README / `config/chain/contracts.yaml`.
+  2. **Agent** vertical slice (votes → aggregate → bands → `rebalance` calldata).
   3. **Governor + ERC20Votes + timelock** (or document bootstrap EOA → timelock handoff).
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** profit split bias unless upgraded.
 - **Tracks (provisional):** Open Track + Uniswap + MetaMask Delegations.

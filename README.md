@@ -4,7 +4,7 @@
 
 Built for **[The Synthesis](https://synthesis.md/)** hackathon (agentic × Ethereum).
 
-> **Status:** Planning, docs, and YAML config are in place; **smart contracts and agent runtime are not wired up yet**. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
+> **Status:** Foundry **`DAOVault`** + tests in [`contracts/`](contracts/README.md); **agent / vote pipeline and Base Sepolia deploy addresses** still to wire. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
 
 ---
 
@@ -37,7 +37,12 @@ Coming: agent service, optional Telegram bot.
 
 ## Quick start (contributors)
 
-1. Clone the repo.
+1. Clone the repo **with submodules** (OpenZeppelin + `forge-std` live under `contracts/lib/`):
+   ```bash
+   git clone --recurse-submodules <URL>
+   # or after a plain clone:
+   git submodule update --init --recursive
+   ```
 2. Copy env template — **never commit real secrets**:
    ```bash
    cp .env.example .env
@@ -51,7 +56,13 @@ Coming: agent service, optional Telegram bot.
 cd contracts && forge build && forge test
 ```
 
-Deploy script: [`contracts/script/DeployDAOVault.s.sol`](contracts/script/DeployDAOVault.s.sol) (set `PRIVATE_KEY` + RPC; see [`contracts/README.md`](contracts/README.md)).
+Deploy + verify: [`contracts/script/DeployDAOVault.s.sol`](contracts/script/DeployDAOVault.s.sol) — set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, and `BASESCAN_API_KEY` (for verification). Example:
+```bash
+cd contracts
+forge script script/DeployDAOVault.s.sol:DeployDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
+```
+Then set `VAULT_ADDRESS` (and optional `GUARDIAN_ADDRESS`) in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Full detail: [`contracts/README.md`](contracts/README.md).
 
 ---
 
@@ -88,4 +99,4 @@ This repository is an **experimental hackathon prototype**. It is **not** invest
 
 ## License
 
-*TBD* — add a `LICENSE` file before open-source submission if the hackathon requires one.
+[MIT](LICENSE)
