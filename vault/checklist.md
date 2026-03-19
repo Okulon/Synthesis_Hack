@@ -6,90 +6,90 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 
 ## 0 — Tooling & layout
 
-- [ ] Add **`contracts/`** at repo root (or agree subpath) with **Foundry** (`foundry.toml`: Solidity version, **Base** + **Base Sepolia** RPC profiles)
-- [ ] **OpenZeppelin** contracts dependency (ERC-20, ERC-4626 and/or Solmate if preferred)
-- [ ] **`lib/`** git submodules or `forge install` documented in root README
-- [ ] **`script/`** deploy scripts; **`test/`** unit + (optional) fork tests
-- [ ] `.env` / `.env.example` keys for deployer, RPC, verified **router/quoter** addresses (see [`config/chain/contracts.yaml`](../config/chain/contracts.yaml))
+- [x] Add **`contracts/`** at repo root (or agree subpath) with **Foundry** (`foundry.toml`: Solidity version, **Base** + **Base Sepolia** RPC profiles)
+- [x] **OpenZeppelin** contracts dependency (ERC-20, ERC-4626 and/or Solmate if preferred)
+- [x] **`lib/`** git submodules or `forge install` documented in root README
+- [x] **`script/`** deploy scripts; **`test/`** unit + (optional) fork tests
+- [x] `.env` / `.env.example` keys for deployer, RPC, verified **router/bot** addresses (`PRIVATE_KEY` in `.env.example`; **live router addresses** TBD after deploy — see [`config/chain/contracts.yaml`](../config/chain/contracts.yaml))
 
 ---
 
 ## 1 — Design locks (before coding core)
 
-- [ ] Decide **ERC-4626 inherit** vs **custom** vault with same user-facing preview methods ([`spec.md` §12](spec.md))
-- [ ] Decide **MVP asset count:** start **single underlying** then generalize, vs **2–3 ERC-20** from day one ([`spec.md` §2](spec.md))
-- [ ] Define **`totalAssets` / NAV** in **one unit of account** (USDC peg, oracle, or reserves-only shortcut) — document in code comments + README
-- [ ] Document **mid-cycle deposits** rule (forbid vs simplify math) ([`spec.md` §3](spec.md))
-- [ ] Lock **`assetOut`** list for `redeemToSingleAsset` (subset of allowlist)
+- [x] **ERC-4626** vs **custom** — **custom** multi-asset (`DAOVault.sol`; mint **virtual offset**, not full 4626 surface)
+- [x] **MVP asset count** — **multi-asset** allowlisted ERC-20s from day one
+- [x] **`totalNAV()`** — governance **`navPricePerFullToken1e18`** (abstract **1e18** unit); see [`contracts/README.md`](../contracts/README.md)
+- [ ] **Mid-cycle deposits** — still **undocumented** in prose ([`spec.md` §3](spec.md) / README)
+- [x] **`assetOut`** — allowlisted token present in **`trackedAssets`** (after at least one deposit of that asset)
 
 ---
 
 ## 2 — Share token & accounting
 
-- [ ] **Share token** (ERC-20) name/symbol; **mint** on deposit, **burn** on redeem
-- [ ] Correct **rounding** (4626-style round-down on mint, round-down on redeem assets — or documented alternates)
-- [ ] **`totalSupply`**, **`convertToShares` / `convertToAssets`** (or equivalents) exposed for agent + UI
-- [ ] **Events** for mint/burn/deposit/redeem indexable by subgraph or off-chain agent
+- [x] **Share token** — ERC-20 mint/burn on deposit/redeem
+- [x] **Rounding** — `Math.mulDiv` **Floor** + first-depositor-style offset on mint
+- [ ] **`convertToShares` / `convertToAssets`** — not exposed (optional later for UIs/agents)
+- [x] **Events** — `Deposit`, `RedeemSingle` + ERC-20 `Transfer`
 
 ---
 
 ## 3 — Deposits ([`spec.md` §3](spec.md))
 
-- [ ] **`deposit(asset, amount, receiver)`** (or batch) — **only** allowlisted `asset`
-- [ ] **Pull** asset via safeTransferFrom; update internal balances / totalAssets logic
-- [ ] **Reverts** on zero amount, bad asset, full pause if deposits disabled
-- [ ] Optional: **disable deposits** when `pauseTrading` only — decide and document ([`spec.md` §8](spec.md))
+- [x] **`deposit(asset, amount, receiver)`** — allowlisted + `navPrice > 0`
+- [x] **`safeTransferFrom`**; NAV from balances × prices
+- [x] **Reverts** — zero amount, bad asset, `pauseAll` / `pauseDeposits`
+- [x] **`pauseTrading`** ≠ auto-pause deposits — use **`pauseDeposits`** (document in deploy README / spec §8)
 
 ---
 
 ## 4 — Withdraw / redeem ([`spec.md` §4](spec.md))
 
-- [ ] **Burn shares**; amount exact per user input
-- [ ] **`redeemToSingleAsset`** (final name in ABI): args include **`assetOut`**, **`minAmountOut`**, **`shares`**
-- [ ] Compute user’s **pro-rata** claim on vault token balances for burned shares
-- [ ] **Swap path(s)** via **allowlisted Uniswap v3 router** (pool fee tiers from config/governance)
-- [ ] Enforce **governance max slippage** + user **`minAmountOut`**
-- [ ] **Reentrancy** guards on external swap callbacks
-- [ ] Document **no silent haircut** — explicit fees if any ([`spec.md` §4.3](spec.md))
-- [ ] (Stretch) Standard **`redeem`** / **`withdraw`** if you want pure 4626 compatibility alongside single-asset exit
+- [x] **Burn shares** — user-chosen amount
+- [x] **`redeemToSingleAsset(shares, assetOut, minAmountOut, SwapStep[])`**
+- [x] **Pro-rata** slices; **slice-capped** approvals on redeem
+- [x] **Swaps** — allowlisted `router` + `data` (Uniswap v3 encoded off-chain); no in-vault v3 adapter
+- [ ] **`maxSlippageBps`** on-chain — **not** yet; user **`minAmountOut`** only
+- [x] **`ReentrancyGuard`**
+- [x] **No silent haircut** — revert if below `minAmountOut`
+- [x] **`redeemProRata`** (basket exit)
+- [ ] (Stretch) ERC-4626 **`redeem`/`withdraw`** for a single underlying
 
 ---
 
 ## 5 — Allowlists & risk caps ([`spec.md` §7](spec.md), §9)
 
-- [ ] **Token allowlist** (add/remove gated by governance role)
-- [ ] **Router + optional pool allowlist** (executor cannot call arbitrary contracts)
-- [ ] **`maxSlippageBps`** (or per-swap ceiling) stored on-chain
-- [ ] **`maxSingleAssetWeightBps`** or equivalent if portfolio caps are on-chain
-- [ ] **Governance** role: Ownable / AccessManager / multisig — document who holds it at deploy
+- [x] **Token allowlist** (`onlyOwner`)
+- [x] **Router allowlist** — no per-**pool** allowlist yet
+- [ ] **`maxSlippageBps`** on-chain
+- [ ] **`maxSingleAssetWeightBps`** on-chain
+- [x] **`Ownable`** + separate **`executor`**
 
 ---
 
 ## 6 — Executor & rebalancing ([`spec.md` §5](spec.md))
 
-- [ ] **`executor`** address set by governance; **`onlyExecutor`** modifier
-- [ ] **Swap / rebalance** entrypoint(s): e.g. `rebalance(...)` with calldata to router or internal swap helper
-- [ ] **Cannot** move user funds except through defined swap/withdraw paths
-- [ ] **Reverts** when `pauseTrading` or not executor
-- [ ] Off-chain **bands** (`ε`) remain in agent; on-chain still enforces **hard** caps (this checklist = vault side)
+- [x] **`executor`** + **`onlyExecutor`**
+- [x] **`rebalance(SwapStep[])`** — full vault `tokenIn` balance may be approved per step (executor privilege)
+- [x] Users use **redeem** / **redeemProRata**; executor only **rebalance**
+- [x] **Reverts** when paused / wrong caller
+- [ ] **Hard caps** still thin — **next:** governance slippage / pool allowlist to match spec story
 
 ---
 
 ## 7 — Pause ([`spec.md` §8](spec.md))
 
-- [ ] **`pauseTrading`** — blocks executor (and policy for deposits); **does not** block user **redeem** (MVP default)
-- [ ] **`pauseAll`** (optional) — document that **exits** are blocked; use only if unavoidable
-- [ ] Events for pause state changes
+- [x] **`pauseTrading`** — blocks **rebalance**; **not** redeem (unless `pauseAll`)
+- [x] **`pauseAll`** — blocks **redeem** + deposits
+- [x] **`PauseUpdated`**
 
 ---
 
 ## 8 — Per-cycle P&L surface ([`spec.md` §6](spec.md) — Tier A bias)
 
-- [ ] **`cycleId`** increment or governance-set
-- [ ] **`cycleOpen` / `cycleClose`** (or single `closeCycle`) callable by **governance** or **operator** (document trust model — bot should not unilaterally lie about NAV without constraints)
-- [ ] Persist or emit **`NAV_start`**, **`NAV_end`** in **unit of account** (uint with documented decimals)
-- [ ] Emit **`CycleClosed(cycleId, navStart, navEnd, timestamp)`** (fields as needed for off-chain profit-split CSV)
-- [ ] Document **deposit/withdraw adjustments** if `NAV_end - NAV_start` is not raw P&L ([`spec.md` §6.2](spec.md))
+- [x] **`cycleId`** + **`closeCycle`** (`onlyOwner`)
+- [x] **`CycleClosed(cycleId, navStart, navEnd, timestamp)`** — NAV bounds operator-posted (Tier A trust model)
+- [x] **Emit** NAV fields (no extra on-chain storage required for Tier A)
+- [ ] Document **deposit/withdraw adjustments** for P&L (README / `BUILD_LOG`)
 
 *(Profit weights `ŵ_i` / `g(trust)` stay **off-chain** for Tier A unless you add Merkle claim — [`spec.md` §6.4](spec.md).)*
 
@@ -97,40 +97,41 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 
 ## 9 — Security pass ([`spec.md` §9](spec.md))
 
-- [ ] No **mint** without deposit; no **drain** via executor except swaps
-- [ ] **Oracle / TWAP** choice documented; minimal exposure for MVP
-- [ ] **Solvency:** revert or partial behavior when **insufficient liquidity** for `redeemToSingleAsset` documented
-- [ ] Slither / static read optional but nice
+- [x] No **mint** without **deposit**; redeem **slice caps**; malicious **router** = governance risk
+- [ ] **Oracle / TWAP** — today **owner-set** prices; document attack surface / upgrade path
+- [ ] **Solvency / illiquid redeem** — document **`MinOut` / `IncompleteRedeem`** for judges
+- [ ] Slither / static read (optional)
 
 ---
 
 ## 10 — Tests
 
-- [ ] Deposit → shares minted correctly (multiple users)
-- [ ] Redeem → shares burned; **assetOut** received ≥ min (mock router or fork)
-- [ ] Non-allowlisted **asset** / **router** reverts
-- [ ] **Executor** cannot call restricted functions; non-executor cannot rebalance
-- [ ] **Pause** matrix: trading blocked, redeem allowed (unless `pauseAll`)
-- [ ] **Cycle** close emits/stores NAV fields
-- [ ] (Fork) **Base Sepolia** or Base mainnet fork — one real Uniswap swap path smoke test if feasible
+- [ ] Deposit → shares (**multi-user** case)
+- [x] Redeem → burn; **assetOut** ≥ min (mock router)
+- [ ] Non-allowlisted **asset** / **router** explicit reverts
+- [x] **`rebalance`** gated to **executor**
+- [x] **`pauseAll`** blocks redeem (`test_pause_all_blocks_redeem`)
+- [ ] **`pauseTrading`** blocks rebalance but **not** redeem — explicit test
+- [x] **`closeCycle`** emits
+- [ ] (Fork) **Base** + one real **Uniswap** swap smoke test
 
 ---
 
 ## 11 — Deploy & ops
 
-- [ ] **Base Sepolia** deploy + **verify** on Basescan
-- [ ] Constructor args documented; **set executor** + **seed allowlist** via script
-- [ ] Addresses in root **README** + update **[`config/chain/contracts.yaml`](../config/chain/contracts.yaml)** env key names
-- [ ] Backup **deployer key** handling — never in git
+- [ ] **Base Sepolia** deploy + **Basescan verify**
+- [ ] Post-deploy: **executor**, allowlists, nav prices (extend script beyond constructor)
+- [ ] Addresses in **README** + [`config/chain/contracts.yaml`](../config/chain/contracts.yaml)
+- [x] **Secrets** — `.gitignore` / `.env.example` only; never commit keys
 
 ---
 
 ## 12 — Docs & demo
 
-- [ ] **`vault/spec.md`** updated if implementation diverges (footnote deltas)
-- [ ] Root README: **how to deposit / redeem** + **Basescan** links
-- [ ] Short **“agent down, user can still redeem”** sentence for judges ([`spec.md` §1](spec.md))
-- [ ] Optional: **architecture diagram** snippet in README or [`STRUCTURE.md`](../STRUCTURE.md)
+- [x] **`vault/spec.md`** §4.2 — **`SwapStep`** implementation note
+- [ ] README **judge path**: deposit / redeem steps + **Basescan** (after deploy)
+- [ ] One line: **agent down, calldata redeem still works** ([`spec.md` §1](spec.md))
+- [x] [`STRUCTURE.md`](../STRUCTURE.md) lists **`contracts/`**
 
 ---
 

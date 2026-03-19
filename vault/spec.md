@@ -52,6 +52,8 @@ Users may hold economic exposure across **N** assets (`N` small in MVP). **UX ta
 
 ### 4.2 Single-asset exit (intended flow)
 
+**Implementation (`contracts/src/DAOVault.sol`):** user passes an ordered array of **`SwapStep { tokenIn, router, data }`**. The vault approves at most that redeemer’s **slice** of `tokenIn` and executes `router.call(data)`, so **routing stays in calldata** (any client can build it). Swaps should generally send **`assetOut` back to the vault** until final settlement; the contract then transfers aggregate **`assetOut`** to `msg.sender` subject to **`minAmountOut`**.
+
 1. User calls `redeemToSingleAsset(shares, assetOut, minAmountOut, ...)` (exact name TBD).
 2. Contract computes the **pro-rata** claim those shares represent against **vault holdings** (or against internal NAV).
 3. Vault uses **allowlisted DEX router** (Uniswap v3 on Base) to swap the constituent pieces into **`assetOut`**, respecting:

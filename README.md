@@ -23,12 +23,15 @@ Full problem/solution and MVP scope: [**docs/PROJECT_SPEC.md**](docs/PROJECT_SPE
 ## Repository layout
 
 ```
+contracts/      # Foundry: DAOVault + tests (see contracts/README.md)
 docs/           # Spec, build log, governance model, checklist
+vault/          # Vault spec + checklist
 config/         # Non-secret agent defaults (YAML); see config/README.md
 .env.example    # Environment variable *names* only (no secrets in git)
 ```
 
-Coming: `contracts/` (Foundry/Hardhat), agent service, optional Telegram bot.
+`contracts/` — Foundry vault (`forge build` / `forge test`); see [`contracts/README.md`](contracts/README.md).  
+Coming: agent service, optional Telegram bot.
 
 ---
 
@@ -44,7 +47,11 @@ Coming: `contracts/` (Foundry/Hardhat), agent service, optional Telegram bot.
 
 ### Commands
 
-*Contract tests, local node, deploy — to be added when `contracts/` lands (target: Base Sepolia).*
+```bash
+cd contracts && forge build && forge test
+```
+
+Deploy script: [`contracts/script/DeployDAOVault.s.sol`](contracts/script/DeployDAOVault.s.sol) (set `PRIVATE_KEY` + RPC; see [`contracts/README.md`](contracts/README.md)).
 
 ---
 
@@ -59,6 +66,7 @@ Coming: `contracts/` (Foundry/Hardhat), agent service, optional Telegram bot.
 | [docs/GOVERNANCE_VOTING.md](docs/GOVERNANCE_VOTING.md) | Parameter vs allocation votes, registry ideas |
 | [docs/BUILD_LOG.md](docs/BUILD_LOG.md) | Chronological human ↔ agent work log |
 | [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md) | Ordered checklist toward submission |
+| [docs/VAULT_ORACLE_AND_GOVERNANCE.md](docs/VAULT_ORACLE_AND_GOVERNANCE.md) | Oracle stack, roles, feed sunset / manual override |
 
 ---
 

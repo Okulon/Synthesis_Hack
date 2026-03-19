@@ -141,14 +141,78 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-19 — Foundry `DAOVault` (multi-asset + calldata exits)
+
+### Goal
+- Ship a **first on-chain vault** matching [`vault/spec.md`](../vault/spec.md): deposits, single-asset redeem with **user-supplied router calldata**, executor rebalance hook, allowlists, pause flags, Tier A **cycle close** event.
+
+### Human decisions
+- **Withdrawal routing:** confirm **off-chain / any client** builds `SwapStep[]`; vault only **approves the redeemer’s slice** of `tokenIn` and **`call`s** allowlisted routers — **no** on-chain “best path” search.
+- **NAV for mint/burn math (MVP):** **governance-set** `navPricePerFullToken1e18` per token until oracle work; document tradeoff in code/README.
+
+### Agent / automation
+- Added [`contracts/`](../contracts/) Foundry project: [`src/DAOVault.sol`](../contracts/src/DAOVault.sol), unit tests (mock router), [`script/DeployDAOVault.s.sol`](../contracts/script/DeployDAOVault.s.sol), [`contracts/README.md`](../contracts/README.md); **`lib/`** vendors OpenZeppelin **v5.0.2** + **forge-std** (clone / `forge install`-style).
+- **Forge:** `forge build` / `forge test` — **6 tests** passing locally.
+- Docs touch-up: root **README** / **STRUCTURE**, **`.env.example`** (`PRIVATE_KEY` hint), [`vault/spec.md`](../vault/spec.md) §4.2 implementation note, [`vault/checklist.md`](../vault/checklist.md) §0.
+
+### Reality checks
+- **Not yet:** Base Sepolia **deploy + verify**, fork smoke against real Uniswap; **on-chain** `maxSlippageBps` / max single-asset weight (only **`minAmountOut`** + allowlists so far).
+- **Vendoring:** nested `.git` under `contracts/lib/*` — normalize (submodule vs strip `.git`) before a clean **public** push.
+- **`git`:** `contracts/` **untracked**; several prior doc files still **modified** vs `origin/main` — **commit + push** pending.
+
+### Open questions / risks
+- Same as earlier: **`sk-synth-…`**, team UUID, **track UUIDs** from `/catalog`.
+- **Profit Tier A:** `closeCycle` trusts **owner-posted** `navStart`/`navEnd` — document honest operator / future constraints.
+
+### Next session
+1. **`git add` `contracts/` + doc updates; commit; push.**
+2. **Base Sepolia** deploy, Basescan verify, drop addresses into README + [`config/chain/contracts.yaml`](../config/chain/contracts.yaml).
+3. **Fork test** (or scripted) one real Uniswap swap path; tighten vault (**slippage caps**, router validation) as time allows.
+
+---
+
+## 2026-03-19 — Oracles, vote-gated params, guardian emergency pause
+
+### Goal
+- Add **trust-minimized pricing** (Chainlink-style feeds + optional secondary + deviation bounds + staleness) while keeping **governance** as the only long-term control plane.
+- Align with **community votes** for **all** parameter changes (`GOVERNANCE_ROLE` → timelock), **except** fast **one-way** pause from **guardians**.
+
+### Human decisions
+- **No separate “operator admin”** for oracles vs pause: **one** `GOVERNANCE_ROLE` (timelock after votes) for **full** `setPause` (including **unpause**), executor, cycle close, allowlists, oracle config, manual price, legacy nav.
+- **`GUARDIAN_ROLE`** (1–N multisig): **`guardianPauseTrading` / `guardianPauseDeposits` / `guardianPauseAll`** only — **cannot** unpause; **unpause** only via governance after a vote.
+- **Feed discontinued / no fallback:** deposits **`OracleUnavailable`** until governance votes a new config or **time-bounded `setManualPrice`** as a bridge.
+
+### Agent / automation
+- [`DAOVault.sol`](../contracts/src/DAOVault.sol): `IAggregatorV3` reads, **`pricePerFullToken1e18`**, `AssetOracleConfig`, `setManualPrice` / `clearManualPrice`, errors `OracleUnavailable` / `OracleDeviation`.
+- **`AccessControl`**: `GOVERNANCE_ROLE`, `GUARDIAN_ROLE`; constructor **`(governance, guardian, name, symbol)`** — `guardian` optional (`address(0)`).
+- **Tests:** [`contracts/test/DAOVault.t.sol`](../contracts/test/DAOVault.t.sol) — **13** Forge tests (oracle stale, secondary fallback, deviation, manual bridge, guardian vs governance pause, access control).
+- **Docs:** [`VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md); README + [`contracts/README.md`](../contracts/README.md); **`.env.example`** (`GUARDIAN_ADDRESS`); deploy script **`GUARDIAN_ADDRESS`** via `vm.envOr`.
+- [`vault/checklist.md`](../vault/checklist.md) synced earlier with implementation status.
+
+### Reality checks
+- **Governor + `ERC20Votes` + timelock** not deployed yet — **docs** describe wiring; vault is **role-ready**.
+- **TWAP** as secondary source still **not** in-contract (future adapter).
+- **Commit/push** still pending for `contracts/` + new docs (see Current state).
+
+### Open questions / risks
+- Same as prior: **`sk-synth-…`**, team UUID, **track UUIDs** from `/catalog`.
+- **Emergency pause** without vote: **guardian griefing** — mitigate with **multisig**, **policy**, optional **social** removal of `GUARDIAN_ROLE` via governance.
+
+### Next session
+1. **`git commit` + `git push`** (full repo delta including `contracts/`).
+2. **Deploy + verify** Base Sepolia; fill addresses in README + `config/chain/contracts.yaml`.
+3. **Optional:** `Governor` + `ERC20Votes` on vault shares + timelock as governance address.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` @ `a2710d8` locally; **pending commit** adds README, STRUCTURE, `vault/spec.md`, PROJECT_SPEC (§2.2 + backlog), BUILD_CHECKLIST/LOG.
-- **Now building:** **Design complete** for vault + cycle P&L/trust profit path; **implementation** (contracts) not started.
+- **Branch / commit:** `main` @ **`ac32f2f`** locally; **uncommitted** work includes full [`contracts/`](../contracts/) tree (Foundry + vendored `lib/`), `docs/VAULT_ORACLE_AND_GOVERNANCE.md`, and edits to **`.env.example`**, README, STRUCTURE, **BUILD_LOG**, `vault/checklist.md`, `vault/spec.md`.
+- **Now building:** **`DAOVault`** with **Chainlink-style oracles** + **guardian-only** emergency pause + **governance-only** unpause and all other params; **Forge: 13 tests** passing.
 - **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only.
 - **Next 3 tasks:**
-  1. **Commit & push** current docs + vault spec.
-  2. **Foundry** project + first vault contracts + tests + Base Sepolia deploy notes.
-  3. Confirm **Synthesis** account + cache **track UUIDs** from `/catalog`.
+  1. **Commit & push** (including `contracts/lib` — decide submodule vs strip nested `.git` before public repo if needed).
+  2. **Base Sepolia** deploy + verify + env addresses.
+  3. **Governor + ERC20Votes + timelock** (or document bootstrap EOA → timelock handoff).
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** profit split bias unless upgraded.
 - **Tracks (provisional):** Open Track + Uniswap + MetaMask Delegations.

@@ -32,13 +32,14 @@ Synthesis_Hack/
     └── BUILD_CHECKLIST.md   # Ordered tasks to submission
 ```
 
-**Planned / in progress**
+**In progress**
 
 ```
 vault/
-└── spec.md                   # Vault technical intent (on-chain behavior)
+├── spec.md                   # Vault technical intent (on-chain behavior)
+└── checklist.md              # Implementation checklist
 
-contracts/                    # Foundry / Hardhat — implements vault/spec.md
+contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
 apps/agent/   (or services/) # Off-chain executor: read chain + config, plan swaps
 apps/bot/     (optional)     # Telegram webhook / long-poll service
 ```
