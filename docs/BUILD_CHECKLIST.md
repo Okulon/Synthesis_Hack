@@ -29,7 +29,7 @@ _Last reviewed: 2026-03-19._
 
 ## 1 — Repo & hygiene
 
-- [ ] Root **README**: problem, MVP demo steps, env vars (names only), links to docs
+- [x] Root **README**: problem, MVP demo steps, env vars (names only), links to docs
 - [x] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, etc.)
 - [x] **No secrets in git** — `.env.example` + [`config/README.md`](../config/README.md)
 - [ ] License file (if required by hackathon / your preference)

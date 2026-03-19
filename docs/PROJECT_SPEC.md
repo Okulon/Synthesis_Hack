@@ -5,7 +5,7 @@
 
 **Status:** Pre-implementation. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
-Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps).
+Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps), [`vault/spec.md`](../vault/spec.md) (on-chain vault design).
 
 ---
 
@@ -22,7 +22,7 @@ Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BU
 3. **Aggregate** targets using **voting power** derived from **share** and **trust** (e.g. `trust × share`, normalized among voters).
 4. **Agent** moves the live portfolio toward the aggregate **only when drift exceeds configurable bands** (voter-set thresholds), not pixel-perfect weights — e.g. skip a swap meant to “fix” 89.99% → 90%. Still subject to **governance limits** (allowlist, max slippage, max single-asset weight, allowed venues).
 5. **Trust** updates from how each user’s proposed portfolio **would have performed** vs a defined benchmark (rolling window, floors/ceilings).
-6. **Profit** allocation (full spec): skew toward higher trust while weak voters still earn some upside; **losses** shared by share (trust does not increase downside) — *full accounting is post-MVP*.
+6. **Profit** (per cycle): measure vault **P&L** over each allocation cycle; **positive** results are split using weights that combine **`share`** and **`trust`** (e.g. `share × g(trust)`, normalized); **losses** hit participants **by share only** — trust does **not** increase downside. See [`vault/spec.md`](../vault/spec.md) §6 for formulas and MVP tiers (ledger vs accrue vs Merkle).
 7. **Governance** can change risk and **registry** parameters (allowlisted tokens, venues, rebalance thresholds; “which chain” is a heavy migration — see [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md)) via proposals (quorum, timelock, bounds) — *MVP may only ship a minimal param set*.
 
 ---
@@ -36,7 +36,7 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 | **Chain** | Single L2 — **Base** (provisional; change only via `BUILD_LOG`). |
 | **Assets** | **2–3 allowlisted** ERC-20s (e.g. USDC + WETH + one volatile) — governance-controlled list. |
 | **Execution** | **Uniswap** (v3/v4 or API-assisted) swaps only; **real tx hashes** on testnet or mainnet. |
-| **Vault** | Users **deposit/withdraw** shares; minimal correct accounting for **no mid-cycle deposits** or document simplified assumptions. |
+| **Vault** | Users **deposit/withdraw** shares; minimal correct accounting for **no mid-cycle deposits** or document simplified assumptions. **Per-cycle NAV / P&L** surfaced for trust updates & profit split ([`vault/spec.md`](../vault/spec.md) §6). |
 | **Votes** | One **cycle** demonstrable: collect votes (Telegram and/or web), compute **aggregate weights**, show math in logs/README. |
 | **Trust v0** | **One** benchmark, **one** update rule, **one** rolling window (e.g. last N cycles); output **auditable** (CSV or JSON + short explanation). |
 | **Agent** | Off-chain worker: fetch state, compute target vs holdings, **apply rebalance bands** (see §2.1), **build minimal trade list**, enforce caps, **submit txs** (or propose txs until delegation path is complete). |
@@ -62,8 +62,15 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 
 **Edge cases (document in code/README):** rounding, new token with 0% target, withdrawals between vote and execution, stale prices.
 
+### 2.2 — Per-cycle profit & trust-weighted distribution (summary)
+
+- At each **cycle boundary**, compute vault **result** in a single unit of account (`NAV_end - NAV_start` with deposit/withdraw adjustments — see [`vault/spec.md` §6.2](../vault/spec.md)).
+- **If profit:** allocate `profit_cycle` across users with weights `ŵ_i ∝ share_i × g(trust_i)` (governance picks `g`, e.g. `trust^α`); optional **floor** so everyone gets some upside.
+- **If loss:** no trust-skewed **profit** pool; impairment flows **through share price / pro-rata loss** — not through extra downside for high-trust voters.
+- **MVP:** prefer **Tier A** (on-chain `CycleClosed` + off-chain CSV of splits) or small **Merkle claim** if time permits — full **legal-grade** fund ops still out of scope.
+
 ### Explicitly out of scope for MVP (document as future work)
-- Full production **profit-skew** settlement and **legal-grade** fund accounting
+- **Legal-grade** fund accounting, audits, and regulatory-grade reporting (product **does** document profit logic for the hackathon)
 - Multi-chain, CEX, or exotic venues
 - Sybil-resistant identity beyond wallet linkage (unless added for a specific track)
 - Fully autonomous **no-human** operation unless you intentionally target Protocol Labs–style tracks *and* budget the checklist (ERC-8004, manifests, logs)
@@ -96,7 +103,8 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 - [ ] **Swap path** to Uniswap with **documented** slippage and limits
 - [ ] **Vote model** in DB (user id ↔ wallet, cycle id, weights JSON, timestamp)
 - [ ] **Aggregation job** + reproducible log output for one demo cycle
-- [ ] **Trust v0** computation + persistence
+- [ ] **Trust v0** computation + persistence (informs next cycle’s voting power + `g(trust)` for profit weights)
+- [ ] **Cycle P&L** snapshot (`NAV_start` / `NAV_end`) + **profit split** artifact (CSV / event / optional claim) per [`vault/spec.md`](../vault/spec.md) §6
 - [ ] **Rebalance band logic**: drift vs target, `ε` (global and/or per-asset), optional **min notional**; log “skip” reasons for demos
 - [ ] **Governance**: store/update threshold params via same process as other risk knobs (timelock if on-chain)
 - [ ] **Agent loop** (manual trigger OK): read vault, compute target, **apply bands**, then trades, execute
