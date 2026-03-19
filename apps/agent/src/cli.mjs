@@ -1,19 +1,13 @@
 /**
  * Dry-run: current vault weights vs local targets + band policy (no txs).
  */
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { parse as parseYaml } from "yaml";
 import { createPublicClient, http, parseAbi } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// apps/agent/src -> repo root
-const repoRoot = path.resolve(__dirname, "../../..");
-
-dotenv.config({ path: path.join(repoRoot, ".env") });
+import { repoRoot } from "./lib/env.mjs";
 
 const vaultAbi = parseAbi([
   "function totalNAV() view returns (uint256)",

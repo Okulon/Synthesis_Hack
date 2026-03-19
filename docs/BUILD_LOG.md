@@ -258,14 +258,41 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Deploy scripts, agent aggregate/trust/quote, DEPLOY.md
+
+### Goal
+- Everything **except** broadcasting with user keys: **one-shot Base Sepolia deploy+configure**, **vote/trust CLI**, **Uniswap pool read**, **deploy doc**, **CI** for agent.
+
+### Human decisions
+- **Mock oracles** on testnet (`MockAggregatorV3` in [`contracts/src/mocks/`](../contracts/src/mocks/)) — not production feeds.
+- **Fork test** skips when `BASE_MAINNET_RPC_URL` unset (CI-safe).
+
+### Agent / automation
+- **Foundry:** [`DeployConfigureDAOVault.s.sol`](../contracts/script/DeployConfigureDAOVault.s.sol), [`ConfigureDAOVault.s.sol`](../contracts/script/ConfigureDAOVault.s.sol), [`BaseSepolia.sol`](../contracts/script/BaseSepolia.sol); mock moved to `src/mocks` for script reuse.
+- **Config:** [`config/chain/base_sepolia.yaml`](../config/chain/base_sepolia.yaml); [`config/chain/base.yaml`](../config/chain/base.yaml) gains Uniswap factory + mainnet USDC/WETH for `quote`.
+- **Agent:** `npm run aggregate`, `trust`, `quote`; [`lib/env.mjs`](../apps/agent/src/lib/env.mjs); fixtures for votes + CSV.
+- **Docs:** [`DEPLOY.md`](./DEPLOY.md); README + [`contracts/README.md`](../contracts/README.md) updated.
+- **CI:** [`.github/workflows/agent.yml`](../.github/workflows/agent.yml) — `npm ci` + aggregate + trust.
+
+### Reality checks
+- **You** run `forge script … --broadcast` with `PRIVATE_KEY` + verify; then paste **`VAULT_ADDRESS`**.
+- **`SwapStep[]` / rebalance tx** still to implement (next coding increment).
+
+### Next session
+1. User **deploy**s Sepolia → fill `.env` → `npm run plan` + `npm run quote`.
+2. **Signer** path: build calldata + `rebalance` (executor key), or MetaMask delegations.
+3. Optional: **Governor** stack.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` @ **`c3f8c11`** (submodules + fork test + CI + LICENSE); **ahead/behind remote** — confirm with `git status` before each session.
-- **Now building:** **`DAOVault`** on-chain; **Forge: 15 tests**; **off-chain agent** dry-run in [`apps/agent/`](../apps/agent/).
-- **Blocked on:** Devfolio/API identity (`sk-synth-…`) for submit automation only; **deploy** needs your **RPC + keys** (not in repo).
+- **Branch / commit:** `main` — **commit** after this pass includes deploy scripts, agent `aggregate`/`trust`/`quote`, `docs/DEPLOY.md`, `config/chain/base_sepolia.yaml`, CI agent workflow.
+- **Now building:** **`DAOVault`** + **DeployConfigure / Configure** scripts; **Forge: 14 pass + 1 fork skipped** (no `BASE_MAINNET_RPC_URL`); **agent** full dry-run surface in [`apps/agent/`](../apps/agent/).
+- **Blocked on:** **Your** `forge script --broadcast` + Basescan verify; **executor `rebalance`** calldata + tx (keys).
 - **Next 3 tasks:**
-  1. **Base Sepolia** deploy + verify + **`VAULT_ADDRESS`** in README / `config/chain/contracts.yaml` + `.env`.
-  2. **`npm run plan`** on deployed vault; tune `config/local/targets.json`; then **swap / `rebalance` calldata** generation.
-  3. **Governor + ERC20Votes + timelock** (or document bootstrap EOA → timelock handoff).
+  1. **Deploy** via [`DEPLOY.md`](./DEPLOY.md) → **`VAULT_ADDRESS`** in README / `config/chain/contracts.yaml` + `.env`.
+  2. **`npm run plan` / `quote`** on Sepolia; then **`SwapStep[]`** builder + **`rebalance`**.
+  3. **Governor + timelock** or **EOA bootstrap** paragraph in submission.
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** profit split bias unless upgraded.
 - **Tracks (provisional):** Open Track + Uniswap + MetaMask Delegations.

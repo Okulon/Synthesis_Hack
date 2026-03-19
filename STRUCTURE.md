@@ -29,7 +29,8 @@ Synthesis_Hack/
     ├── PROJECT_SPEC.md       # MVP, mechanics, backlog
     ├── GOVERNANCE_VOTING.md # How params vs allocation votes work
     ├── BUILD_LOG.md         # Chronological build narrative
-    └── BUILD_CHECKLIST.md   # Ordered tasks to submission
+    ├── BUILD_CHECKLIST.md   # Ordered tasks to submission
+    └── DEPLOY.md             # Base Sepolia deploy + agent wiring
 ```
 
 **In progress**

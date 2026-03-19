@@ -33,18 +33,36 @@ forge build
 forge test
 ```
 
-**Fork test (Base mainnet — hits public RPC):** reads Uniswap V3 factory + USDC/WETH pool liquidity on a Base fork (`test/UniswapBaseFork.t.sol`). Override RPC with `BASE_MAINNET_RPC_URL` in `.env` if needed.
+**Fork test (Base mainnet):** `test/UniswapBaseFork.t.sol` — set `BASE_MAINNET_RPC_URL` in `.env` or the test **skips** (CI-friendly).
 
 ## Deploy & verify (Base Sepolia)
 
-Set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, and `BASESCAN_API_KEY` (verification). Optional: `GUARDIAN_ADDRESS`.
+Full walkthrough: [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
+
+**One-shot deploy + configure** (mock oracles for USDC/WETH, allowlists, SwapRouter02, executor):
+
+```bash
+forge script script/DeployConfigureDAOVault.s.sol:DeployConfigureDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
+```
+
+**Vault only:**
 
 ```bash
 forge script script/DeployDAOVault.s.sol:DeployDAOVault \
   --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
 ```
 
-Copy the logged `DAOVault` address into the root **README**, **`config/chain/contracts.yaml`**, and `VAULT_ADDRESS` in `.env`.
+**Configure existing vault** (`VAULT_ADDRESS` in env):
+
+```bash
+forge script script/ConfigureDAOVault.s.sol:ConfigureDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
+```
+
+Set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, `BASESCAN_API_KEY`. Optional: `GUARDIAN_ADDRESS`, `EXECUTOR_ADDRESS`.
+
+Addresses: [`script/BaseSepolia.sol`](script/BaseSepolia.sol).
 
 ## Contracts
 

@@ -34,7 +34,11 @@ contract UniswapBaseForkTest is Test {
     uint24 internal constant FEE_3000 = 3000;
 
     function testFork_USDC_WETH_pool_has_liquidity_on_Base() public {
-        string memory rpc = vm.envOr("BASE_MAINNET_RPC_URL", string("https://mainnet.base.org"));
+        string memory rpc = vm.envOr("BASE_MAINNET_RPC_URL", string(""));
+        if (bytes(rpc).length == 0) {
+            vm.skip(true, "set BASE_MAINNET_RPC_URL to run fork test (e.g. https://mainnet.base.org)");
+            return;
+        }
         vm.createSelectFork(rpc);
 
         address pool = IUniswapV3Factory(V3_FACTORY).getPool(USDC, WETH, FEE_3000);

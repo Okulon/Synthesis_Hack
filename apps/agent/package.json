@@ -6,7 +6,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "plan": "node src/cli.mjs"
+    "plan": "node src/cli.mjs",
+    "quote": "node src/quote.mjs",
+    "aggregate": "node src/aggregate.mjs",
+    "trust": "node src/trust.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

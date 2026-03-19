@@ -1,0 +1,28 @@
+name: agent
+
+on:
+  push:
+    paths:
+      - "apps/agent/**"
+      - ".github/workflows/agent.yml"
+  pull_request:
+    paths:
+      - "apps/agent/**"
+      - ".github/workflows/agent.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/agent/package-lock.json
+      - run: npm ci
+      - run: node src/aggregate.mjs
+      - run: node src/trust.mjs

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IAggregatorV3} from "../../src/interfaces/IAggregatorV3.sol";
+import {IAggregatorV3} from "../interfaces/IAggregatorV3.sol";
 
+/// @dev Chainlink-style mock for tests and testnet configure scripts (not production oracles).
 contract MockAggregatorV3 is IAggregatorV3 {
     uint8 public override decimals;
     int256 public answer;

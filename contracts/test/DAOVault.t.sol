@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {DAOVault} from "../src/DAOVault.sol";
 import {ERC20Mock} from "openzeppelin-contracts/mocks/token/ERC20Mock.sol";
 import {MockSwapRouter} from "./mocks/MockSwapRouter.sol";
-import {MockAggregatorV3} from "./mocks/MockAggregatorV3.sol";
+import {MockAggregatorV3} from "../src/mocks/MockAggregatorV3.sol";
 import {IAccessControl} from "openzeppelin-contracts/access/IAccessControl.sol";
 
 contract DAOVaultTest is Test {

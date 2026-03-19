@@ -1,0 +1,83 @@
+# Deploy on Base Sepolia (DAO Agent vault)
+
+You need: **ETH on Base Sepolia** for gas, **RPC URL**, **deployer private key** (never commit). Optional: **Basescan API key** for verification.
+
+## 1. Environment
+
+From repo root:
+
+```bash
+cp .env.example .env
+```
+
+Set:
+
+| Variable | Purpose |
+|----------|---------|
+| `PRIVATE_KEY` | Deployer (has `GOVERNANCE_ROLE` on vault) |
+| `BASE_SEPOLIA_RPC_URL` or `CHAIN_RPC_URL` | HTTPS RPC to Base Sepolia |
+| `GUARDIAN_ADDRESS` | Optional emergency multisig (guardian pause only) |
+| `BASESCAN_API_KEY` | Contract verification |
+
+**Foundry** `forge script` uses `BASE_SEPOLIA_RPC_URL` from [`contracts/foundry.toml`](../contracts/foundry.toml) `[rpc_endpoints]` — set that name **or** pass `--rpc-url` explicitly.
+
+## 2. One-shot deploy + configure (recommended)
+
+Deploys **`DAOVault`**, deploys **mock Chainlink-style aggregators** for USDC + WETH, sets oracle configs, allowlists **USDC** + **WETH** + **SwapRouter02**, sets **executor** (defaults to deployer unless `EXECUTOR_ADDRESS` is set).
+
+```bash
+cd contracts
+forge script script/DeployConfigureDAOVault.s.sol:DeployConfigureDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" \
+  --broadcast \
+  --verify
+```
+
+Copy the logged **`DAOVault`** address into:
+
+- `VAULT_ADDRESS` in `.env`
+- `CHAIN_ID=84532`
+- `CHAIN_RPC_URL` (same RPC you used)
+- `README` / `config/chain/contracts.yaml` (placeholders)
+
+## 3. Alternative: deploy only, configure later
+
+```bash
+forge script script/DeployDAOVault.s.sol:DeployDAOVault --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
+export VAULT_ADDRESS=0x...   # from logs
+forge script script/ConfigureDAOVault.s.sol:ConfigureDAOVault \
+  --rpc-url "$BASE_SEPOLIA_RPC_URL" \
+  --broadcast \
+  --verify
+```
+
+## 4. Off-chain agent (dry-run)
+
+```bash
+cd apps/agent && npm install
+npm run aggregate   # → target weights JSON
+npm run trust         # optional trust CSV
+# Copy aggregated targets to config/local/targets.json
+npm run plan          # needs VAULT_ADDRESS + CHAIN_RPC_URL
+npm run quote         # pool slot0 + liquidity (Uniswap factory)
+```
+
+## 5. Canonical addresses (Base Sepolia)
+
+See [`contracts/script/BaseSepolia.sol`](../contracts/script/BaseSepolia.sol) and [`config/chain/base_sepolia.yaml`](../config/chain/base_sepolia.yaml). **Uniswap** addresses match [official Uniswap Base deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/base-deployments).
+
+## 6. Governance bootstrap (hackathon)
+
+- **Today:** `GOVERNANCE_ROLE` is the **deployer EOA** — you can change params, pause, executor, cycle close.
+- **North star:** timelock + `Governor` + share voting — see [`VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md).
+- **Honest demo:** document “EOA governance until timelock” in README / submission.
+
+## 7. Tokens
+
+- **USDC** on Base Sepolia: `0x036CbD53842c5426634e7929541eC2318f3dCF7e` (test USDC; verify on [Basescan Sepolia](https://sepolia.basescan.org)).
+- Fund the vault with small test amounts for deposits/rebalances; use **faucets** / **bridges** as needed.
+
+## 8. What you cannot automate without keys
+
+- Broadcasting `forge script` (needs `PRIVATE_KEY`).
+- Basescan verification (needs `BASESCAN_API_KEY` + successful deploy).

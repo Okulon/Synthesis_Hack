@@ -17,3 +17,15 @@ chain:
 explorer:
   base_url: https://basescan.org
   tx_path_template: "/tx/{txHash}"
+
+# Uniswap v3 (mainnet) — https://docs.uniswap.org/contracts/v3/reference/deployments/base-deployments
+uniswap:
+  v3_factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
+
+tokens:
+  WETH:
+    address: "0x4200000000000000000000000000000000000006"
+    decimals: 18
+  USDC:
+    address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    decimals: 6

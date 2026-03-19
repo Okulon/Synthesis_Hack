@@ -65,13 +65,7 @@ cd apps/agent && npm install && npm run plan
 
 Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.example.json) to `config/local/targets.json` and set real token addresses.
 
-Deploy + verify: [`contracts/script/DeployDAOVault.s.sol`](contracts/script/DeployDAOVault.s.sol) — set `PRIVATE_KEY`, `BASE_SEPOLIA_RPC_URL`, and `BASESCAN_API_KEY` (for verification). Example:
-```bash
-cd contracts
-forge script script/DeployDAOVault.s.sol:DeployDAOVault \
-  --rpc-url "$BASE_SEPOLIA_RPC_URL" --broadcast --verify
-```
-Then set `VAULT_ADDRESS` (and optional `GUARDIAN_ADDRESS`) in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Full detail: [`contracts/README.md`](contracts/README.md).
+**Deploy on Base Sepolia:** step-by-step [`docs/DEPLOY.md`](docs/DEPLOY.md) (recommended: `DeployConfigureDAOVault` one-shot). Then set `VAULT_ADDRESS` in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Contract commands: [`contracts/README.md`](contracts/README.md).
 
 ---
 
@@ -80,7 +74,8 @@ Then set `VAULT_ADDRESS` (and optional `GUARDIAN_ADDRESS`) in `.env` and documen
 | Doc | Purpose |
 |-----|---------|
 | [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture diagrams |
-| [apps/agent/README.md](apps/agent/README.md) | Dry-run planner (`npm run plan`) — bands + RPC + local targets |
+| [apps/agent/README.md](apps/agent/README.md) | `plan` / `aggregate` / `trust` / `quote` (dry-run) |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Base Sepolia deploy + configure + agent wiring |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |
 | [TRACKS.md](TRACKS.md) | Synthesis prize tracks we target + fit notes |
 | [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md) | MVP, rebalance bands, backlog |

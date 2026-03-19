@@ -54,7 +54,7 @@ _Last reviewed: 2026-03-19._
 - [ ] **Governance knobs** minimal set: allowlist, max slippage (or executor caps), **rebalance drift thresholds** (`ε` / optional per-asset), optional **min trade notional**, optional pause
 - [ ] **Rebalancer permission**: address or contract with **hard bounds** (fits **delegations** story)
 - [ ] Tests (Foundry/Hardhat): deposits, withdraw, unauthorized paths, cap enforcement
-- [ ] **Testnet deploy** + verified contract addresses in README
+- [x] **Testnet deploy path documented** — [`DEPLOY.md`](./DEPLOY.md) + `DeployConfigureDAOVault` (you still run `--broadcast` + paste addresses)
 - [ ] At least one **real swap / rebalance path** demo on testnet (or mainnet if you accept risk) for Uniswap track credibility
 
 ---
