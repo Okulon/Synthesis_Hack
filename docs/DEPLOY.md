@@ -1,5 +1,7 @@
 # Deploy on Base Sepolia (DAO Agent vault)
 
+_Last updated: 2026-03-20._
+
 You need: **ETH on Base Sepolia** for gas, **RPC URL**, **deployer private key** (never commit). Optional: **Basescan API key** for verification.
 
 ## 1. Environment

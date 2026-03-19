@@ -248,13 +248,10 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Drift** metric: `absolute_pp` from config; **min notional** gate vs `drift * NAV` (USDC-scale rough).
 
 ### Reality checks
-- **No** swap calldata / Uniswap API yet — next increment after live vault address + routes.
-- **Votes DB / trust aggregation** still out of scope for this stub.
+- **Superseded** by **2026-03-20** session: `aggregate` / `trust` / `quote` + [`DEPLOY.md`](./DEPLOY.md) landed; remaining gap is **`SwapStep[]` builder + signed `rebalance`**, not the dry-run planner itself.
 
 ### Next session
-1. **Deploy** vault; set `VAULT_ADDRESS` + `CHAIN_RPC_URL`; run `npm run plan` against Sepolia.
-2. Add **route builder** (Uniswap API or quoter) → `SwapStep[]` preview for `rebalance`.
-3. Optional: **`Governor` + timelock** or document EOA bootstrap.
+*(Handled in 2026-03-20 log — see below.)*
 
 ---
 
@@ -278,21 +275,25 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **You** run `forge script … --broadcast` with `PRIVATE_KEY` + verify; then paste **`VAULT_ADDRESS`**.
 - **`SwapStep[]` / rebalance tx** still to implement (next coding increment).
 
+### Commit
+- **`e22a254`** — *feat: Base Sepolia deploy/configure scripts, agent aggregate/trust/quote, DEPLOY.md*
+
 ### Next session
-1. User **deploy**s Sepolia → fill `.env` → `npm run plan` + `npm run quote`.
-2. **Signer** path: build calldata + `rebalance` (executor key), or MetaMask delegations.
-3. Optional: **Governor** stack.
+1. **`forge script … --broadcast`** on Base Sepolia → paste **`VAULT_ADDRESS`** → `npm run plan` + `npm run quote`.
+2. **`SwapStep[]`** preview + executor **`rebalance`** (or delegations narrative).
+3. Optional: **Governor** stack or keep **EOA governance** + honest README.
 
 ---
 
 ## Current state (update every session)
 
-- **Branch / commit:** `main` — **commit** after this pass includes deploy scripts, agent `aggregate`/`trust`/`quote`, `docs/DEPLOY.md`, `config/chain/base_sepolia.yaml`, CI agent workflow.
-- **Now building:** **`DAOVault`** + **DeployConfigure / Configure** scripts; **Forge: 14 pass + 1 fork skipped** (no `BASE_MAINNET_RPC_URL`); **agent** full dry-run surface in [`apps/agent/`](../apps/agent/).
-- **Blocked on:** **Your** `forge script --broadcast` + Basescan verify; **executor `rebalance`** calldata + tx (keys).
+- **Branch / commit:** `main` @ **`e22a254`** (sync with `origin` via `git status`).
+- **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Tests:** **14** pass + **1** fork **skipped** unless `BASE_MAINNET_RPC_URL` is set (CI-safe).
+- **Blocked on (you):** **`forge script --broadcast`** + verify; funded testnet wallet; **`rebalance`** / swap calldata path for a **real tx hash** (Uniswap track).
 - **Next 3 tasks:**
-  1. **Deploy** via [`DEPLOY.md`](./DEPLOY.md) → **`VAULT_ADDRESS`** in README / `config/chain/contracts.yaml` + `.env`.
-  2. **`npm run plan` / `quote`** on Sepolia; then **`SwapStep[]`** builder + **`rebalance`**.
-  3. **Governor + timelock** or **EOA bootstrap** paragraph in submission.
-- **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** profit split bias unless upgraded.
-- **Tracks (provisional):** Open Track + Uniswap + MetaMask Delegations.
+  1. **Deploy** per [`DEPLOY.md`](./DEPLOY.md) → document **`VAULT_ADDRESS`** (README, `config/chain/contracts.yaml`, `.env`).
+  2. End-to-end demo: **aggregate** → **targets** → **plan** → (optional) **`quote`** → build **`rebalance`** calldata + **one explorer tx**.
+  3. **Submission:** video / track UUIDs / `conversationLog` polish from this file.
+- **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.
+- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations.

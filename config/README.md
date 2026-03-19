@@ -7,7 +7,7 @@ YAML here holds **non-secret defaults** and structure. **Secrets** (`TELEGRAM_BO
 | Folder | Purpose |
 |--------|---------|
 | `agent/` | Worker loop, dry-run, execution limits |
-| `chain/` | Chain metadata; contract addresses (or env placeholders) |
+| `chain/` | Chain metadata; [`base.yaml`](chain/base.yaml) / [`base_sepolia.yaml`](chain/base_sepolia.yaml) (Uniswap + token hints); env placeholders in [`contracts.yaml`](chain/contracts.yaml) |
 | `dex/` | Uniswap / routing defaults (governance can override on-chain) |
 | `rebalancing/` | Drift bands (`ε`), min notional, metric choice |
 | `governance/` | Quorum, timelock, caps — defaults until on-chain params exist |
@@ -19,10 +19,10 @@ YAML here holds **non-secret defaults** and structure. **Secrets** (`TELEGRAM_BO
 
 ## Overrides
 
-Recommended load order (implement in code later):
+Recommended load order (agent implements **1 + 3** today; **2** optional):
 
 1. `config/**/*.yaml` (defaults)
-2. `config/local/**/*.yaml` (optional, gitignored — see `.gitignore` suggestion in README)
+2. `config/local/**` — `targets.json`, `votes.json`, `trust_cycle.csv` (gitignored; see [`docs/DEPLOY.md`](../docs/DEPLOY.md))
 3. Environment variables (highest priority for addresses, RPC URLs, tokens)
 
 `config/local/` is optional per-developer overrides; add `config/local/` to `.gitignore` when you create it.

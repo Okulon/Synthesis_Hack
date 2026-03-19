@@ -99,3 +99,5 @@ Whatever governance sets (allowlist, slippage, DEX router allowlist), the **dele
 - [ ] Snapshot block definition when `trust` updates mid-vote
 - [ ] Whether parameter votes require **higher quorum** than allocation votes
 - [ ] Exact encoding for “add token” proposals (address + oracle feed + decimals?)
+
+**Hackathon default:** deployer EOA holds `GOVERNANCE_ROLE` until timelock handoff — see [`DEPLOY.md`](./DEPLOY.md) §6 and [`VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md).

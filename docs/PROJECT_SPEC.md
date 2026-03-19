@@ -3,7 +3,7 @@
 **Working name:** DAO Agent  
 **Elevator pitch:** A pooled treasury where stakeholders vote on target portfolio weights; an autonomous executor rebalances on-chain within governance caps; influence and (eventually) profit skew reflect **trust** earned from past voting performance — without giving the agent unchecked custody.
 
-**Status:** **On-chain vault** (`contracts/`) implemented with tests; off-chain agent + vote DB + deploy addresses are the remaining MVP slice. **Hackathon MVP** below is the build target; full mechanics are a north star.
+**Status:** **On-chain vault** + tests + **Base Sepolia deploy/configure scripts** ([`docs/DEPLOY.md`](../docs/DEPLOY.md)); **agent** dry-run (`plan`, `aggregate`, `trust`, `quote`). **Remaining** for a full demo: **broadcast deploy** + documented **`VAULT_ADDRESS`**, **real `rebalance` / swap tx**, optional **vote DB**. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
 Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps), [`vault/spec.md`](../vault/spec.md) (on-chain vault design).
 
@@ -97,18 +97,18 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 ## 4 — Implementation backlog
 
 ### Must-have (MVP shippable)
-- [ ] **Monorepo layout** — e.g. `contracts/`, `apps/agent/` (or `services/`), `apps/bot/` (optional), `docs/`
-- [ ] **Vault**: deposit, withdraw, share accounting; events for indexer
-- [ ] **Allowlist + risk caps** enforced on-chain (or executor contract enforces + vault holds funds)
-- [ ] **Swap path** to Uniswap with **documented** slippage and limits
-- [ ] **Vote model** in DB (user id ↔ wallet, cycle id, weights JSON, timestamp)
-- [ ] **Aggregation job** + reproducible log output for one demo cycle
-- [ ] **Trust v0** computation + persistence (informs next cycle’s voting power + `g(trust)` for profit weights)
-- [ ] **Cycle P&L** snapshot (`NAV_start` / `NAV_end`) + **profit split** artifact (CSV / event / optional claim) per [`vault/spec.md`](../vault/spec.md) §6
-- [ ] **Rebalance band logic**: drift vs target, `ε` (global and/or per-asset), optional **min notional**; log “skip” reasons for demos
-- [ ] **Governance**: store/update threshold params via same process as other risk knobs (timelock if on-chain)
-- [ ] **Agent loop** (manual trigger OK): read vault, compute target, **apply bands**, then trades, execute
-- [ ] **README** demo script + contract addresses + env template
+- [x] **Monorepo layout** — `contracts/`, `apps/agent/`, `docs/` (optional `apps/bot/` later)
+- [x] **Vault**: deposit, redeem, share accounting; events for indexer
+- [x] **Allowlist** + router allowlist on-chain; **risk caps** partially (slippage via `minAmountOut`; full `maxSlippageBps` / weight caps still backlog)
+- [ ] **Swap path** to Uniswap with **documented** slippage and **real tx** on testnet/mainnet (calldata built off-chain per `vault/spec` §4.2)
+- [ ] **Vote model** in DB *(optional for MVP — file-based votes + `aggregate` shipped)*
+- [x] **Aggregation** — `npm run aggregate` + reproducible JSON for one demo cycle
+- [x] **Trust v0** (off-chain MVP) — `npm run trust` + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)
+- [x] **Cycle P&L** snapshot — Tier A `CycleClosed` event + off-chain CSV path per [`vault/spec.md`](../vault/spec.md) §6
+- [x] **Rebalance band logic** (`npm run plan`) + `config/rebalancing/bands.yaml`
+- [ ] **Governance**: full on-chain timelock + votes *(hackathon: EOA `GOVERNANCE_ROLE` + [`DEPLOY.md`](../docs/DEPLOY.md) honesty)*
+- [ ] **Agent execution** (sign txs): `plan` + `quote` done; **executor `rebalance`** + keys/delegations still pending
+- [x] **README** + **env template** + **[`DEPLOY.md`](../docs/DEPLOY.md)**; **`VAULT_ADDRESS`** TBD after your deploy
 
 ### Should-have (stronger judging / track fit)
 - [ ] **Uniswap Developer Platform** integration with **real API key** and **tx proof** (if claiming Uniswap track)
@@ -146,8 +146,8 @@ Refresh UUIDs from **`https://synthesis.devfolio.co/catalog`** before `trackUUID
 
 ## 7 — Open decisions (resolve into `BUILD_LOG`)
 
-- Exact **vault vs smart account** design
-- **Mid-cycle deposit** rule for hackathon (forbid vs simplify math)
+- **Vault vs smart account:** **vault contract** + executor (see [`vault/spec.md`](../vault/spec.md)); smart account optional later
+- **Mid-cycle deposit** — documented in [`vault/spec.md`](../vault/spec.md) §3 (hackathon default)
 - **Benchmark** for trust (e.g. 60/40 vs equal-weight allowlist)
 - Whether **executor** is EOA with tight allowance or **contract** with immutable checks
 - **Drift metric:** absolute percentage points vs relative; single global `ε` vs per-asset (MVP can ship global + min-notional only)

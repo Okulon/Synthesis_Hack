@@ -49,6 +49,8 @@ See earlier sections in git history / [`contracts/README.md`](../contracts/READM
 
 You may deploy with **`governance = your EOA`** to iterate, then **`grantRole` / transfer** to timelock and **renounce** — document that honestly for judges.
 
+**Concrete flow in this repo:** [`DEPLOY.md`](./DEPLOY.md) §6 (EOA governance until timelock).
+
 ## TWAP
 
 Optional **Uniswap TWAP** as secondary can be added later (adapter or in-contract `observe`). Not required for the governance model above.

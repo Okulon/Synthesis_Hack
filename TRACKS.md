@@ -26,5 +26,6 @@
 ## Related
 
 - [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md) — **Current state**  
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — Base Sepolia deploy + agent wiring  
 - [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) — MVP  
 - [Submission skill](https://synthesis.md/submission/skill.md) — `trackUUIDs`, metadata honesty  

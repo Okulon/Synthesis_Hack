@@ -12,8 +12,10 @@ How the **DAO Agent** repo and runtime pieces fit together. For product behavior
 Synthesis_Hack/
 ├── README.md                 # Judge / contributor entry point
 ├── STRUCTURE.md              # This file
+├── LICENSE                   # MIT
 ├── .env.example              # Secret *names* only; copy to .gitignored `.env`
 ├── .gitignore
+├── .github/workflows/        # Foundry CI + apps/agent CI
 ├── config/                   # Non-secret YAML defaults (see config/README.md)
 │   ├── agent/                # Worker loop, execution limits
 │   ├── chain/                # Base metadata, contract env keys
@@ -41,7 +43,7 @@ vault/
 └── checklist.md              # Implementation checklist
 
 contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
-apps/agent/                   # Node (viem): dry-run plan — RPC + bands + local targets (`npm run plan`)
+apps/agent/                   # Node (viem): `plan` | `aggregate` | `trust` | `quote` — see apps/agent/README.md
 apps/bot/     (optional)     # Telegram webhook / long-poll service
 ```
 
@@ -166,5 +168,6 @@ Once the vault stores governance values on-chain, **chain wins** over file defau
 ## Related links
 
 - [`README.md`](README.md) — quick start and disclaimer  
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — Base Sepolia deploy + configure  
 - [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) — MVP and rebalance bands §2.1  
 - [`docs/GOVERNANCE_VOTING.md`](docs/GOVERNANCE_VOTING.md) — two vote streams  

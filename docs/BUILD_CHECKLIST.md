@@ -2,7 +2,7 @@
 
 Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
 
-_Last reviewed: 2026-03-19._
+_Last reviewed: 2026-03-20._
 
 ---
 
@@ -62,9 +62,9 @@ _Last reviewed: 2026-03-19._
 ## 4 — Off-chain agent & integrations
 
 - [x] **Dry-run planner** — [`apps/agent`](../apps/agent/README.md) (`npm run plan`): RPC + [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) + local targets JSON; prints skip / would_trade (no txs yet)
-- [ ] **Vote ingestion**: signed payloads / bot commands / mini-app — source of truth = DB +/or chain, not chat alone
-- [ ] **Aggregation**: weighted target portfolio (`trust × share` or MVP simplification)
-- [ ] **Trust v0**: one benchmark, one update rule, logged per cycle (even if “manual cycle” for demo)
+- [ ] **Vote ingestion**: signed payloads / bot commands / mini-app — source of truth = DB +/or chain, not chat alone *(MVP: JSON files + `npm run aggregate`)*
+- [x] **Aggregation** (file-based MVP) — `npm run aggregate` + [`fixtures/votes.example.json`](../apps/agent/fixtures/votes.example.json) → normalized targets
+- [x] **Trust v0** (off-chain MVP) — `npm run trust` + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml) + CSV fixture
 - [ ] **Execution worker**: compares current vs target weights, **applies band rules** (no micro-swaps), logs skips; builds swap plan, respects caps, submits txs (or proposes + human confirm until delegation is wired)
 - [ ] **Uniswap API** (if targeting track): real **API key**, **real tx hashes**, no mocks on critical path
 - [ ] **MetaMask Delegations** (if targeting track): delegation as **core pattern**, not decoration — link docs + demo flow
@@ -83,7 +83,7 @@ _Last reviewed: 2026-03-19._
 ## 6 — Demo & proofs
 
 - [ ] **Deployed URL** and/or **recorded video** (2–5 min): problem → vote → rebalance (and ideally **one “below ε, no swap”** clip) → governance / thresholds visible
-- [x] **Architecture / trust / limits** — partially covered in `docs/` (README still needed for judge quickstart)
+- [x] **Architecture / trust / limits** — `docs/` + README + [`DEPLOY.md`](./DEPLOY.md) (judge path: clone → configure env → deploy)
 - [ ] Explorer links for **key txs** in README or demo script
 
 ---

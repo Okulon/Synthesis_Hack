@@ -1,5 +1,7 @@
 # DAO Agent — off-chain worker
 
+_Last reviewed: 2026-03-20._
+
 Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate` / `trust` (read-only).
 
 ## Setup

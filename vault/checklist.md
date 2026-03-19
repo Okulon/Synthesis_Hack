@@ -119,9 +119,9 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 
 ## 11 — Deploy & ops
 
-- [ ] **Base Sepolia** deploy + **Basescan verify**
-- [ ] Post-deploy: **executor**, allowlists, nav prices (extend script beyond constructor)
-- [ ] Addresses in **README** + [`config/chain/contracts.yaml`](../config/chain/contracts.yaml)
+- [ ] **Base Sepolia** deploy + **Basescan verify** *(you run `forge script --broadcast`; see [`docs/DEPLOY.md`](../docs/DEPLOY.md))*
+- [x] Post-deploy **configure** in-repo — **`DeployConfigureDAOVault`** (mocks + allowlists + router + executor) or **`ConfigureDAOVault`** for existing `VAULT_ADDRESS`
+- [ ] Addresses in **README** + [`config/chain/contracts.yaml`](../config/chain/contracts.yaml) *(after your deploy)*
 - [x] **Secrets** — `.gitignore` / `.env.example` only; never commit keys
 
 ---

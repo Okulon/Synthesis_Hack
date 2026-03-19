@@ -4,7 +4,7 @@
 
 Built for **[The Synthesis](https://synthesis.md/)** hackathon (agentic × Ethereum).
 
-> **Status:** Foundry **`DAOVault`** + tests in [`contracts/`](contracts/README.md); **dry-run agent** in [`apps/agent/`](apps/agent/README.md) (bands + targets JSON); **deploy addresses + vote DB + swap calldata** still to wire. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
+> **Status:** Foundry **`DAOVault`** + tests; **[`docs/DEPLOY.md`](docs/DEPLOY.md)** (Base Sepolia **DeployConfigure** one-shot + configure-only script); **agent** [`plan` / `aggregate` / `trust` / `quote`](apps/agent/README.md) (dry-run). **You still:** broadcast deploy, paste **`VAULT_ADDRESS`**, add **real rebalance tx** + optional vote DB. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
 
 ---
 
@@ -24,7 +24,7 @@ Full problem/solution and MVP scope: [**docs/PROJECT_SPEC.md**](docs/PROJECT_SPE
 
 ```
 contracts/      # Foundry: DAOVault + tests (see contracts/README.md)
-apps/agent/     # Node: `npm run plan` — vault weights vs targets + band policy (dry-run)
+apps/agent/     # Node: plan | aggregate | trust | quote (dry-run; see apps/agent/README.md)
 docs/           # Spec, build log, governance model, checklist
 vault/          # Vault spec + checklist
 config/         # Non-secret agent defaults (YAML); see config/README.md
@@ -73,7 +73,7 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 
 | Doc | Purpose |
 |-----|---------|
-| [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture diagrams |
+| [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture (links to `DEPLOY`, specs) |
 | [apps/agent/README.md](apps/agent/README.md) | `plan` / `aggregate` / `trust` / `quote` (dry-run) |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Base Sepolia deploy + configure + agent wiring |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |

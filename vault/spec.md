@@ -187,19 +187,19 @@ Exact flags are implementation details; this spec requires **documenting** which
 
 ## 11 — Deliverables checklist (vault track)
 
-- [ ] `contracts/` implementation matching §3–7, §8–11 (and §6 tiers as scoped)
-- [ ] Unit + fork tests (Base Sepolia or mainnet fork)
-- [ ] Deploy script; addresses in README + `.env.example` keys
-- [ ] User-facing **“How to redeem”** paragraph in root README
-- [ ] Explicit **trust assumptions** (pricing, pause, executor)
-- [ ] **Cycle P&L** surface: event or stored `NAV_start` / `NAV_end` per `cycleId` (§6)
-- [ ] **Profit distribution v0:** Tier A ledger + documented `ŵ_i` / `g(trust)` formula, or Tier B/C if implemented
+- [x] `contracts/` implementation matching §3–7, §8–11 (Tier A §6); **on-chain caps** (`maxSlippageBps` / weight) still optional backlog
+- [x] Unit tests + optional **mainnet fork** test ([`UniswapBaseFork.t.sol`](../contracts/test/UniswapBaseFork.t.sol); requires `BASE_MAINNET_RPC_URL`)
+- [x] Deploy / configure scripts + **[`docs/DEPLOY.md`](../docs/DEPLOY.md)**; **you** paste addresses into README + `.env`
+- [ ] User-facing **“How to redeem”** judge paragraph in root README *(partially covered in [`contracts/README.md`](../contracts/README.md))*
+- [x] Explicit **trust assumptions** — [`VAULT_ORACLE_AND_GOVERNANCE.md`](../docs/VAULT_ORACLE_AND_GOVERNANCE.md) + spec §9
+- [x] **Cycle P&L** surface — `CycleClosed` + Tier A off-chain splits ([`PROJECT_SPEC`](../docs/PROJECT_SPEC.md) §2.2)
+- [ ] **Profit distribution v0:** Tier A CSV fully demo’d *(formula documented; automation optional)*
 
 ---
 
 ## 12 — Open implementation choices (resolve in `BUILD_LOG`)
 
-- ERC-4626 **inheritance** vs **custom** vault with same interface surface
+- ERC-4626 **inheritance** vs **custom** vault — **custom** multi-asset (`DAOVault`)
 - Exact **`totalAssets`** definition for multi-token (oracle vs reserves-only for MVP)
 - Whether **`deposit` allowed** when `pauseTrading` is on
 - **`redeem` path:** single multicall-style swap vs per-asset iterate (gas limit)

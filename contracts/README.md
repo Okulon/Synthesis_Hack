@@ -1,6 +1,6 @@
 # Contracts (DAO Agent vault)
 
-Foundry project implementing [`../vault/spec.md`](../vault/spec.md).
+Foundry project implementing [`../vault/spec.md`](../vault/spec.md). **Deploy:** [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
 
 ## Prereqs
 
