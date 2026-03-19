@@ -1,0 +1,19 @@
+# Telegram bot UX (token in .env only: TELEGRAM_BOT_TOKEN)
+
+telegram:
+  # Long polling vs webhook — MVP usually polling
+  transport: polling
+  webhook:
+    public_url_env: TELEGRAM_WEBHOOK_URL  # if transport: webhook
+  bot:
+    username_env: TELEGRAM_BOT_USERNAME  # optional, for deep links
+  commands:
+    prefix: "/"
+    # Example command names (implement handlers later)
+    status: status
+    vote: vote
+    help: help
+  # Ignore edits / duplicates older than this (seconds) for idempotency helpers
+  update_stale_after_seconds: 300
+  rate_limit:
+    max_commands_per_user_per_minute: 20

@@ -1,0 +1,19 @@
+# Base L2 (provisional; change in BUILD_LOG if pivoting)
+# RPC URL: set CHAIN_RPC_URL (or BASE_RPC_URL) in .env — do not commit.
+
+chain:
+  name: base
+  chain_id: 8453
+  native_symbol: ETH
+  # Stable used for notionals and UI ("USDC" on Base)
+  quote_symbol: USDC
+  quote_decimals: 6
+  # Env var names (values in .env only)
+  env:
+    rpc_url: CHAIN_RPC_URL
+    # optional fallbacks your code may support
+    alt_rpc_url: CHAIN_RPC_URL_FALLBACK
+
+explorer:
+  base_url: https://basescan.org
+  tx_path_template: "/tx/{txHash}"

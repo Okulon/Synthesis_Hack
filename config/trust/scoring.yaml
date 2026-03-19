@@ -1,0 +1,14 @@
+# Trust score v0 — defaults until governance stores parameters on-chain / DB.
+
+trust:
+  # New wallets / first cycle default trust (multiplier in voting_points)
+  default_trust: 1.0
+  trust_floor: 0.1
+  trust_ceiling: 3.0
+  # Number of past cycles contributing to rolling score
+  rolling_window_cycles: 6
+  # Benchmark label for documentation and logs (implement one in code)
+  # Examples: "60_40_weth_usdc", "equal_weight_allowlist"
+  benchmark_id: equal_weight_allowlist
+  # How to map cycle return to trust delta (implement in code — stub enum)
+  update_rule: relative_to_benchmark  # or absolute_return

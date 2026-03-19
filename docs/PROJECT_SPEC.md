@@ -5,7 +5,7 @@
 
 **Status:** Pre-implementation. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
-Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order).
+Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps).
 
 ---
 
@@ -23,7 +23,7 @@ Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BU
 4. **Agent** moves the live portfolio toward the aggregate **only when drift exceeds configurable bands** (voter-set thresholds), not pixel-perfect weights — e.g. skip a swap meant to “fix” 89.99% → 90%. Still subject to **governance limits** (allowlist, max slippage, max single-asset weight, allowed venues).
 5. **Trust** updates from how each user’s proposed portfolio **would have performed** vs a defined benchmark (rolling window, floors/ceilings).
 6. **Profit** allocation (full spec): skew toward higher trust while weak voters still earn some upside; **losses** shared by share (trust does not increase downside) — *full accounting is post-MVP*.
-7. **Governance** can change risk parameters via proposals (quorum, timelock, bounds) — *MVP may only ship a minimal param set*.
+7. **Governance** can change risk and **registry** parameters (allowlisted tokens, venues, rebalance thresholds; “which chain” is a heavy migration — see [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md)) via proposals (quorum, timelock, bounds) — *MVP may only ship a minimal param set*.
 
 ---
 

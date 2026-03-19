@@ -1,0 +1,16 @@
+# Governance parameter defaults (human-readable; on-chain values are source of truth when deployed)
+# Used by agent/UI for display and simulation before proposals execute.
+
+governance:
+  # Fraction of voting points that must participate (0–1); TBD in product
+  quorum_fraction: 0.15
+  # Approval: simple majority of participating weight
+  approval_threshold_fraction: 0.5
+  # Delay after proposal passes before execution (hours)
+  timelock_hours: 48
+  # Hard caps proposals cannot exceed (executor / vault should enforce)
+  bounds:
+    max_slippage_bps: 1000
+    max_single_asset_weight_pp: 50.0
+  # Allocation cycle length (hours) — informational; chain may store cycle ID only
+  default_cycle_length_hours: 720

@@ -1,0 +1,14 @@
+# Security policy references — NO secrets or keys in this file.
+
+security:
+  # Env var holding executor private key for signing (if EOA executor — prefer smart account + delegation in prod story)
+  executor_key_env: EXECUTOR_PRIVATE_KEY
+  # Require explicit opt-in to broadcast transactions
+  require_explicit_broadcast_flag: true
+  # Chain IDs the agent is allowed to submit to (prevent wrong-env disasters)
+  allowed_chain_ids:
+    - 8453   # Base mainnet
+    - 84532  # Base Sepolia — uncomment or add when using testnet
+  signing:
+    # If using AWS KMS / Turnkey / etc., document env var names only
+    kms_key_id_env: null

@@ -1,0 +1,20 @@
+# Rebalance band policy — aligns with docs/PROJECT_SPEC.md §2.1
+# Governance may override these on-chain or via DB; this file is agent bootstrap / fallback.
+
+rebalancing:
+  # How drift is measured: "absolute_pp" = |w_current - w_target| in percentage points (0–100 scale)
+  # Alternative: "relative" = drift / max(w_target, epsilon_floor)
+  drift_metric: absolute_pp
+  # Global minimum drift (percentage points) before an asset qualifies for a rebalance trade
+  # Example: 2.0 means 89.99% vs 90.00% target does not trade (drift 0.01 pp)
+  global_epsilon_pp: 2.0
+  # Optional per-asset overrides (symbol -> epsilon_pp); omit to use global only
+  per_asset_epsilon_pp: {}
+  # Skip trades smaller than this notional in quote currency (USDC units on Base)
+  min_trade_notional_quote: 25.0
+  # Floor on target weight when using relative metric (avoid div-by-zero)
+  relative_metric_floor_pp: 0.01
+
+logging:
+  # When true, emit structured log line per asset: drift, threshold, decision (trade|skip)
+  log_per_asset_decision: true

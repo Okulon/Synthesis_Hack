@@ -1,0 +1,17 @@
+# Trade construction and submission limits (off-chain agent policy)
+# On-chain governance still wins for allowlist, slippage caps, etc.
+
+execution:
+  # Max swap steps per rebalance run (prevents runaway routing)
+  max_swaps_per_run: 10
+  # Prioritize assets with largest (weighted) drift first
+  prioritize_largest_drifts: true
+  # Optional safety: cap total value moved per run (denominated in quote_symbol from chain config)
+  max_notional_moved_per_run_quote: null  # null = no extra cap beyond governance
+
+# Simulation / quoting
+quoting:
+  # Seconds before fresh quote for same route (reduce RPC spam)
+  quote_ttl_seconds: 30
+  # Max price impact (bps) before aborting a planned leg — agent-level guardrail
+  max_price_impact_bps: 100

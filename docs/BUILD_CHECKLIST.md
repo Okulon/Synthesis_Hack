@@ -1,12 +1,26 @@
 # Build checklist — DAO Agent (Synthesis)
 
-Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
+Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
+
+_Last reviewed: 2026-03-19._
+
+---
+
+## P — Planning & docs (foundation)
+
+- [x] **Product spec** — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) (MVP, rebalance bands §2.1, backlog)
+- [x] **Governance model** — [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (param registry, vote streams, MVP recommendation)
+- [x] **Build log** — [`BUILD_LOG.md`](./BUILD_LOG.md) (cross-session handoff + **Current state**)
+- [x] **Config scaffold** — [`config/`](../config/) (`agent/`, `chain/`, `dex/`, `rebalancing/`, `governance/`, `trust/`, `telegram/`, `integrations/`, `logging/`, `security/`)
+- [x] **`.gitignore`** — root (`.env`, `config/local/`, common artifacts)
+- [x] **`.env.example`** — secret **names** only; `cp .env.example .env` documented there
+- [ ] `git add` / **commit** + **push** current docs + config (working tree was dirty after initial commit)
 
 ---
 
 ## 0 — Hackathon & identity
 
-- [ ] Confirm **Synthesis** account: email / Devfolio / Telegram follow-ups (`https://nsb.dev/synthesis-updates`)
+- [x] **Initial registration** — web form submitted (confirm email / Telegram for follow-ups: [`BUILD_LOG.md`](./BUILD_LOG.md))
 - [ ] Obtain **`sk-synth-…`** (or documented web-only submission path) and **team UUID** when available
 - [ ] `GET https://synthesis.devfolio.co/catalog` — save **track UUIDs** you will claim (refresh before submit)
 - [ ] Wallet ready for **self-custody transfer** before publish (all team members — solo = you)
@@ -16,21 +30,21 @@ Use this as the **order of operations**. Check boxes as you go. Details live in 
 ## 1 — Repo & hygiene
 
 - [ ] Root **README**: problem, MVP demo steps, env vars (names only), links to docs
-- [ ] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, etc.)
-- [ ] **No secrets in git** — document `cp .env.example .env` pattern
+- [x] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, etc.)
+- [x] **No secrets in git** — `.env.example` + [`config/README.md`](../config/README.md)
 - [ ] License file (if required by hackathon / your preference)
-- [ ] First commits early (judges correlate timeline with `submissionMetadata` / GitHub stats)
+- [x] **First commit** on repo (`Initial Commit`); **follow-up commit** needed for latest files (see **§ P**)
 
 ---
 
 ## 2 — MVP freeze (before heavy code)
 
-- [ ] One-paragraph **MVP** + diagram (vote → aggregate → execute within caps) — matches [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) § MVP
-- [ ] Lock **chain** (target: **Base** unless changed in `BUILD_LOG`)
-- [ ] Lock **custody model** (vault contract vs smart account — document choice)
-- [ ] Lock **2–3 allowlisted tokens** + one DEX path (**Uniswap**) for v0
-- [ ] Lock **rebalance band defaults** (global `ε`, optional min-notional) — see [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1
-- [ ] Decide **Telegram** scope for hackathon (notify only vs structured vote capture + links to wallet flows)
+- [x] **MVP scope** documented — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 + §2.1 (+ architecture §3)
+- [x] Lock **chain** — **Base** (`config/chain/base.yaml`, spec)
+- [ ] Lock **custody model** (vault vs smart account — still open in spec §7; decide & log in `BUILD_LOG`)
+- [x] Lock **2–3 allowlisted tokens** + **Uniswap** for v0 (spec + `config/chain/contracts.yaml` hints + `config/dex/uniswap.yaml`)
+- [x] Lock **rebalance band defaults** — spec §2.1 + `config/rebalancing/bands.yaml`
+- [x] **Telegram** direction — `config/telegram/bot.yaml` (polling MVP); refine notify-only vs vote UX when building §5
 
 ---
 
@@ -68,7 +82,7 @@ Use this as the **order of operations**. Check boxes as you go. Details live in 
 ## 6 — Demo & proofs
 
 - [ ] **Deployed URL** and/or **recorded video** (2–5 min): problem → vote → rebalance (and ideally **one “below ε, no swap”** clip) → governance / thresholds visible
-- [ ] `docs/` or README: **architecture** (what runs where), **trust assumptions**, **known limitations**
+- [x] **Architecture / trust / limits** — partially covered in `docs/` (README still needed for judge quickstart)
 - [ ] Explorer links for **key txs** in README or demo script
 
 ---
@@ -78,7 +92,7 @@ Use this as the **order of operations**. Check boxes as you go. Details live in 
 - [ ] **Public `repoURL`**
 - [ ] **Draft project** via API: name, description, `problemStatement`, `trackUUIDs`, `conversationLog` (from `BUILD_LOG` + polish)
 - [ ] **Moltbook** post + `moltbookPostURL`
-- [ ] **Honest `submissionMetadata`**: `cursor`, `other`/framework truth, **Cursor Auto** for model, real **skills** / **tools** / **helpfulResources**
+- [ ] **Honest `submissionMetadata`**: `cursor`, `other`/framework truth, **Cursor Auto** for model, real **skills** / **tools** / **helpfulResources`
 - [ ] **Self-custody** complete for everyone on team
 - [ ] **Publish** + verify `GET /projects/:uuid` → `publish` and public listing
 

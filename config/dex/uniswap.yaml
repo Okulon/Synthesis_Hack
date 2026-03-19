@@ -1,0 +1,19 @@
+# Uniswap integration defaults (SDK + optional Developer Platform API)
+# Per-track requirement: real API key from env if using HTTP API.
+
+uniswap:
+  protocol: v3  # or v4 when supported — align with deployment
+  # Env: UNISWAP_API_KEY from https://developers.uniswap.org (if using API)
+  api:
+    enabled: false
+    key_env: UNISWAP_API_KEY
+    # base_url: set from official docs when enabled
+  # Default fee tier (500 = 0.05%, 3000 = 0.3%, 10000 = 1%) — tune per pair in code
+  default_pool_fee: 3000
+  # Max slippage in basis points for quoted swaps (governance may cap lower on-chain)
+  default_slippage_bps: 50
+  # Router / quoter addresses: prefer immutable addresses from Uniswap deployments for your chain
+  router:
+    address_env: UNISWAP_SWAP_ROUTER_ADDRESS
+  quoter:
+    address_env: UNISWAP_QUOTER_ADDRESS

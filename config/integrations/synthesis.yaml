@@ -1,0 +1,10 @@
+# Synthesis hackathon / Devfolio (no API keys here — use .env)
+
+synthesis:
+  catalog_base_url: https://synthesis.devfolio.co
+  # Optional env: SYNTHESIS_API_KEY (sk-synth-...) for draft/publish automation
+  api_key_env: SYNTHESIS_API_KEY
+  # Feature flags for agent tooling
+  flags:
+    auto_fetch_tracks_before_submit: false
+    post_moltbook_reminder: false

@@ -1,0 +1,20 @@
+# Contract and token addresses — load values from environment in application code.
+# Keys below are env var names; values must never be committed.
+
+contracts:
+  vault:
+    address_env: VAULT_ADDRESS
+  governance:
+    address_env: GOVERNANCE_ADDRESS
+  executor:
+    address_env: EXECUTOR_ADDRESS
+
+tokens:
+  WETH:
+    address_env: WETH_ADDRESS
+    default_address_hint: "0x4200000000000000000000000000000000000006" # Base canonical WETH; verify before mainnet use
+    decimals: 18
+  USDC:
+    address_env: USDC_ADDRESS
+    default_address_hint: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" # Base USDC; verify
+    decimals: 6

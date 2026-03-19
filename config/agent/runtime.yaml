@@ -1,0 +1,21 @@
+# Agent worker process (orchestrator / cron target)
+#
+# Secrets: none. Use RPC_URL etc. from .env in code.
+
+agent:
+  name: dao-agent-executor
+  # poll_interval_seconds: how often the loop wakes to check work (if not event-driven)
+  poll_interval_seconds: 60
+  # When true, compute trades and log but do not broadcast txs
+  dry_run: true
+  # Max consecutive RPC failures before backing off (exponential backoff in code)
+  max_consecutive_rpc_failures: 5
+  # Single-run time budget (agent stops planning; partial execute is OK if coded)
+  run_time_budget_seconds: 300
+
+# What triggers a rebalance pass (MVP: single source; extend later)
+triggers:
+  # Run after governance-approved cycle closes (manual flag / DB / chain event)
+  on_cycle_close: true
+  # Optional: periodic health check without swapping
+  heartbeat_log_interval_seconds: 3600

@@ -1,0 +1,18 @@
+logging:
+  level: info  # debug | info | warn | error
+  format: json # json | text
+  # Field names for structured logs (agent decisions, swap plans, band skips)
+  fields:
+    cycle_id: cycle_id
+    run_id: run_id
+    vault_address: vault
+  # Optional file sink path (relative to cwd) — prefer stdout in containers
+  file:
+    enabled: false
+    path: logs/agent.log
+    max_mb: 50
+
+metrics:
+  enabled: false
+  # prometheus pushgateway / otel — wire when needed
+  prometheus_port: null
