@@ -1,40 +1,15 @@
 {
   "version": 1,
-  "defaultCycleKey": "1",
+  "defaultCycleKey": "0",
   "cycles": {
-    "1": {
-      "label": "Example cycle — allocation targets while vault cycleId is 1",
-      "onChainCycleId": 1,
-      "votingOpen": false,
-      "snapshotBlock": "0",
+    "0": {
+      "label": "Template — no demo voters; ballots fill from UI / castAllocationBallot. Run `npm run cycle:sync` to align to the live window.",
+      "onChainCycleId": 0,
+      "votingOpen": true,
+      "snapshotBlock": null,
       "snapshotCapturedAt": null,
-      "shares1e18": {
-        "0x1111111111111111111111111111111111111111": "10000000000000000000",
-        "0x2222222222222222222222222222222222222222": "5000000000000000000"
-      },
-      "ballots": [
-        {
-          "voter": "0x1111111111111111111111111111111111111111",
-          "submittedAt": "2026-03-20T12:00:00.000Z",
-          "priceMarksUsdc": {
-            "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 1,
-            "0x4200000000000000000000000000000000000006": 2000
-          },
-          "priceMarksCapturedAt": "2026-03-20T12:00:05.000Z",
-          "weights": {
-            "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.55,
-            "0x4200000000000000000000000000000000000006": 0.45
-          }
-        },
-        {
-          "voter": "0x2222222222222222222222222222222222222222",
-          "submittedAt": "2026-03-20T12:30:00.000Z",
-          "weights": {
-            "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.4,
-            "0x4200000000000000000000000000000000000006": 0.6
-          }
-        }
-      ]
+      "shares1e18": {},
+      "ballots": []
     }
   }
 }

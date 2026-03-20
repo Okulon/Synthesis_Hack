@@ -93,7 +93,7 @@ Users hold **shares** (pro-rata claim on vault NAV). Separately, the system must
 ### 6.1 Definitions
 
 - **Cycle:** Same window as an **allocation vote → rebalance → settle** round (length governance-configurable; see [`config/governance/defaults.yaml`](../config/governance/defaults.yaml)).
-- **`trust_i`:** Non-negative score for user *i*, updated after the cycle from how their **submitted vote** would have performed vs a **benchmark** (rolling window, floor/ceiling — [`config/trust/scoring.yaml`](../config/trust/scoring.yaml), [`PROJECT_SPEC`](../docs/PROJECT_SPEC.md)).
+- **`trust_i`:** Non-negative score for user *i*, updated after the cycle from how their **submitted vote** would have performed vs a **benchmark** (rolling window, floor/ceiling — [`config/trust/scoring.yaml`](../config/trust/scoring.yaml), [`PROJECT_SPEC`](../docs/PROJECT_SPEC.md)). **Implemented:** agent runs `trust-finalize-window` on rollover (time-weighted portfolio return from vote-time USDC prices to cycle-end prices); `trust.mjs` applies `scoring.yaml` update rule to produce per-voter scores. Dev knobs for testnet: `TESTWETHOCCILATOR` (synthetic prices), `TESTBOOSTTRUST` (amplify bps).
 - **`share_i`:** User *i*’s vault shares at the **snapshot** used for profit distribution (see §6.3).
 
 ### 6.2 Cycle P&L (vault-level)

@@ -9,6 +9,11 @@ import { createPublicClient, http, parseAbi } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
 import { repoRoot } from "./env.mjs";
+import {
+  isTestWethOscillatorEnabled,
+  testWethOscillatingUsdcPerToken,
+  warnTestWethOscillatorOnce,
+} from "./testWethOscillator.mjs";
 
 const factoryAbi = parseAbi([
   "function getPool(address tokenA, address tokenB, uint24 fee) view returns (address pool)",
@@ -126,8 +131,16 @@ export async function fetchUsdcPricesForTokens(client, yamlDoc, tokenAddresses) 
   const prices = {};
   const errors = [];
 
+  const wethAddr = yamlDoc.tokens?.WETH?.address?.toLowerCase?.() ?? null;
+  const useWethOsc = isTestWethOscillatorEnabled() && wethAddr;
+
   for (const addr of uniq) {
     try {
+      if (useWethOsc && addr === wethAddr) {
+        warnTestWethOscillatorOnce();
+        prices[addr] = testWethOscillatingUsdcPerToken();
+        continue;
+      }
       const p = await usdcPerTokenHuman(client, factory, usdc, addr);
       prices[addr] = p;
       if (p == null || !Number.isFinite(p)) errors.push(`no USDC pool (tried common fees): ${addr}`);

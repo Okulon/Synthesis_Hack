@@ -27,7 +27,12 @@ import {
   type QuorumStats,
   votedAddressSet,
 } from "./lib/votingMetrics";
-import { fetchTrustScores, trustForAddress } from "./lib/trustScores";
+import {
+  fetchTrustScores,
+  onChainBallotVoterSetFromSnap,
+  trustForAddress,
+  type TrustForAddressOpts,
+} from "./lib/trustScores";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -567,6 +572,14 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
   const data = votesQ.data;
   const trustMap = trustQ.data?.trustByVoter ?? {};
 
+  const trustOpts = useMemo((): TrustForAddressOpts => {
+    const off = (trustQ.data?._meta?.votersPendingTrustFinalize ?? []).map((a) => a.toLowerCase());
+    return {
+      onChainBallotVoters: onChainBallotVoterSetFromSnap(snap.onChainAllocationBallots),
+      offChainBallotVotersPending: new Set(off),
+    };
+  }, [snap.onChainAllocationBallots, trustQ.data?._meta?.votersPendingTrustFinalize]);
+
   const governance = useMemo(
     () => ({
       quorumFraction: data?.governance?.quorumFraction ?? 0.15,
@@ -582,8 +595,9 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
       trustMap,
       governance.quorumFraction,
       votedAddressSet(snap.onChainAllocationBallots),
+      trustOpts,
     );
-  }, [snap, trustMap, governance.quorumFraction]);
+  }, [snap, trustMap, governance.quorumFraction, trustOpts]);
 
   return (
     <section className="panel voting-page">
@@ -616,8 +630,13 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
           </div>
         ) : null}
 
-        <AllocationBallotPanel snap={snap} trustMap={trustMap} />
-        <VotingTables snap={snap} trustMap={trustMap} />
+        <AllocationBallotPanel snap={snap} trustMap={trustMap} trustOpts={trustOpts} />
+        <VotingTables
+          snap={snap}
+          trustMap={trustMap}
+          trustOpts={trustOpts}
+          allocationVoters={data?.voters}
+        />
       </div>
     </section>
   );
@@ -626,11 +645,15 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
 function VotingTables({
   snap,
   trustMap,
+  trustOpts,
+  allocationVoters,
 }: {
   snap: VaultSnapshot;
   trustMap: Record<string, number>;
+  trustOpts?: TrustForAddressOpts;
+  allocationVoters?: Array<{ address: string; trust: number }>;
 }) {
-  const onChainAgg = useMemo(() => computeOnChainTargets(snap, trustMap), [snap, trustMap]);
+  const onChainAgg = useMemo(() => computeOnChainTargets(snap, trustMap, trustOpts), [snap, trustMap, trustOpts]);
   const targetEntries = useMemo(
     () => Object.entries(onChainAgg.targets).sort((a, b) => b[1] - a[1]),
     [onChainAgg.targets],
@@ -642,7 +665,10 @@ function VotingTables({
       fraction: w,
     }));
   }, [targetEntries, snap]);
-  const holderRows = useMemo(() => buildHolderVoteRows(snap, trustMap), [snap, trustMap]);
+  const holderRows = useMemo(
+    () => buildHolderVoteRows(snap, trustMap, trustOpts, allocationVoters),
+    [snap, trustMap, trustOpts, allocationVoters],
+  );
 
   return (
     <>
@@ -718,6 +744,12 @@ function VotingTables({
           <h3>Share holders & on-chain ballots</h3>
         </div>
         <div className="voting-card__body">
+          <p className="muted small" style={{ marginTop: 0 }}>
+            <strong>Trust</strong> uses <code className="mono">trust-scores.json</code> when present; otherwise the same
+            number from <code className="mono">allocation-votes.json</code> (aggregate export). Non-default trust requires a
+            ballot + <code className="mono">trust-finalize-window</code> writing your address to <code className="mono">trust_cycle.csv</code>, then{" "}
+            <code className="mono">npm run trust:export</code>.
+          </p>
           {snap.holders.length === 0 ? (
             <div className="muted empty-hint">
               No share holders in this scan — widen <code>VITE_HOLDER_LOGS_FROM_BLOCK</code> or deposit.
@@ -738,7 +770,15 @@ function VotingTables({
                 <tbody>
                   {holderRows.map((row) => {
                     const trustClass =
-                      row.trustIsDefault ? "trust-score trust-default" : row.trust >= 1.01 ? "trust-score trust-high" : row.trust <= 0.99 ? "trust-score trust-low" : "trust-score";
+                      row.trustPendingFinalize
+                        ? "trust-score trust-pending"
+                        : row.trustIsDefault
+                          ? "trust-score trust-default"
+                          : row.trust >= 1.01
+                            ? "trust-score trust-high"
+                            : row.trust <= 0.99
+                              ? "trust-score trust-low"
+                              : "trust-score";
                     const bps = row.weightsBps;
                     const bpsOk = bps && bps.length === snap.ballotAssets.length;
                     return (
@@ -753,11 +793,42 @@ function VotingTables({
                             <span className="vote-status vote-status--ok" title={`Ballot events filtered for vault cycleId ${snap.cycleId}`}>
                               Voted · vault cycle {snap.cycleId.toString()}
                             </span>
+                          ) : row.votedOffChainOnly ? (
+                            <span
+                              className="vote-status vote-status--ok"
+                              title="Address appears in allocation-votes.json (off-chain export); not in this log scan yet"
+                            >
+                              Voted · off-chain export
+                            </span>
                           ) : (
                             <span className="vote-status vote-status--pending">No ballot</span>
                           )}
                         </td>
-                        <td className={`mono sm ${trustClass}`}>{row.trust.toFixed(3)}</td>
+                        <td
+                          className={`mono sm ${trustClass}`}
+                          title={
+                            row.trustFromAllocationExport
+                              ? "Trust from allocation-votes.json (same as aggregate). Run npm run trust:export to mirror into trust-scores.json."
+                              : row.trustPendingFinalize
+                                ? "Using default 1.0 until agent runs trust-finalize and your address appears in trust_cycle.csv"
+                                : row.trustIsDefault
+                                  ? "Default 1.0 — no trust row yet (vote + wait for window close + trust finalize), or widen on-chain ballot log scan"
+                                  : undefined
+                          }
+                        >
+                          {row.trust.toFixed(3)}
+                          {row.trustPendingFinalize ? (
+                            <span className="muted sm" title="Pending trust CSV">
+                              {" "}
+                              †
+                            </span>
+                          ) : row.trustFromAllocationExport ? (
+                            <span className="muted sm" title="From allocation export">
+                              {" "}
+                              ◆
+                            </span>
+                          ) : null}
+                        </td>
                         <td className="mono sm">{row.sharesLabel}</td>
                         <td className="mono sm">{row.displayPower.toFixed(4)}</td>
                         <td className="ballot-weights">
@@ -772,6 +843,15 @@ function VotingTables({
                             </ul>
                           ) : row.voted && !bpsOk ? (
                             <span className="muted sm">Malformed ballot (asset count)</span>
+                          ) : row.votedOffChainOnly && row.offChainWeights && Object.keys(row.offChainWeights).length > 0 ? (
+                            <ul className="ballot-weight-list">
+                              {Object.entries(row.offChainWeights).map(([addr, w]) => (
+                                <li key={addr}>
+                                  <span className="mono sm">{assetSymbolForAddress(snap, addr)}</span>{" "}
+                                  <span className="mono muted">{pctFromFraction(w)}</span>
+                                </li>
+                              ))}
+                            </ul>
                           ) : (
                             <span className="muted">—</span>
                           )}
@@ -798,12 +878,20 @@ function UsersPage({ snap }: { snap: VaultSnapshot }) {
 
   const trustMap = trustQ.data?.trustByVoter ?? {};
 
+  const trustOpts = useMemo((): TrustForAddressOpts => {
+    const off = (trustQ.data?._meta?.votersPendingTrustFinalize ?? []).map((a) => a.toLowerCase());
+    return {
+      onChainBallotVoters: onChainBallotVoterSetFromSnap(snap.onChainAllocationBallots),
+      offChainBallotVotersPending: new Set(off),
+    };
+  }, [snap.onChainAllocationBallots, trustQ.data?._meta?.votersPendingTrustFinalize]);
+
   return (
     <section className="panel">
       <h2>Vault users (share holders)</h2>
       <p className="muted small trust-scores-hint">
-        <strong>Trust score</strong> is off-chain v0 (same multipliers as aggregate). Missing addresses use default{" "}
-        <strong>1.00</strong>.
+        <strong>Trust score</strong> is off-chain v0. <strong>†</strong> = you voted but CSV not finalized yet (still 1.0); * =
+        no row and no on-chain ballot in this snapshot.
       </p>
       {trustQ.isLoading ? <p className="muted small">Loading trust scores…</p> : null}
       {trustQ.isError ? (
@@ -836,11 +924,22 @@ function UsersPage({ snap }: { snap: VaultSnapshot }) {
                   snap.totalSupply > 0n ? (h.balance * 1_000_000n) / snap.totalSupply : 0n;
                 const navClaim =
                   snap.totalSupply > 0n ? (snap.totalNAV1e18 * h.balance) / snap.totalSupply : 0n;
-                const { score: trustScore, isDefault: trustIsDefault } = trustForAddress(trustMap, h.address);
+                const { score: trustScore, isDefault: trustIsDefault, pendingTrustFinalize } = trustForAddress(
+                  trustMap,
+                  h.address,
+                  trustOpts,
+                );
                 const sharesNum = Number(formatUnits(h.balance, 18));
                 const influence = Number.isFinite(sharesNum) ? sharesNum * trustScore : 0;
-                const trustClass =
-                  trustIsDefault ? "trust-score trust-default" : trustScore >= 1.01 ? "trust-score trust-high" : trustScore <= 0.99 ? "trust-score trust-low" : "trust-score";
+                const trustClass = pendingTrustFinalize
+                  ? "trust-score trust-pending"
+                  : trustIsDefault
+                    ? "trust-score trust-default"
+                    : trustScore >= 1.01
+                      ? "trust-score trust-high"
+                      : trustScore <= 0.99
+                        ? "trust-score trust-low"
+                        : "trust-score";
                 return (
                   <tr key={h.address}>
                     <td className="mono">
@@ -848,9 +947,18 @@ function UsersPage({ snap }: { snap: VaultSnapshot }) {
                         {h.address}
                       </ExplorerLink>
                     </td>
-                    <td className={`mono ${trustClass}`} title={trustIsDefault ? "Default trust (no CSV row)" : undefined}>
+                    <td
+                      className={`mono ${trustClass}`}
+                      title={
+                        pendingTrustFinalize
+                          ? "Default 1.0 until trust-finalize writes your address to trust_cycle.csv"
+                          : trustIsDefault
+                            ? "Default trust (no CSV row for this address)"
+                            : undefined
+                      }
+                    >
                       {trustScore.toFixed(2)}
-                      {trustIsDefault ? " *" : ""}
+                      {pendingTrustFinalize ? " †" : trustIsDefault ? " *" : ""}
                     </td>
                     <td className="mono sm">{influence.toLocaleString(undefined, { maximumFractionDigits: 6 })}</td>
                     <td className="mono">{formatUnits(h.balance, 18)}</td>

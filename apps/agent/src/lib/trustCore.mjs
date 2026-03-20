@@ -23,11 +23,39 @@ export function loadScoring() {
   };
 }
 
-export function loadCsv() {
+/**
+ * @param {{ fallbackToExample?: boolean }} [options]
+ *   Default: do **not** use the fixture CSV — if `config/local/trust_cycle.csv` is missing, returns
+ *   empty rows (every address uses default trust in the UI). The old example file only had fake
+ *   addresses, so real wallets always showed 1.000 and looked "broken".
+ */
+export function loadCsv(options = {}) {
   const local = path.join(repoRoot, "config/local/trust_cycle.csv");
   const example = path.join(repoRoot, "apps/agent/fixtures/trust_cycle.example.csv");
-  const src = fs.existsSync(local) ? local : example;
-  const lines = fs.readFileSync(src, "utf8").trim().split(/\r?\n/);
+  const useExample = options.fallbackToExample === true;
+  if (!fs.existsSync(local)) {
+    if (!useExample) {
+      console.warn(
+        "[trust] config/local/trust_cycle.csv is missing — no per-voter trust rows. " +
+          "All wallets get default trust (1.0) until you run trust-finalize-window after a window closes.",
+      );
+      return { src: local, rows: [], missingLocalCsv: true };
+    }
+    const rawEx = fs.readFileSync(example, "utf8").trim();
+    const lines = rawEx ? rawEx.split(/\r?\n/) : [];
+    return { src: example, rows: parseCsvLines(lines), missingLocalCsv: false };
+  }
+  const rawLocal = fs.readFileSync(local, "utf8").trim();
+  if (!rawLocal) {
+    console.warn("[trust] config/local/trust_cycle.csv is empty — no trust rows.");
+    return { src: local, rows: [], missingLocalCsv: false };
+  }
+  const lines = rawLocal.split(/\r?\n/);
+  return { src: local, rows: parseCsvLines(lines), missingLocalCsv: false };
+}
+
+function parseCsvLines(lines) {
+  if (lines.length === 0 || !lines[0]) return [];
   const header = lines[0].split(",").map((s) => s.trim());
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
@@ -38,7 +66,7 @@ export function loadCsv() {
     });
     rows.push(o);
   }
-  return { src, rows };
+  return rows;
 }
 
 function clamp(x, lo, hi) {
@@ -54,8 +82,10 @@ export function buildTrustByVoter(rows, scoring) {
   for (const r of rows) {
     const voter = (r.voter_address ?? r.voter)?.toLowerCase();
     if (!voter) continue;
-    const v = Number(r.vote_return_bps ?? 0);
-    const b = Number(r.benchmark_return_bps ?? 0);
+    let v = Number(r.vote_return_bps ?? 0);
+    let b = Number(r.benchmark_return_bps ?? 0);
+    if (!Number.isFinite(v)) v = 0;
+    if (!Number.isFinite(b)) b = 0;
     let t0 = trust[voter] ?? scoring.defaultTrust;
     if (scoring.updateRule === "time_weighted_portfolio_return") {
       const gain = v / 10000;

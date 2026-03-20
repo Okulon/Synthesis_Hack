@@ -13,7 +13,7 @@ import {
 } from "wagmi";
 import { daovaultAbi } from "../lib/abi";
 import { formatContractRevert } from "../lib/vaultWriteErrors";
-import { trustForAddress } from "../lib/trustScores";
+import { type TrustForAddressOpts, trustForAddress } from "../lib/trustScores";
 import { shortAddr, type VaultSnapshot } from "../lib/vault";
 import { AllocationPieChart, type PieSegment } from "./AllocationPieChart";
 
@@ -23,6 +23,7 @@ const CAST_ALLOCATION_BALLOT_SELECTOR_HEX = "d87de598";
 type Props = {
   snap: VaultSnapshot;
   trustMap: Record<string, number>;
+  trustOpts?: TrustForAddressOpts;
 };
 
 function equalPercents(n: number): string[] {
@@ -59,7 +60,7 @@ function percentsToBps(pctStrings: string[]): bigint[] | null {
   return out;
 }
 
-export function AllocationBallotPanel({ snap, trustMap }: Props) {
+export function AllocationBallotPanel({ snap, trustMap, trustOpts }: Props) {
   const queryClient = useQueryClient();
   const vault = snap.vault;
   const chainId = snap.chainId;
@@ -160,10 +161,10 @@ export function AllocationBallotPanel({ snap, trustMap }: Props) {
 
   const votingPower = useMemo(() => {
     if (!address || wrongChain) return null;
-    const { score: trust } = trustForAddress(trustMap, address as Address);
+    const { score: trust } = trustForAddress(trustMap, address as Address, trustOpts);
     const shares = Number(formatUnits(shareBal, 18));
     return trust * shares;
-  }, [address, wrongChain, trustMap, shareBal]);
+  }, [address, wrongChain, trustMap, shareBal, trustOpts]);
 
   const bpsPreview = useMemo(() => percentsToBps(pctStr), [pctStr]);
 

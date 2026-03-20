@@ -109,3 +109,5 @@ Whatever governance sets (allowlist, slippage, DEX router allowlist), the **dele
 - [ ] Exact encoding for “add token” proposals (address + oracle feed + decimals?)
 
 **Hackathon default:** deployer EOA holds `GOVERNANCE_ROLE` until timelock handoff — see [`DEPLOY.md`](./DEPLOY.md) §6 and [`VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md).
+
+**Trust pipeline (implemented):** After each wall-clock window closes, the agent runs: sync on-chain ballots → stamp USDC prices → finalize (time-weighted portfolio return per voter) → trust scoring (`trust.mjs` with `scoring.yaml`) → export to `trust-scores.json`. Trust feeds the **next** cycle's `trust × share` aggregation. Dev knobs (`TESTWETHOCCILATOR`, `TESTBOOSTTRUST`) for testnet demos where pool prices don't move. See [`apps/agent/README.md`](../apps/agent/README.md).

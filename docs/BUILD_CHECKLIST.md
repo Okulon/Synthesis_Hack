@@ -6,7 +6,7 @@ Use this as the **order of operations**. Check boxes as you go. Details live in 
 - **§4** = the **DAO Agent product loop** still to wire end-to-end (votes, trust-weighted targets, cycles, executor swaps, single-token exit UX, profit path).  
 - Aligns with [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 (MVP), §2.1 (bands), §2.2 (profit), §3 (architecture), §4 (backlog), §7 (open decisions).
 
-_Last reviewed: 2026-03-20._
+_Last reviewed: 2026-03-20 (pm)._
 
 ---
 
@@ -73,14 +73,14 @@ _Last reviewed: 2026-03-20._
 
 This is the **story** beyond “we have a vault”: allocation **votes**, **trust × share** targets, **cycles**, **moving the vault** toward targets, **easy single-asset exit**, **profit** after a cycle.
 
-- [ ] **Cycles as a product** — define **open / close**, what gets **frozen** (target weights for cycle *N*), how **mid-cycle deposits** affect P&L/trust (document choice; may match spec default)
+- [x] **Cycles as a product** — wall-clock windows (voting + frozen) via `cycles.yaml`; `closeCycle` on rollover advances on-chain `cycleId`; trust finalize runs per closed window; mid-cycle deposits don't affect trust (trust uses ballot-time vs close-time prices, not vault NAV).
 - [x] **Allocation voting (MVP)** — **cycle-keyed** `vote-store.json` + operator **`cycle:snapshot`** (share `balanceOf` at block); see [`CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md) (DB / signed ballots still future)
 - [x] **Trust × share aggregation** — **`npm run aggregate`** / **`votes:export`**: **trust** (CSV) × **snapshot shares** × ballot **weights** → normalized targets; legacy **`votes.json`** if no vote-store
 - [ ] **Executor path** — read vault weights + NAV, compare to targets, apply **band rules** (`plan` logic), build **`SwapStep[]`**, set **minOut** from quotes, **`rebalance`** broadcast (or human confirm / delegation wrapper)
 - [ ] **Single-asset withdraw UX** — reliable **route + calldata builder** for `redeemToSingleAsset` in **agent and/or frontend** (users shouldn’t hand-roll Uniswap encoding)
 - [ ] **Profit after cycle** — per [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.2 + [`vault/spec.md`](../vault/spec.md) §6: **P&L** in one unit of account with **deposit/withdraw adjustments**; **profit** split with **`ŵ_i ∝ share_i × g(trust_i)`** (+ optional floor); **losses** by share only (no trust-skewed downside); **Tier A**: `CycleClosed` + auditable **CSV/JSON**; **optional** small **Merkle claim** if time ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4 should-have path)
 - [ ] **Trust updates over time** — after each cycle, score each voter’s **proposed portfolio vs benchmark** (rolling window, floors/ceilings per [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)); feed **next** cycle’s aggregation (not a one-off CSV demo only)
-- [ ] **Pricing consistency** — **current weights** for `plan` / executor use the **same** pricing method as **trust** and **on-chain NAV** (or document the MVP shortcut explicitly — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 step 1)
+- [x] **Pricing consistency** — trust stamp + finalize use **`fetchUsdcPricesForTokens`** (Uniswap v3 slot0 mid, or synthetic oscillator for testnet); `plan` uses on-chain `pricePerFullToken1e18` (oracle-based). MVP shortcut documented: oracle vs pool mid divergence is expected on thin testnet pools.
 - [ ] **Band policy edge cases** — document in README or code: **rounding**, **new token at 0% target**, **withdrawals between vote and execution**, **stale prices** ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 closing paragraph)
 - [x] **Mid-cycle deposits / liquidity** — **locked** in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) **§2.0** + [`vault/spec.md`](../vault/spec.md) §3: **deposit/withdraw anytime** (unless pause); **vote snapshot** → new shares **after** cutoff **vote next cycle**; still **document** P&L boundary vs NAV flows in README/`BUILD_LOG`
 

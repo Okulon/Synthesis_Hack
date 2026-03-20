@@ -3,6 +3,12 @@
  * Run: cd apps/agent && npm run votes:export
  *
  * Always runs cycle:sync first so vote-store defaultCycleKey matches the live wall-clock window.
+ *
+ * **Display vs execution:** The `targets` field here is the **full** trust×share aggregate of current
+ * ballots (what the dashboard should show as “voted blend”). It is **not** gated by allocation quorum.
+ * **`config/local/targets.json`** (written by the agent after `check-quorum-for-targets`) is the **only**
+ * file `plan` / rebalance use — that path **is** quorum-gated so execution does not move until enough
+ * participation is met.
  */
 import { spawnSync } from "child_process";
 import fs from "fs";

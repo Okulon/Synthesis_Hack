@@ -503,19 +503,77 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 (pm) — Trust pipeline fixes, WETH oscillator, quorum, on-chain ballot sync
+
+### Goal
+- Make **trust scores actually move** off default 1.0 after a cycle closes — end-to-end, no manual steps.
+- Add **allocation quorum** gating on `targets.json` so executor only acts on sufficient participation.
+- Harden the **agent rollover pipeline** (sync → stamp → finalize → trust → export) to survive dead testnet pools and on-chain-only ballots.
+
+### Human decisions
+- **`TESTWETHOCCILATOR`** env var: synthetic oscillating WETH/USDC price for dev/demo (Base Sepolia pool is dead — price never moves, making trust returns always 0).
+- **`TESTBOOSTTRUST`**: amplify tiny effective returns before bps rounding so trust visibly moves in short demo cycles.
+- **Quorum gate**: `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on) — agent only writes `targets.json` when allocation participation meets threshold; executor keeps previous targets otherwise.
+
+### Agent / automation
+- **New files:**
+  - `apps/agent/src/lib/testWethOscillator.mjs` — sine wave + random noise WETH/USDC price generator (configurable base, amplitude, period, noise bps).
+  - `apps/agent/src/lib/testBoostTrust.mjs` — `TESTBOOSTTRUST` multiplier on effective return before bps rounding.
+  - `apps/agent/src/lib/quorumAlloc.mjs` — allocation quorum math (holder power vs participated power).
+  - `apps/agent/src/lib/quorumChain.mjs` — on-chain `AllocationBallotCast` log reader + ballot weights decoder.
+  - `apps/agent/src/check-quorum-for-targets.mjs` — quorum check script (`npm run quorum:check`).
+  - `apps/agent/src/sync-allocation-ballots-from-chain.mjs` — merges on-chain `AllocationBallotCast` events into `vote-store.json` for a given cycle key (trust finalize reads vote-store only).
+
+- **Bug fixes:**
+  - **`sync-allocation-ballots-from-chain`** was **replacing** `cycle.ballots` wholesale, **dropping `priceMarksUsdc`** (vote-time price marks). Fixed: now preserves existing marks per voter when merging chain ballots.
+  - **`trust-stamp-prices`** at rollover filled missing marks at close-time prices, making start ≈ end → `portfolioReturnFull: 0`. With the sync merge fix + oscillator, stamp and finalize now see different prices.
+  - **`agent.mjs`**: added `localTargetsWeightSum()` guard — skips `plan`/`rebalance` when `targets.json` has empty weights (instead of crashing `cli.mjs` with "targets must sum to > 0"). Prints stderr on `plan` failure.
+  - **`trustCore.mjs`**: stopped silently falling back to `trust_cycle.example.csv` when local CSV is missing (was hiding that real voters had no rows). Returns empty rows with a warning instead.
+  - **`close-cycle.mjs`**: receipt status check (`status === "success"`) + `AGENT_CLOSE_CYCLE_RETRIES` in agent.
+
+- **Trust pipeline in agent rollover** (`runTrustPipelineForClosedWindow`):
+  1. **Sync on-chain ballots** → vote-store (preserves existing priceMarksUsdc)
+  2. **Stamp prices** for closed window (fills only missing marks — uses oscillator when `TESTWETHOCCILATOR` is set)
+  3. **Finalize** — reads stamped marks as start, fetches live (oscillating) prices as end → non-zero return
+  4. **Trust scoring** (`trust.mjs`) + **export** to `frontend/public/trust-scores.json`
+
+- **WETH oscillator** wired into `fetchUsdcPricesForTokens` in `assetPrices.mjs`: when `TESTWETHOCCILATOR=true`, WETH price bypasses Uniswap pool and uses synthetic sine + noise (configurable via `TESTWETH_OSCILLATOR_BASE_USDC`, `_AMP`, `_PERIOD_SEC`, `_NOISE_BPS`). Other assets still use real pools.
+
+- **Frontend**: trust from `allocation-votes.json` when `trust-scores.json` lacks a row; **†** / **◆** markers for off-chain vote status.
+
+- **`.env.example`**: documented `TESTWETHOCCILATOR`, `TESTBOOSTTRUST`, `TRUST_MIN_TIME_WEIGHT_FLOOR`, oscillator tuning vars.
+
+### Reality checks
+- **Trust moved**: after fixes, manual re-finalize of cycle 12 produced `vote_return_bps: -220541888` → trust clamped to floor **0.1** (from default 1.0). Pipeline confirmed working.
+- **Oscillator is dev-only** — unset `TESTWETHOCCILATOR` for production; real pool liquidity would provide natural price movement.
+- **`TESTBOOSTTRUST=10000000`** is extreme — trust will slam to floor (0.1) or ceiling (3.0) each cycle. Reduce for gradual movement.
+- Dead testnet pool (`413.42 USDC/WETH` static) was the root cause of zero returns on all prior cycles — not a code logic error in the trust math itself.
+
+### Open questions / risks
+- On-chain-only ballots still don't get vote-time price marks during voting phase (only at rollover via stamp). For accurate P&L on real pools, agent should sync on-chain ballots during voting ticks too (heavy on RPC — deferred).
+- `TESTBOOSTTRUST` at extreme values makes trust binary (floor or ceiling). Consider tuning down or using `TRUST_MIN_TIME_WEIGHT_FLOOR` for smoother behavior.
+
+### Next session
+1. Tune `TESTBOOSTTRUST` to a moderate value so trust moves gradually (e.g. 100–1000).
+2. Optional: sync on-chain ballots during voting phase (not just rollover) so vote-time marks are accurate.
+3. Submission polish: refresh draft, video, conversation log.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
-- **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`** ballot indexing on current `contracts/src/DAOVault.sol`); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**, **`npm run agent`** (orchestrator); **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`** (incl. **SwapRouter02** on Base mainnet YAML); **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
-- **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = **only** schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = **genesis unix** (v2); durations never duplicated in JSON — see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
-- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid (chain-aware YAML; Sepolia default guard behavior when env unset — see script header).
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts**, **Voted/Pending** ballot status, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**. **Addresses** only via **`VITE_*`** in **local** env; see [`frontend/README.md`](../frontend/README.md).
-- **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** (auto clock init) → **`cycle:snapshot`** (share balances) → trust-weighted **`aggregate`** + **`votes:export`** → **`frontend/public/allocation-votes.json`**; **`trust:export`** keeps **`trust-scores.json`** in sync when agent runs; holders **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** optional **`closeCycle`** + trust finalize pipeline when keys + env allow.
-- **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**; use **local `.env`** and **`contracts/broadcast/`** (gitignored).
-- **`castAllocationBallot`:** current **`DAOVault`** includes **`ballotAssets`**; **older bytecode** lacks **`ballotAssetsLength`** — UI **falls back** to **tracked-only** ballot rows. Bytecode probe uses selector **`d87de598`**.
-- **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers (rule enum + portfolio scale).
-- **Tests:** **`DAOVault.t.sol`** **18** tests; other suites unchanged (**fork test** may still skip without `BASE_MAINNET_RPC_URL`).
+- **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`**); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles**; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`rebalance`**, **`npm run agent`** (orchestrator), **quorum check**, **on-chain ballot sync**, **trust finalize pipeline**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Trust pipeline (working end-to-end):** On rollover: **sync on-chain ballots** (preserves vote-time `priceMarksUsdc`) → **stamp prices** (fills missing; uses **WETH oscillator** on testnet when `TESTWETHOCCILATOR` set) → **finalize** (time-weighted portfolio return × `TESTBOOSTTRUST` amplifier) → **trust scoring** (`trust.mjs` applies `scoring.yaml` rule) → **export** (`trust-scores.json`). Trust confirmed moving off 1.0 (e.g. 0.1 floor or 3.0 ceiling depending on oscillator direction).
+- **Dev knobs:** `TESTWETHOCCILATOR` (synthetic WETH/USDC for dead testnet pools), `TESTBOOSTTRUST` (amplify bps), `TRUST_MIN_TIME_WEIGHT_FLOOR` (clamp late-vote time weight).
+- **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
+- **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
+- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts**, **Voted/Pending** ballot status, trust scores with **†/◆** markers, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**.
+- **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** keeps **`trust-scores.json`** in sync; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
+- **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
+- **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
+- **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.
 - **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; multi-asset / reverse swap path; **Synthesis** draft update with demo artifacts.
-- **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.
-- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent (see live catalog UUIDs).
-- **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root holds payload template — refine before publish (self-custody, video, etc.).
+- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent.
+- **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root — refine before publish.

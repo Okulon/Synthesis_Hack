@@ -49,7 +49,7 @@ A separate **TEST** panel (warn-styled) runs a **multi-tx** path so you can fund
 - **On-chain:** connect wallet and **`castAllocationBallot`** (weights in **basis points**, one weight per **`ballotAssets[i]`** on current vault bytecode — i.e. **allowlisted** order, not “only tokens already in the vault”). **Donut chart** previews the form when percents sum to **100%**. **Aggregate targets** table + second **pie** blend **trust × shares × on-chain ballot weights** (same idea as `computeOnChainTargets` / `npm run aggregate`). **Older vault bytecode** without **`ballotAssets`**: UI falls back to **tracked** assets only and shows a **legacy** banner if **`AssetAllowed`** logs show extra allowlisted tokens — **redeploy** for full behavior.
 - **Off-cycle schedule + file export:** **trust × snapshot shares × weights** from **`allocation-votes.json`** (same math as `npm run aggregate`). See **`docs/CYCLES_AND_VOTING.md`**.
 
-1. **`config/local/vote-store.json`** — copy from `apps/agent/fixtures/vote-store.example.json`; add ballots; run **`npm run cycle:snapshot`** (RPC + `VAULT_ADDRESS`) to record **`shares1e18`** at a block.  
+1. **`config/local/vote-store.json`** — if missing, `cycle:sync` seeds from an **empty** `vote-store.example.json`. Add **real** ballots (UI / imports); run **`npm run cycle:snapshot`** (RPC + `VAULT_ADDRESS`) to record **`shares1e18`** at a block.  
    **Or** legacy **`config/local/votes.json`** only (trust-only / embedded trust per file) if `vote-store.json` is absent.
 2. From repo root:
    ```bash

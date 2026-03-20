@@ -907,6 +907,11 @@ td.mono.sm,
   color: var(--muted);
 }
 
+.trust-score.trust-pending {
+  color: var(--accent);
+  font-style: italic;
+}
+
 .trust-score.trust-high {
   color: var(--accent2);
 }

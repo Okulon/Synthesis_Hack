@@ -90,7 +90,8 @@ async function main() {
   }
 
   const { cycleId, source, targets } = loadTargets();
-  console.log(`Targets: ${source} (cycleId=${cycleId})`);
+  /** stderr only — stdout must be a single JSON object (agent parses it for rebalance loop). */
+  console.error(`[plan] targets: ${source} (cycleId=${cycleId})`);
 
   const { chain, transport } = pickChain(rpcUrl, chainId);
   const client = createPublicClient({ chain, transport });

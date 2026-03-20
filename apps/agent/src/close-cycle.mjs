@@ -102,6 +102,10 @@ async function main() {
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
+  if (receipt.status !== "success") {
+    throw new Error(`closeCycle tx reverted on-chain (status=${receipt.status}) hash=${hash}`);
+  }
+
   saveNavState({
     lastNavEnd1e18: navEnd.toString(),
     lastCloseAt: new Date().toISOString(),

@@ -1,6 +1,6 @@
 import { formatUnits, type Address } from "viem";
 
-import { trustForAddress } from "./trustScores";
+import { type TrustForAddressOpts, trustForAddress } from "./trustScores";
 import type { OnChainAllocationBallot, VaultSnapshot } from "./vault";
 
 export type QuorumStats = {
@@ -19,13 +19,14 @@ export function computeQuorumStats(
   trustByVoter: Record<string, number>,
   quorumFraction: number,
   votedAddresses: Set<string>,
+  trustOpts?: TrustForAddressOpts,
 ): QuorumStats {
   let totalPower = 0;
   let participatingPower = 0;
   let votedCount = 0;
 
   for (const h of snap.holders) {
-    const { score: trust } = trustForAddress(trustByVoter, h.address);
+    const { score: trust } = trustForAddress(trustByVoter, h.address, trustOpts);
     const sharesNum = Number(formatUnits(h.balance, 18));
     const potential = trust * sharesNum;
     totalPower += potential;
@@ -57,8 +58,16 @@ export type HolderVoteRow = {
   sharesLabel: string;
   trust: number;
   trustIsDefault: boolean;
+  /** Voted on-chain but no row in trust-scores.json yet — score is still default 1.0 */
+  trustPendingFinalize?: boolean;
+  /** Trust number came from allocation-votes.json because trust-scores had no row (same aggregate math) */
+  trustFromAllocationExport?: boolean;
   displayPower: number;
   voted: boolean;
+  /** In allocation-votes export but no matching on-chain ballot in the log window */
+  votedOffChainOnly?: boolean;
+  /** Weights from allocation-votes.json when votedOffChainOnly */
+  offChainWeights?: Record<string, number> | null;
   weightsBps: number[] | null;
 };
 
@@ -73,14 +82,58 @@ function ballotMapByVoter(ballots: OnChainAllocationBallot[]): Map<string, OnCha
 export function buildHolderVoteRows(
   snap: VaultSnapshot,
   trustByVoter: Record<string, number>,
+  trustOpts?: TrustForAddressOpts,
+  allocationVoters?: ReadonlyArray<{
+    address: string;
+    trust: number;
+    weights?: Record<string, number>;
+  }>,
 ): HolderVoteRow[] {
   const bMap = ballotMapByVoter(snap.onChainAllocationBallots);
+  const allocationByAddr = new Map<string, number>();
+  const allocationWeightsByAddr = new Map<string, Record<string, number>>();
+  const allocationVoterSet = new Set<string>();
+  for (const v of allocationVoters ?? []) {
+    const k = v.address.toLowerCase();
+    allocationVoterSet.add(k);
+    if (Number.isFinite(v.trust)) allocationByAddr.set(k, v.trust);
+    if (v.weights && typeof v.weights === "object") allocationWeightsByAddr.set(k, v.weights);
+  }
+
   const rows: HolderVoteRow[] = snap.holders.map((h) => {
-    const { score: trust, isDefault: trustIsDefault } = trustForAddress(trustByVoter, h.address);
+    const k = h.address.toLowerCase();
+    const fromCsv = trustByVoter[k];
+    const fromAlloc = allocationByAddr.get(k);
+    const base = trustForAddress(trustByVoter, h.address, trustOpts);
+
+    let trust: number;
+    let trustIsDefault: boolean;
+    let trustPendingFinalize: boolean | undefined;
+    let trustFromAllocationExport: boolean | undefined;
+
+    if (Number.isFinite(fromCsv)) {
+      trust = fromCsv;
+      trustIsDefault = false;
+      trustPendingFinalize = false;
+      trustFromAllocationExport = false;
+    } else if (fromAlloc != null && Number.isFinite(fromAlloc)) {
+      trust = fromAlloc;
+      trustIsDefault = false;
+      trustPendingFinalize = false;
+      trustFromAllocationExport = true;
+    } else {
+      trust = base.score;
+      trustIsDefault = base.isDefault;
+      trustPendingFinalize = base.pendingTrustFinalize;
+      trustFromAllocationExport = false;
+    }
+
     const sharesLabel = formatUnits(h.balance, 18);
     const sharesNum = Number(sharesLabel);
-    const b = bMap.get(h.address.toLowerCase());
+    const b = bMap.get(k);
     const voted = !!b;
+    const votedOffChainOnly = allocationVoterSet.has(k) && !b;
+    const offChainWeights = votedOffChainOnly ? allocationWeightsByAddr.get(k) ?? null : null;
     const displayPower = trust * sharesNum;
     return {
       address: h.address,
@@ -88,8 +141,12 @@ export function buildHolderVoteRows(
       sharesLabel,
       trust,
       trustIsDefault,
+      trustPendingFinalize,
+      trustFromAllocationExport,
       displayPower,
       voted,
+      votedOffChainOnly,
+      offChainWeights,
       weightsBps: b ? b.weightsBps : null,
     };
   });
@@ -101,6 +158,7 @@ export function buildHolderVoteRows(
 export function computeOnChainTargets(
   snap: VaultSnapshot,
   trustByVoter: Record<string, number>,
+  trustOpts?: TrustForAddressOpts,
 ): {
   targets: Record<string, number>;
   warnings: string[];
@@ -135,7 +193,7 @@ export function computeOnChainTargets(
       continue;
     }
 
-    const { score: trust } = trustForAddress(trustByVoter, b.voter);
+    const { score: trust } = trustForAddress(trustByVoter, b.voter, trustOpts);
     const holder = snap.holders.find((h) => h.address.toLowerCase() === b.voter.toLowerCase());
     const sharesNum = holder ? Number(formatUnits(holder.balance, 18)) : 0;
     if (sharesNum <= 0) continue;

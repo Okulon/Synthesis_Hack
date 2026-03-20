@@ -19,15 +19,21 @@ Default in repo: **15 minutes** per allocation window ([`config/agent/cycles.yam
 
 After clone: **`npm run agent`** from repo root (or `cycle:daemon` for sync+export only); wall-clock + `vote-store` alignment run automatically. Optional manual **`cycle:clock-init`** only if you want to pin genesis without running **`cycle:sync`**.
 
+### Display vs execution targets
+
+- **`frontend/public/allocation-votes.json`** (`targets` field): full trust×share aggregate of ballot weights — always reflects the **overall voted blend** for the dashboard. **Not** gated by allocation quorum.
+- **`config/local/targets.json`**: **only** file read by **`npm run plan`** and **`rebalance`**. The agent writes it when aggregate succeeds **and** (by default) **[`check-quorum-for-targets`](../apps/agent/src/check-quorum-for-targets.mjs)** reports quorum met (`AGENT_REQUIRE_QUORUM_FOR_TARGETS`, default on). If quorum is **not** met, this file is **not** overwritten — execution keeps using the **previous** targets until participation is sufficient.
+
 ## Artifacts
 
 | File | Purpose |
 |------|---------|
 | `config/local/cycle-clock.json` | **Genesis unix only** (gitignored). Window length / voting / frozen come from **`config/agent/cycles.yaml`** only. Created on first **`cycle:sync`** / **`npm run agent`** (or **`cycle:clock-init`**). |
-| `config/local/vote-store.json` | **Source of truth** for ballots (gitignored). Copy from [`apps/agent/fixtures/vote-store.example.json`](../apps/agent/fixtures/vote-store.example.json). |
+| `config/local/vote-store.json` | **Source of truth** for ballots (often gitignored). If missing, `cycle:sync` copies an **empty** template from [`apps/agent/fixtures/vote-store.example.json`](../apps/agent/fixtures/vote-store.example.json) — no demo voters; ballots come from the UI / `castAllocationBallot`. |
 | `config/local/votes.json` | **Legacy** single-file votes; used only if **no** `vote-store.json` exists. |
 | `config/local/trust_cycle.csv` + `config/trust/scoring.yaml` | Trust multipliers (same as `npm run trust`). |
-| `frontend/public/allocation-votes.json` | Dashboard **Voting** tab (`npm run votes:export`). |
+| `frontend/public/allocation-votes.json` | Dashboard **Voting** tab (`npm run votes:export`). Includes aggregate **`targets`** for display (not quorum-gated). |
+| `config/local/targets.json` | **`plan` / rebalance** input only (gitignored). Quorum-gated when agent writes (see **Display vs execution targets** above). |
 
 ## Cycle record (`vote-store`)
 
