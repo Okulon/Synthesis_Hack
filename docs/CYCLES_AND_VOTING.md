@@ -33,6 +33,7 @@ After clone: **`npm run agent`** from repo root (or `cycle:daemon` for sync+expo
 | `config/local/votes.json` | **Legacy** single-file votes; used only if **no** `vote-store.json` exists. |
 | `config/local/trust_cycle.csv` + `config/trust/scoring.yaml` | Trust multipliers (same as `npm run trust`). |
 | `frontend/public/allocation-votes.json` | Dashboard **Voting** tab (`npm run votes:export`). Includes aggregate **`targets`** for display (not quorum-gated). |
+| `frontend/public/trust-history.json` | Dashboard **History** tab — per-voter, per-cycle trust steps + vote/benchmark bps + ballot weights (`npm run trust:export`, written alongside `trust-scores.json`). |
 | `config/local/targets.json` | **`plan` / rebalance** input only (gitignored). Quorum-gated when agent writes (see **Display vs execution targets** above). |
 
 ## Cycle record (`vote-store`)

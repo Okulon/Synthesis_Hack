@@ -560,6 +560,37 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-21 — History tab: voting + trust over cycles
+
+### Goal
+- New **frontend** tab so a connected wallet (or pasted address) can see **voting / trust history**: per-cycle **trust gained or lost**, **vote vs benchmark return (bps)**, **ballot weights**, and a **chart** of **trust over wall-clock windows**.
+
+### Human decisions
+- **Data source:** extend **`npm run trust:export`** to emit a second static JSON (no new server) — judges clone repo and run the agent export like **`trust-scores.json`**.
+- **Chart:** inline **SVG** (no new npm dependency) — line through **trust_after** per finalized cycle.
+
+### Agent / automation
+- **[`trustCore.mjs`](../apps/agent/src/lib/trustCore.mjs):** **`applyTrustRow()`** (single CSV step, shared with **`buildTrustByVoter`**) + **`buildPerVoterHistory()`** — sorted by **`cycle_id`**, emits **`trust_before` / `trust_after` / `delta_trust`** per step.
+- **[`trust-export-frontend.mjs`](../apps/agent/src/trust-export-frontend.mjs):** after **`trust-scores.json`**, writes **`frontend/public/trust-history.json`**: scoring metadata (default/floor/ceiling/rule), **`byVoter[addr][]`** with **`vote_return_bps`**, **`benchmark_return_bps`**, trust deltas, optional **`weights`** merged from **`vote-store`** per cycle (last ballot per voter).
+
+### Frontend
+- **[`VotingHistoryTab.tsx`](../frontend/src/components/VotingHistoryTab.tsx):** **History** nav; **`useAccount`** + optional **manual `0x…`**; **`fetchTrustHistory()`** → table + SVG chart; asset labels via existing **`ballotAssets` / tracked** snapshot.
+- **[`App.tsx`](../frontend/src/App.tsx):** fourth view **`history`**.
+- **[`index.css`](../frontend/src/index.css):** history table + chart layout.
+
+### Docs
+- **[`frontend/README.md`](../frontend/README.md)**, **[`apps/agent/README.md`](../apps/agent/README.md)** (`trust:export` writes both JSON files), **[`docs/CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md)** (artifacts table), **[`STRUCTURE.md`](../STRUCTURE.md)** (public JSON list).
+
+### Reality checks
+- **`trust-history.json`** is **empty / missing** until **`npm run trust:export`** (or agent trust export on rollover) — UI explains.
+- Large **`vote_return_bps`** (e.g. with **`TESTBOOSTTRUST`**) shows as **scientific %** in the formatter when needed.
+
+### Next session
+1. Optional: sparkline in **Users** row linking to **History**.
+2. Optional: export **portfolio narrative** fields from finalize JSON into CSV/history (not only bps).
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -569,8 +600,8 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
 - **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
 - **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts**, **Voted/Pending** ballot status, trust scores with **†/◆** markers, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**.
-- **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** keeps **`trust-scores.json`** in sync; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + **History** tab (**trust over cycles** chart + per-window table from **`/trust-history.json`**) + voting **pie charts**, **Voted/Pending** ballot status, trust scores with **†/◆** markers, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**.
+- **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** writes **`trust-scores.json`** + **`trust-history.json`**; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
 - **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.

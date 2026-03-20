@@ -1,14 +1,14 @@
 {
   "trustByVoter": {
-    "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92": 0.1
+    "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92": 3
   },
   "_meta": {
     "csvSource": "config/local/trust_cycle.csv",
     "scoringRule": "time_weighted_portfolio_return",
-    "csvRowCount": 4,
+    "csvRowCount": 5,
     "missingLocalCsv": false,
     "votersPendingTrustFinalize": [],
-    "updatedAt": "2026-03-20T22:05:22.160Z",
+    "updatedAt": "2026-03-20T22:17:19.148Z",
     "note": "Regenerate: npm run trust:export (apps/agent). votersPendingTrustFinalize = vote-store ballots not yet in trust_cycle.csv."
   }
 }

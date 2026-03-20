@@ -1,0 +1,76 @@
+{
+  "defaultTrust": 1,
+  "trustFloor": 0.1,
+  "trustCeiling": 3,
+  "scoringRule": "time_weighted_portfolio_return",
+  "linearScale": 1,
+  "byVoter": {
+    "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92": [
+      {
+        "cycle_id": "9",
+        "vote_return_bps": 0,
+        "benchmark_return_bps": 0,
+        "trust_before": 1,
+        "trust_after": 1,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "10",
+        "vote_return_bps": 0,
+        "benchmark_return_bps": 0,
+        "trust_before": 1,
+        "trust_after": 1,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "11",
+        "vote_return_bps": 0,
+        "benchmark_return_bps": 0,
+        "trust_before": 1,
+        "trust_after": 1,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "12",
+        "vote_return_bps": -220541888,
+        "benchmark_return_bps": -35,
+        "trust_before": 1,
+        "trust_after": 0.1,
+        "delta_trust": -0.9,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "14",
+        "vote_return_bps": 101013184,
+        "benchmark_return_bps": 15,
+        "trust_before": 0.1,
+        "trust_after": 3,
+        "delta_trust": 2.9,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      }
+    ]
+  },
+  "_meta": {
+    "csvSource": "config/local/trust_cycle.csv",
+    "updatedAt": "2026-03-20T22:17:19.152Z",
+    "note": "Per-cycle trust + vote_return_bps. vote_return_bps = time-weighted portfolio return × 10000 (scaled by TESTBOOSTTRUST in finalize if set). Weights from vote-store when available."
+  }
+}

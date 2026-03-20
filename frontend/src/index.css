@@ -950,3 +950,80 @@ code {
   flex-wrap: wrap;
   gap: 0.35rem 0.75rem;
 }
+
+/* Voting / trust history tab */
+.voting-history-page {
+  max-width: 960px;
+}
+
+.history-wallet-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-manual-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  max-width: 28rem;
+}
+
+.history-manual-input {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.trust-chart-wrap {
+  width: 100%;
+  max-width: 640px;
+}
+
+.trust-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.trust-chart-tick,
+.trust-chart-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+}
+
+.trust-chart-caption {
+  margin-top: 0.5rem;
+}
+
+.history-table-wrap {
+  overflow-x: auto;
+}
+
+.history-table {
+  font-size: 0.88rem;
+}
+
+.history-table th {
+  white-space: nowrap;
+}
+
+.history-weights {
+  min-width: 8rem;
+  vertical-align: top;
+}
+
+.delta-pos {
+  color: var(--accent2);
+}
+
+.delta-neg {
+  color: var(--warn);
+}

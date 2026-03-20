@@ -1,6 +1,6 @@
 # DAO Vault dashboard
 
-Read-only **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets (balances, oracle config), **Access Control** members (from `RoleGranted` / `RoleRevoked` logs), and **Users** tab with **off-chain trust scores** (see below).
+Read-only **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets (balances, oracle config), **Access Control** members (from `RoleGranted` / `RoleRevoked` logs), **Users** tab with **off-chain trust scores**, **Voting** tab for allocation ballots, and **History** tab for **per-cycle trust** and **ballot performance** (see below).
 
 ## Run (port **1337**)
 
@@ -71,6 +71,16 @@ Trust multipliers match **`npm run trust`** / **`aggregate`** (CSV + [`config/tr
    This writes **`frontend/public/trust-scores.json`**, which the Users page fetches at `/trust-scores.json`.
 
 Wallets not listed get **default 1.00** (asterisk in UI). **Influence** ≈ shares × trust (informal, not an on-chain value).
+
+## History tab (per-cycle trust & performance)
+
+After **`npm run trust:export`**, the agent also writes **`frontend/public/trust-history.json`** (same command as trust-scores). The **History** tab:
+
+- Connect wallet **or** paste a voter `0x…` address.
+- **Line chart:** trust score **after** each finalized wall-clock window.
+- **Table:** per window — **trust Δ**, **vote return** (bps / %), **benchmark** (bps), and **your ballot weights** (from `vote-store` when available).
+
+Regenerate whenever `trust_cycle.csv` changes (agent rollover runs **`trust:export`** when trust pipeline is on).
 
 ## Build
 

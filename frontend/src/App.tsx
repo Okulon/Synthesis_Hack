@@ -33,6 +33,7 @@ import {
   trustForAddress,
   type TrustForAddressOpts,
 } from "./lib/trustScores";
+import { VotingHistoryTab } from "./components/VotingHistoryTab";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -243,7 +244,7 @@ function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
 }
 
 export default function App() {
-  const [view, setView] = useState<"dashboard" | "users" | "voting">("dashboard");
+  const [view, setView] = useState<"dashboard" | "users" | "voting" | "history">("dashboard");
   if (!RPC) {
     return (
       <div className="shell">
@@ -314,6 +315,13 @@ export default function App() {
             >
               Voting
             </button>
+            <button
+              type="button"
+              className={`btn ${view === "history" ? "btn-primary" : ""}`}
+              onClick={() => setView("history")}
+            >
+              History
+            </button>
           </div>
           {q.data ? (
             <ExplorerLink chainId={q.data.chainId} path={`/address/${q.data.vault}`}>
@@ -341,8 +349,10 @@ export default function App() {
           <Dashboard snap={q.data} />
         ) : view === "users" ? (
           <UsersPage snap={q.data} />
-        ) : (
+        ) : view === "voting" ? (
           <VotingPage snap={q.data} />
+        ) : (
+          <VotingHistoryTab snap={q.data} />
         )
       ) : null}
 

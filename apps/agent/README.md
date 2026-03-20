@@ -67,7 +67,7 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | `npm run trust` | Trust v0 from CSV + `config/trust/scoring.yaml` |
 | `npm run trust:stamp-prices` | Writes ballot **`priceMarksUsdc`** from pool mid (stamp at vote time; optional `VOTE_CYCLE_KEY`, `TRUST_STAMP_OVERWRITE=1`) |
 | `npm run trust:finalize-window` | **Previous** wall-clock window → upserts **`trust_cycle.csv`** with time-weighted portfolio `vote_return_bps` (`TRUST_FINALIZE_CYCLE_KEY` optional) |
-| `npm run trust:export` | Writes **`frontend/public/trust-scores.json`** for dashboard Users tab |
+| `npm run trust:export` | Writes **`frontend/public/trust-scores.json`** + **`frontend/public/trust-history.json`** (per-cycle trust Δ, bps, weights) for Users + History tabs |
 | `npm run quote` | Uniswap V3 **factory → pool → slot0 + liquidity** (uses `config/chain/base.yaml` or `base_sepolia.yaml` by `CHAIN_ID`) |
 | `npm run rebalance` | **Executor-only:** `vault.rebalance` WETH→USDC; **oracle vs pool mid-price guard** + **`amountOutMinimum`** from mid (+ fee fudge). See env vars below. |
 
