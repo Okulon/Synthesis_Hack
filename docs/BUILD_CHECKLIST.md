@@ -1,8 +1,12 @@
 # Build checklist — DAO Agent (Synthesis)
 
-Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
+Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); vault mechanics in [`vault/spec.md`](../vault/spec.md) + [`vault/checklist.md`](../vault/checklist.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
 
-_Last reviewed: 2026-03-21._
+- **§3** = what the **vault contract** already does (and small on-chain gaps).  
+- **§4** = the **DAO Agent product loop** still to wire end-to-end (votes, trust-weighted targets, cycles, executor swaps, single-token exit UX, profit path).  
+- Aligns with [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 (MVP), §2.1 (bands), §2.2 (profit), §3 (architecture), §4 (backlog), §7 (open decisions).
+
+_Last reviewed: 2026-03-22._
 
 ---
 
@@ -30,10 +34,11 @@ _Last reviewed: 2026-03-21._
 ## 1 — Repo & hygiene
 
 - [x] Root **README**: problem, MVP demo steps, env vars (names only), links to docs
-- [x] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, etc.)
+- [x] `.gitignore` (node, forge, `.env`, keys, `out/`, `cache/`, `contracts/broadcast/`, etc.)
 - [x] **No secrets in git** — `.env.example` + [`config/README.md`](../config/README.md)
 - [x] License file — [`LICENSE`](../LICENSE) (MIT)
-- [x] **First commit** on repo (`Initial Commit`); **follow-up commit** needed for latest files (see **§ P**)
+- [x] **First commit** on repo; **ongoing** commits for `frontend/`, agent, contracts (keep `BUILD_LOG` current)
+- [ ] **Deployed `VAULT_ADDRESS`** mirrored in README + [`config/chain/contracts.yaml`](../config/chain/contracts.yaml) when stable ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) status + §4 backlog)
 
 ---
 
@@ -41,55 +46,95 @@ _Last reviewed: 2026-03-21._
 
 - [x] **MVP scope** documented — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 + §2.1 (+ architecture §3)
 - [x] Lock **chain** — **Base** (`config/chain/base.yaml`, spec)
-- [ ] Lock **custody model** (vault vs smart account — still open in spec §7; decide & log in `BUILD_LOG`)
+- [x] Lock **custody model** for implementation — **vault contract** holds assets; **scoped `executor`** for rebalances ([`vault/spec.md`](../vault/spec.md) §2)
 - [x] Lock **2–3 allowlisted tokens** + **Uniswap** for v0 (spec + `config/chain/contracts.yaml` hints + `config/dex/uniswap.yaml`)
 - [x] Lock **rebalance band defaults** — spec §2.1 + `config/rebalancing/bands.yaml`
-- [x] **Telegram** direction — `config/telegram/bot.yaml` (polling MVP); refine notify-only vs vote UX when building §5
+- [x] **Telegram** direction — `config/telegram/bot.yaml` (polling MVP); refine notify-only vs vote UX when building §7
+- [ ] **Resolve & log** [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) **§7** in [`BUILD_LOG.md`](./BUILD_LOG.md): **trust benchmark** (e.g. 60/40 vs equal-weight allowlist); **drift metric** (absolute pp vs `drift_i / w_target_i`); **global ε vs per-asset ε_i**; **executor** shape (EOA vs contract with immutable checks)
 
 ---
 
-## 3 — Smart contracts / on-chain
+## 3 — Smart contracts / on-chain (vault status)
 
-- [ ] Vault (or equivalent): **deposit / withdraw / share** accounting for MVP assumptions
-- [ ] **Governance knobs** minimal set: allowlist, max slippage (or executor caps), **rebalance drift thresholds** (`ε` / optional per-asset), optional **min trade notional**, optional pause
-- [ ] **Rebalancer permission**: address or contract with **hard bounds** (fits **delegations** story)
-- [ ] Tests (Foundry/Hardhat): deposits, withdraw, unauthorized paths, cap enforcement
-- [x] **Testnet deploy path documented** — [`DEPLOY.md`](./DEPLOY.md) + `DeployConfigureDAOVault` (you still run `--broadcast` + paste addresses)
-- [ ] At least one **real swap / rebalance path** demo on testnet (or mainnet if you accept risk) for Uniswap track credibility
-
----
-
-## 4 — Off-chain agent & integrations
-
-- [x] **Dry-run planner** — [`apps/agent`](../apps/agent/README.md) (`npm run plan`): RPC + [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) + local targets JSON; prints skip / would_trade (no txs yet)
-- [ ] **Vote ingestion**: signed payloads / bot commands / mini-app — source of truth = DB +/or chain, not chat alone *(MVP: JSON files + `npm run aggregate`)*
-- [x] **Aggregation** (file-based MVP) — `npm run aggregate` + [`fixtures/votes.example.json`](../apps/agent/fixtures/votes.example.json) → normalized targets
-- [x] **Trust v0** (off-chain MVP) — `npm run trust` + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml) + CSV fixture
-- [ ] **Execution worker**: compares current vs target weights, **applies band rules** (no micro-swaps), logs skips; builds swap plan, respects caps, submits txs (or proposes + human confirm until delegation is wired)
-- [ ] **Uniswap API** (if targeting track): real **API key**, **real tx hashes**, no mocks on critical path
-- [ ] **MetaMask Delegations** (if targeting track): delegation as **core pattern**, not decoration — link docs + demo flow
+- [x] **`DAOVault`**: **deposit** / **redeem** / **share** accounting — multi-asset allowlist, NAV from balances × governance/oracle pricing ([`contracts/src/DAOVault.sol`](../contracts/src/DAOVault.sol); see [`vault/checklist.md`](../vault/checklist.md))
+- [x] **Withdraw to one token** — `redeemToSingleAsset(…, SwapStep[])` (calldata built **off-chain**); **pro-rata** basket exit `redeemProRata`
+- [x] **Executor `rebalance(SwapStep[])`** — allowlisted routers; gated **`onlyExecutor`**; pauses respected
+- [x] **Governance / safety surface** — token + router allowlists, **`pauseTrading` / `pauseDeposits` / `pauseAll`**, guardian vs governance pause story ([`docs/VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md))
+- [x] **Per-cycle P&L hook (Tier A)** — `cycleId`, **`closeCycle`**, **`CycleClosed`** with operator-posted NAV bounds ([`vault/spec.md`](../vault/spec.md) §6)
+- [x] **Foundry tests** — deposits, redeem, rebalance auth, pause, oracle paths (see `contracts/test/`); fork test optional on `BASE_MAINNET_RPC_URL`
+- [ ] **On-chain knobs still thin** — no **`maxSlippageBps`** / **`maxSingleAssetWeightBps`** / **on-chain ε**; drift + min-notional live in **YAML + `plan`** only
+- [x] **Testnet deploy path documented** — [`DEPLOY.md`](./DEPLOY.md) + `DeployConfigureDAOVault`
+- [ ] At least one **real executor `rebalance`** tx on testnet (built **`SwapStep[]`**, explorer hash) — **Uniswap track** credibility
 
 ---
 
-## 5 — Telegram (if shipping)
+## 4 — Core DAO Agent loop *(finished product gap)*
+
+This is the **story** beyond “we have a vault”: allocation **votes**, **trust × share** targets, **cycles**, **moving the vault** toward targets, **easy single-asset exit**, **profit** after a cycle.
+
+- [ ] **Cycles as a product** — define **open / close**, what gets **frozen** (target weights for cycle *N*), how **mid-cycle deposits** affect P&L/trust (document choice; may match spec default)
+- [ ] **Allocation voting** — users submit **target weights** over allowlisted assets for the active cycle; **persist** votes (DB, chain, or signed payloads — not only ad-hoc JSON for demos)
+- [ ] **Trust × share aggregation** — one pipeline: load **eligible voters**, **trust scores**, **share balances** → **single normalized target vector** per cycle (today: separate **`aggregate`** + **`trust`** CLIs, not cycle-keyed)
+- [ ] **Executor path** — read vault weights + NAV, compare to targets, apply **band rules** (`plan` logic), build **`SwapStep[]`**, set **minOut** from quotes, **`rebalance`** broadcast (or human confirm / delegation wrapper)
+- [ ] **Single-asset withdraw UX** — reliable **route + calldata builder** for `redeemToSingleAsset` in **agent and/or frontend** (users shouldn’t hand-roll Uniswap encoding)
+- [ ] **Profit after cycle** — per [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.2 + [`vault/spec.md`](../vault/spec.md) §6: **P&L** in one unit of account with **deposit/withdraw adjustments**; **profit** split with **`ŵ_i ∝ share_i × g(trust_i)`** (+ optional floor); **losses** by share only (no trust-skewed downside); **Tier A**: `CycleClosed` + auditable **CSV/JSON**; **optional** small **Merkle claim** if time ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4 should-have path)
+- [ ] **Trust updates over time** — after each cycle, score each voter’s **proposed portfolio vs benchmark** (rolling window, floors/ceilings per [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)); feed **next** cycle’s aggregation (not a one-off CSV demo only)
+- [ ] **Pricing consistency** — **current weights** for `plan` / executor use the **same** pricing method as **trust** and **on-chain NAV** (or document the MVP shortcut explicitly — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 step 1)
+- [ ] **Band policy edge cases** — document in README or code: **rounding**, **new token at 0% target**, **withdrawals between vote and execution**, **stale prices** ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 closing paragraph)
+- [ ] **Mid-cycle deposits** — explicit product choice + README/`BUILD_LOG`: either **exclude from cycle P&L** math, **document simplification**, or tighten rules ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 vault row + [`vault/spec.md`](../vault/spec.md) §3)
+
+---
+
+## 5 — Off-chain agent & integrations
+
+- [x] **Dry-run planner** — [`apps/agent`](../apps/agent/README.md) (`npm run plan`): RPC + [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) + local targets JSON; **skip / would_trade** (no txs)
+- [x] **Aggregation** (file-based MVP) — `npm run aggregate` + [`fixtures/votes.example.json`](../apps/agent/fixtures/votes.example.json) → normalized weights
+- [x] **Trust v0** (file-based MVP) — `npm run trust` + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml) + CSV fixture
+- [x] **Quote helper** — `npm run quote` (pool read; routing still manual)
+- [ ] **Vote ingestion** — move from fixtures to **real** source of truth (§4)
+- [ ] **API + durable store** — per [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §3: votes + trust snapshots **persisted** (DB or chain); **Telegram/web are not** balance source of truth (**chain + DB** authoritative)
+- [ ] **Execution worker** — §4 executor path: **sign / submit** `rebalance`, retries, logging; **least-privilege** signing key (delegation / allowance narrative); extends `plan`, does not replace it ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 agent row)
+- [ ] **Minimal trade list** — prefer routes that fix **largest deviations** first; no full optimizer required ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 step 6)
+- [ ] **Governance on-chain (north star)** — timelock + `Governor` for params ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §1.7, §4 backlog); *hackathon honest path:* EOA `GOVERNANCE_ROLE` per [`DEPLOY.md`](./DEPLOY.md) until upgraded
+- [ ] **Uniswap API** (if claiming Uniswap track) — real **API key** + **tx proof** on critical path (dashboard TEST path is **router calldata**, not the API track requirement by itself)
+- [ ] **MetaMask Delegations** (if claiming track) — **capped executor** as load-bearing demo, not README-only ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 guardrails + §5)
+- [ ] **Locus track** ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §5) — only if agent **spend rails** are genuinely built on **Locus** (Base, USDC); otherwise do not claim
+- [ ] **MCP / tool surface** (nice-to-have) — query vault state / targets for judges or agent ops ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4); skip unless pivoting to tool-native tracks
+
+---
+
+## 6 — Frontend & demo UX
+
+- [x] **Dashboard** — [`frontend/`](../frontend/): NAV, pause, assets, roles, **Users** (share holders), **Deposit** (WETH / USDC / ETH→WETH)
+- [x] **TEST swap-deposit** (hackathon QA) — ETH → WETH → USDC → `deposit` ([`frontend/README.md`](../frontend/README.md))
+- [ ] **`redeemToSingleAsset` in UI** — pick **assetOut**, slippage, build **SwapStep[]** or call helper API
+- [ ] **Vote / cycle UX** (optional) — even a minimal **admin “set targets for cycle”** + display beats invisible JSON for judges
+- [ ] **One demonstrable cycle** ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 **Votes**) — collect allocation votes (**web and/or** Telegram), compute **aggregate weights** with **trust × share** math, show **reproducible** output (logs, JSON, or UI)
+- [ ] **ENS** (nice-to-have) — display for treasury or voters ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4)
+
+---
+
+## 7 — Telegram (if shipping)
 
 - [ ] Bot created; token only in **env**
 - [ ] **Idempotent** handlers, basic `/status`, vote or deep-link flow
 - [ ] Failure modes: downtime, duplicate messages, user correction path
 - [ ] README: how a judge spins up bot (or use hosted demo instance)
+- [ ] **Nice-to-have:** inline vote UX + **deep links** to wallet signing ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4)
 
 ---
 
-## 6 — Demo & proofs
+## 8 — Demo & proofs
 
-- [ ] **Deployed URL** and/or **recorded video** (2–5 min): problem → vote → rebalance (and ideally **one “below ε, no swap”** clip) → governance / thresholds visible
+- [ ] **Deployed URL** and/or **short video** (2–5 min; [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4 should-have): problem → **vote** → **rebalance** (and ideally **one “below ε, no swap”** clip) → governance / thresholds visible
 - [x] **Architecture / trust / limits** — `docs/` + README + [`DEPLOY.md`](./DEPLOY.md) (judge path: clone → configure env → deploy)
 - [x] **Frontend TEST path** (optional QA) — [`frontend/README.md`](../frontend/README.md): ETH → WETH → Uniswap v3 WETH→USDC → `deposit(USDC)` on Base Sepolia (`minOut = 0`; hackathon only)
-- [ ] Explorer links for **key txs** in README or demo script
+- [ ] Explorer links for **key txs** in README or demo script (**deposit**, **`rebalance`**, optional **redeem**)
+- [ ] **README disclosures** — pooled funds / prototype language, **oracle & manipulation** caveats, **contract risk** + TVL guidance ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §6); **trust v0** names **benchmark/data sources** and known gaps
 
 ---
 
-## 7 — Submission package
+## 9 — Submission package
 
 - [ ] **Public `repoURL`**
 - [ ] **Draft project** via API: name, description, `problemStatement`, `trackUUIDs`, `conversationLog` (from `BUILD_LOG` + polish)
@@ -100,7 +145,7 @@ _Last reviewed: 2026-03-21._
 
 ---
 
-## 8 — Post-submit (before deadline)
+## 10 — Post-submit (before deadline)
 
 - [ ] Small fixes only; no scope creep
 - [ ] `BUILD_LOG.md` caught up through final push
