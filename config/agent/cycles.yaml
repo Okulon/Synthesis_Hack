@@ -1,0 +1,7 @@
+# Wall-clock allocation windows (off-chain). On-chain `DAOVault.cycleId` is separate (NAV / `closeCycle`).
+cycle_clock:
+  duration_minutes: 30
+  # First N minutes accept ballot edits; remainder is "frozen" (snapshot / tally prep).
+  voting_minutes: 25
+  frozen_minutes: 5
+  # `config/local/cycle-clock.json` is created by: cd apps/agent && npm run cycle:clock-init

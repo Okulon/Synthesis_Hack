@@ -1,0 +1,80 @@
+{
+  "kind": "vote-store",
+  "cycleId": 0,
+  "onChainCycleId": 0,
+  "cycleKey": "2",
+  "activeVoteCycleKey": "2",
+  "managedWindowIndex": 2,
+  "voterCount": 2,
+  "uniqueVoters": 2,
+  "votingOpen": true,
+  "snapshotBlock": null,
+  "snapshotCapturedAt": null,
+  "aggregationMode": "trust_only",
+  "warnings": [
+    "Voter 0x1111111111111111111111111111111111111111: no snapshot share — using trust-only (unit share)",
+    "Voter 0x2222222222222222222222222222222222222222: no snapshot share — using trust-only (unit share)"
+  ],
+  "voters": [
+    {
+      "address": "0x1111111111111111111111111111111111111111",
+      "trust": 1.05,
+      "weights": {
+        "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.55,
+        "0x4200000000000000000000000000000000000006": 0.45
+      },
+      "share1e18": null,
+      "votingPower": 1.05,
+      "submittedAt": "2026-03-20T12:00:00.000Z"
+    },
+    {
+      "address": "0x2222222222222222222222222222222222222222",
+      "trust": 0.95,
+      "weights": {
+        "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.4,
+        "0x4200000000000000000000000000000000000006": 0.6
+      },
+      "share1e18": null,
+      "votingPower": 0.95,
+      "submittedAt": "2026-03-20T12:30:00.000Z"
+    }
+  ],
+  "targets": {
+    "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.47875000000000006,
+    "0x4200000000000000000000000000000000000006": 0.52125
+  },
+  "managedClock": {
+    "genesisUnix": 1774029600,
+    "durationSec": 1800,
+    "votingSec": 1500,
+    "frozenSec": 300,
+    "serverNowSec": 1774033655,
+    "live": {
+      "index": 2,
+      "cycleStartSec": 1774033200,
+      "cycleEndSec": 1774035000,
+      "phase": "voting",
+      "votingSec": 1500,
+      "frozenSec": 300,
+      "durationSec": 1800,
+      "genesisUnix": 1774029600,
+      "phaseEndsAtSec": 1774034700,
+      "secondsUntilPhaseEnd": 1045,
+      "secondsUntilCycleEnd": 1345,
+      "calendarCycleStartIso": "2026-03-20T19:00:00.000Z",
+      "calendarCycleEndIso": "2026-03-20T19:30:00.000Z"
+    }
+  },
+  "governance": {
+    "quorumFraction": 0.15,
+    "approvalThresholdFraction": 0.5
+  },
+  "_meta": {
+    "votesSource": "config/local/vote-store.json",
+    "updatedAt": "2026-03-20T19:07:35.584Z",
+    "note": "Regenerate: npm run votes:export (apps/agent). See docs/CYCLES_AND_VOTING.md.",
+    "rawSum": 2,
+    "trustMass": 2,
+    "cycleLabel": "Window 2 · 2026-03-20T19:00:00.000Z"
+  }
+}

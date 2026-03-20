@@ -1,6 +1,6 @@
 # DAO Vault dashboard
 
-Read-only **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets (balances, oracle config), and **Access Control** members (from `RoleGranted` / `RoleRevoked` logs).
+Read-only **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets (balances, oracle config), **Access Control** members (from `RoleGranted` / `RoleRevoked` logs), and **Users** tab with **off-chain trust scores** (see below).
 
 ## Run (port **1337**)
 
@@ -38,9 +38,39 @@ A separate **TEST** panel (warn-styled) runs a **multi-tx** path so you can fund
 | `VITE_RPC_URL` | yes | Public HTTPS RPC for the chain |
 | `VITE_VAULT_ADDRESS` | yes | `0x…` vault |
 | `VITE_CHAIN_ID` | no | Default `84532` (Base Sepolia) |
-| `VITE_ROLE_LOGS_FROM_BLOCK` | no | If log queries time out, set to the vault’s deployment block |
+| `VITE_ROLE_LOGS_FROM_BLOCK` | no | First block for role discovery — use **vault deploy block** (from `contracts/broadcast/.../run-latest.json`) if **`AssetAllowed`** / roles are missing from default lookback |
+| `VITE_HOLDER_LOGS_FROM_BLOCK` | no | Same idea for **share `Transfer`** logs (Users tab) |
+| `VITE_ALLOCATION_VOTE_LOGS_FROM_BLOCK` | no | Same for **`AllocationBallotCast`** (Voting tab) |
 
 `VITE_*` values are **embedded in the browser bundle** — do not put private keys or paid RPC secrets you need to hide.
+
+## Allocation voting (Voting tab)
+
+- **On-chain:** connect wallet and **`castAllocationBallot`** (weights in **basis points**, one weight per **`ballotAssets[i]`** on current vault bytecode — i.e. **allowlisted** order, not “only tokens already in the vault”). **Donut chart** previews the form when percents sum to **100%**. **Aggregate targets** table + second **pie** blend **trust × shares × on-chain ballot weights** (same idea as `computeOnChainTargets` / `npm run aggregate`). **Older vault bytecode** without **`ballotAssets`**: UI falls back to **tracked** assets only and shows a **legacy** banner if **`AssetAllowed`** logs show extra allowlisted tokens — **redeploy** for full behavior.
+- **Off-cycle schedule + file export:** **trust × snapshot shares × weights** from **`allocation-votes.json`** (same math as `npm run aggregate`). See **`docs/CYCLES_AND_VOTING.md`**.
+
+1. **`config/local/vote-store.json`** — copy from `apps/agent/fixtures/vote-store.example.json`; add ballots; run **`npm run cycle:snapshot`** (RPC + `VAULT_ADDRESS`) to record **`shares1e18`** at a block.  
+   **Or** legacy **`config/local/votes.json`** only (trust-only / embedded trust per file) if `vote-store.json` is absent.
+2. From repo root:
+   ```bash
+   cd apps/agent && npm run votes:export
+   ```
+   This writes **`frontend/public/allocation-votes.json`**. The UI warns if **`onChainCycleId`** differs from on-chain `DAOVault.cycleId`.
+
+See **`docs/GOVERNANCE_VOTING.md`** — allocation votes are separate from **parameter / governance** votes.
+
+## Trust scores (Users tab)
+
+Trust multipliers match **`npm run trust`** / **`aggregate`** (CSV + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)).
+
+1. Maintain cycle returns in `config/local/trust_cycle.csv` (or rely on the fixture for demos).
+2. From repo root:
+   ```bash
+   cd apps/agent && npm run trust:export
+   ```
+   This writes **`frontend/public/trust-scores.json`**, which the Users page fetches at `/trust-scores.json`.
+
+Wallets not listed get **default 1.00** (asterisk in UI). **Influence** ≈ shares × trust (informal, not an on-chain value).
 
 ## Build
 

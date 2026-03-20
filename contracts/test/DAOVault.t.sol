@@ -314,4 +314,54 @@ contract DAOVaultTest is Test {
         emit DAOVault.CycleClosed(1, 1e18, 2e18, block.timestamp);
         vault.closeCycle(1e18, 2e18);
     }
+
+    function test_castAllocationBallot() public {
+        vm.startPrank(alice);
+        tokenA.approve(address(vault), 100 ether);
+        vault.deposit(address(tokenA), 100 ether, alice);
+        // Both allowlisted tokens are ballot slots even if only A is in the vault
+        uint256[] memory w = new uint256[](2);
+        w[0] = 6000;
+        w[1] = 4000;
+        vault.castAllocationBallot(w);
+        vm.stopPrank();
+    }
+
+    function test_castAllocationBallot_reverts_bad_sum() public {
+        vm.startPrank(alice);
+        tokenA.approve(address(vault), 100 ether);
+        vault.deposit(address(tokenA), 100 ether, alice);
+        uint256[] memory w = new uint256[](2);
+        w[0] = 5000;
+        w[1] = 1000;
+        vm.expectRevert(DAOVault.BadBallot.selector);
+        vault.castAllocationBallot(w);
+        vm.stopPrank();
+    }
+
+    function test_castAllocationBallot_reverts_no_shares() public {
+        uint256[] memory w = new uint256[](2);
+        w[0] = 5000;
+        w[1] = 5000;
+        vm.expectRevert(DAOVault.MinShares.selector);
+        vm.prank(alice);
+        vault.castAllocationBallot(w);
+    }
+
+    /// @dev one asset deposited; still vote across all allowlisted (ballot) assets
+    function test_castAllocationBallot_one_deposit_two_ballot_slots() public {
+        vm.startPrank(alice);
+        tokenA.approve(address(vault), 100 ether);
+        vault.deposit(address(tokenA), 100 ether, alice);
+        assertEq(vault.trackedAssetsLength(), 1);
+        assertEq(vault.ballotAssetsLength(), 2);
+        uint256[] memory w = new uint256[](2);
+        w[0] = 10_000;
+        w[1] = 0;
+        vault.castAllocationBallot(w);
+        w[0] = 7000;
+        w[1] = 3000;
+        vault.castAllocationBallot(w);
+        vm.stopPrank();
+    }
 }

@@ -9,7 +9,14 @@
     "plan": "node src/cli.mjs",
     "quote": "node src/quote.mjs",
     "aggregate": "node src/aggregate.mjs",
+    "votes:export": "node src/votes-export-frontend.mjs",
+    "cycle:snapshot": "node src/cycle-snapshot.mjs",
+    "cycle:clock-init": "node src/cycle-clock-init.mjs",
+    "cycle:status": "node src/cycle-status.mjs",
+    "cycle:sync": "node src/cycle-sync.mjs",
+    "cycle:daemon": "node src/cycle-daemon.mjs",
     "trust": "node src/trust.mjs",
+    "trust:export": "node src/trust-export-frontend.mjs",
     "rebalance": "node src/rebalance.mjs"
   },
   "dependencies": {

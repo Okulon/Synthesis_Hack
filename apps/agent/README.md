@@ -4,6 +4,8 @@ _Last reviewed: 2026-03-21._
 
 Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate` / `trust` (read-only).
 
+**Wall-clock cycle sync** (`cycle:sync` / `cycle:daemon`) updates the vote-store + dashboard JSON — it does **not** broadcast **`rebalance`** or **`closeCycle`** on-chain ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)).
+
 ## Setup
 
 From repo root:
@@ -23,11 +25,21 @@ Targets (gitignored):
 cp apps/agent/fixtures/targets.example.json config/local/targets.json
 ```
 
-Votes (optional):
+Votes — **prefer** cycle store ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)):
+
+```bash
+cp apps/agent/fixtures/vote-store.example.json config/local/vote-store.json
+# edit ballots; then:
+npm run cycle:snapshot   # shares at block — needs .env RPC + VAULT_ADDRESS
+```
+
+Legacy single-file:
 
 ```bash
 cp apps/agent/fixtures/votes.example.json config/local/votes.json
 ```
+
+(Used only when **`config/local/vote-store.json` is absent**.)
 
 Trust CSV (optional):
 
@@ -40,8 +52,13 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | Script | Purpose |
 |--------|---------|
 | `npm run plan` | Current vault weights vs `targets.json` + band policy → JSON (`would_trade` / `skip`) |
-| `npm run aggregate` | Trust-weighted vote aggregation → `targets` object (paste into `targets.json`) |
+| `npm run aggregate` | **Trust × snapshot shares × weights** (vote-store) or legacy trust-only → `targets` for `targets.json` |
+| `npm run votes:export` | Writes **`frontend/public/allocation-votes.json`** for dashboard **Voting** tab |
+| `npm run cycle:clock-init` / `cycle:status` / `cycle:sync` | 30m wall-clock — pin genesis, inspect, align **`vote-store`** to current window ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)) |
+| `npm run cycle:daemon` | **Keeps managing cycles**: init clock if missing, then on an interval runs **`cycle:sync`** + **`votes:export`** (`CYCLE_DAEMON_INTERVAL_SEC`, optional `CYCLE_DAEMON_TRUST_EXPORT`) |
+| `npm run cycle:snapshot` | Captures vault **share** balances at block → `config/local/vote-store.json` (needs `VAULT_ADDRESS`, RPC) |
 | `npm run trust` | Trust v0 from CSV + `config/trust/scoring.yaml` |
+| `npm run trust:export` | Writes **`frontend/public/trust-scores.json`** for dashboard Users tab |
 | `npm run quote` | Uniswap V3 **factory → pool → slot0 + liquidity** (uses `config/chain/base.yaml` or `base_sepolia.yaml` by `CHAIN_ID`) |
 | `npm run rebalance` | **Executor-only:** `vault.rebalance` WETH→USDC; **oracle vs pool mid-price guard** + **`amountOutMinimum`** from mid (+ fee fudge). See env vars below. |
 

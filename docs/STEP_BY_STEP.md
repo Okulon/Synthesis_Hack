@@ -186,7 +186,7 @@ cd frontend
 cp .env.example .env.local
 ```
 
-Edit **`frontend/.env.local`**: set **`VITE_RPC_URL`** (public HTTPS RPC for Base Sepolia) and **`VITE_VAULT_ADDRESS`** (same `0x…` as **`VAULT_ADDRESS`** in repo root). Then:
+Edit **`frontend/.env.local`**: set **`VITE_RPC_URL`** (public HTTPS RPC for Base Sepolia) and **`VITE_VAULT_ADDRESS`** (same value as **`VAULT_ADDRESS`** in repo root). Optionally set **`VITE_ROLE_LOGS_FROM_BLOCK`**, **`VITE_HOLDER_LOGS_FROM_BLOCK`**, **`VITE_ALLOCATION_VOTE_LOGS_FROM_BLOCK`** to your vault **deploy block** (from Foundry **`broadcast/.../run-latest.json`**) if role / ballot logs are truncated. Then:
 
 ```bash
 npm install

@@ -3,7 +3,7 @@
 **Working name:** DAO Agent  
 **Elevator pitch:** A pooled treasury where stakeholders vote on target portfolio weights; an autonomous executor rebalances on-chain within governance caps; influence and (eventually) profit skew reflect **trust** earned from past voting performance — without giving the agent unchecked custody.
 
-**Status:** **On-chain vault** + tests + **Base Sepolia deploy/configure scripts** ([`docs/DEPLOY.md`](../docs/DEPLOY.md)); **agent** dry-run (`plan`, `aggregate`, `trust`, `quote`); **frontend** dashboard ([`frontend/README.md`](../frontend/README.md)) with deposits + hackathon **TEST** path (ETH → WETH → Uniswap WETH→USDC → `deposit(USDC)` on Base Sepolia). **Remaining** for a full demo: documented **`VAULT_ADDRESS`** in README/config, **real `rebalance` / swap tx** from executor, optional **vote DB**. **Hackathon MVP** below is the build target; full mechanics are a north star.
+**Status:** **On-chain vault** + tests + **Base Sepolia deploy/configure scripts** ([`docs/DEPLOY.md`](../docs/DEPLOY.md)); **agent** (`plan`, `aggregate`, `trust`, `quote`, executor **`rebalance`** script — see [`apps/agent/README.md`](../apps/agent/README.md)); **frontend** dashboard with **`castAllocationBallot`**, ballot **pie** preview, on-chain aggregate **pie**, and legacy bytecode fallback ([`frontend/README.md`](../frontend/README.md)); hackathon **TEST** deposit path. **No** on-chain storage of **final aggregate targets** — ballots are **events**; **`closeCycle`** only bumps **`cycleId`**. Optional later: **`setCycleTargets`**. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
 Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps), [`vault/spec.md`](../vault/spec.md) (on-chain vault design).
 
@@ -117,20 +117,20 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 - [x] **Vault**: deposit, redeem, share accounting; events for indexer
 - [x] **Allowlist** + router allowlist on-chain; **risk caps** partially (slippage via `minAmountOut`; full `maxSlippageBps` / weight caps still backlog)
 - [ ] **Swap path** to Uniswap with **documented** slippage and **real tx** on testnet/mainnet (calldata built off-chain per `vault/spec` §4.2)
-- [ ] **Vote model** in DB *(optional for MVP — file-based votes + `aggregate` shipped)*
+- [x] **Vote model** — **file-based** `vote-store.json` + snapshots + aggregate *(DB optional later)*
 - [x] **Aggregation** — `npm run aggregate` + reproducible JSON for one demo cycle
 - [x] **Trust v0** (off-chain MVP) — `npm run trust` + [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)
 - [x] **Cycle P&L** snapshot — Tier A `CycleClosed` event + off-chain CSV path per [`vault/spec.md`](../vault/spec.md) §6
 - [x] **Rebalance band logic** (`npm run plan`) + `config/rebalancing/bands.yaml`
 - [ ] **Governance**: full on-chain timelock + votes *(hackathon: EOA `GOVERNANCE_ROLE` + [`DEPLOY.md`](../docs/DEPLOY.md) honesty)*
-- [ ] **Agent execution** (sign txs): `plan` + `quote` done; **executor `rebalance`** + keys/delegations still pending
+- [x] **Agent execution** — executor **`npm run rebalance`** ( [`apps/agent/src/rebalance.mjs`](../apps/agent/src/rebalance.mjs)); **target-aware sizing** / full automation loop still optional ([`BUILD_LOG.md`](./BUILD_LOG.md))
 - [x] **README** + **env template** + **[`DEPLOY.md`](../docs/DEPLOY.md)**; **`VAULT_ADDRESS`** TBD after your deploy
 
 ### Should-have (stronger judging / track fit)
 - [ ] **Uniswap Developer Platform** integration with **real API key** and **tx proof** (if claiming Uniswap track)
 - [ ] **Delegation / smart account** demo: agent operates under **caveats** (if claiming MetaMask track)
 - [ ] **Short video** walkthrough
-- [x] **Deployed** minimal UI — Vite dashboard in [`frontend/`](../frontend/) (NAV, deposit, Users, optional **TEST** swap-deposit for QA on testnet)
+- [x] **Deployed** minimal UI — Vite dashboard in [`frontend/`](../frontend/) (NAV, deposit, Users, **Voting** / on-chain ballots + pies, optional **TEST** swap-deposit for QA on testnet)
 
 ### Nice-to-have (time permitting)
 - [ ] Telegram **inline** vote UX with **deep links** to wallet signing

@@ -1,6 +1,6 @@
 # Governance voting — parameters & process
 
-How holders change **rules** (allowlisted tokens, venues, chains, risk caps) vs how they change **allocation** (monthly portfolio targets). Allocation voting is already in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); this doc focuses on **governance** of the system.
+How holders change **rules** (allowlisted tokens, venues, chains, risk caps) vs how they change **allocation** (monthly portfolio targets). **Allocation cycles + vote-store + snapshots** are in [`CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md) and [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); this doc focuses on **parameter governance** of the system.
 
 ---
 
@@ -12,6 +12,8 @@ How holders change **rules** (allowlisted tokens, venues, chains, risk caps) vs 
 | **Parameter / governance vote** | “Should we allow token X? Add DEX Y? Change ε?” | Ad hoc or scheduled | Same formula *or* different (see §5) |
 
 Keep them **separate in the product** so users don’t confuse “I voted my portfolio” with “I voted to change the rules.”
+
+**On-chain allocation expression (vault):** share holders may call **`castAllocationBallot`** — **`weightsBps`** align with **`ballotAssets[]`** (current bytecode). That records **per-voter** intent via **events** only; **aggregate targets** for the portfolio are still computed **off-chain** (or in the UI) unless you add a future **`setCycleTargets`**-style commitment. See [`CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md) and [`BUILD_LOG.md`](./BUILD_LOG.md).
 
 ### 1.1 — Cycle length, testing, liquidity vs voting
 

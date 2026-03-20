@@ -1,7 +1,7 @@
 # Contract and token addresses — load values from environment in application code.
 # Keys below are env var names; values must never be committed.
 #
-# After Base Sepolia deploy: set VAULT_ADDRESS in `.env` and paste the same value in the judge-facing README table.
+# After Base Sepolia deploy: set VAULT_ADDRESS in `.env`, `VITE_VAULT_ADDRESS` in `frontend/.env.local`, and paste the same value in the judge-facing README table.
 
 contracts:
   vault:

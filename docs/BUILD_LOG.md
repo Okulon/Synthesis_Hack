@@ -295,7 +295,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - Treat **`contracts/cache/`** (sensitive JSON) and **`contracts/broadcast/`** as **never commit** — scope **`.gitignore`** to **`contracts/cache/`** + **`contracts/broadcast/`** with an explicit comment (replaces broad **`cache/`** / **`broadcast/`** at repo root for clarity).
 
 ### Agent / automation
-- **On-chain:** `DeployConfigureDAOVault.s.sol` completed; **`DAOVault`** at **`0xc738Fd6CD6CDe70e30F979fe62a0332ad37a5543`** (confirm in `contracts/broadcast/.../run-latest.json` / Basescan); mock aggregators deployed in same sequence.
+- **On-chain:** `DeployConfigureDAOVault.s.sol` completed; **`DAOVault`** deployed (confirm address in **`contracts/broadcast/.../run-latest.json`** / explorer — **do not paste addresses in this log**); mock aggregators deployed in same sequence.
 - **Agent:** `npm run plan` with **`VAULT_ADDRESS`** set — **`totalNAV` `0`**, **`rows` []** (empty vault / nothing to rebalance yet); targets file was example/fixture path as printed by CLI.
 - **Repo:** [`.gitignore`](../.gitignore) updated for Foundry paths + comment.
 
@@ -427,15 +427,57 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Ballot registry vs allowlist, legacy UI, pies, env hygiene, cycle/target semantics
+
+### Goal
+- Let holders vote across **governance-allowlisted** assets (not only **tracked** vault balances) on **current** `DAOVault` bytecode.
+- Keep the **dashboard** working against **pre-upgrade** vaults (no `ballotAssets` selector).
+- Clarify what **does / does not** happen at **cycle end** and where **targets** live — **without** storing secrets or chain addresses in this file.
+
+### Contracts
+- **`ballotAssets`:** order follows **first** `setAssetAllowed(asset, true)`; removed on disallow. **`castAllocationBallot(weightsBps)`** requires `weightsBps.length == ballotAssets.length`, per-asset allowlist guard, sum **10_000** bps, **`MinShares`**, no **`pauseAll`**.
+- **`ballotAssetsLength()`** for RPC clients.
+- **Foundry:** [`DAOVault.t.sol`](../contracts/test/DAOVault.t.sol) covers multi-slot ballots (e.g. two allowlisted assets, deposit only one); **18** tests in that suite (see `forge test` locally). **Redeploy** is required for this behavior — **paste new `VAULT_ADDRESS` / `VITE_VAULT_ADDRESS` only in local env**, not in git or this log.
+
+### Frontend
+- **`fetchVaultSnapshot`:** probe **`ballotAssetsLength`** in a **multicall** with **`allowFailure: true`**; on failure → **legacy** mode: ballot rows = **tracked** only; expose **`ballotRegistryOnChain`**.
+- **`governanceAllowedAssets`:** derived from **`AssetAllowed`** logs + **`isAssetAllowed`**; **legacy banner** when the allowlist is **wider than** ballot slots (“redeploy for full on-chain ballot set”).
+- **`AllocationPieChart`:** dependency-free SVG **donut** + legend — **Cast ballot** “Preview” and **Aggregate targets** “On-chain blend” ([`AllocationPieChart.tsx`](../frontend/src/components/AllocationPieChart.tsx)).
+- **`AllocationBallotPanel`:** **`ballotAssetsLength`** wagmi read gated on **`ballotRegistryOnChain`**; **“Reset to on-chain”** = refill **local % fields** from latest **`AllocationBallotCast`** for the snapshot **`cycleId`** (**no tx**).
+
+### Env / repo hygiene (patterns only)
+- **Root `.env`:** single canonical **`VAULT_ADDRESS`** + chain vars (no duplicate blocks).
+- **Mirror** in **`frontend/.env.local`** (and optional **`frontend/.env`**): **`VITE_VAULT_ADDRESS`**, **`VITE_RPC_URL`**, **`VITE_CHAIN_ID`**; optional **`VITE_*_LOGS_FROM_BLOCK`** from **vault deploy block** in **`contracts/broadcast/.../run-latest.json`** so **`AssetAllowed`** / roles aren’t truncated by default lookback.
+- **[`.env.example`](../.env.example)** / **[`frontend/.env.example`](../frontend/.env.example):** document sync; **no real addresses or keys**.
+
+### Cycle / targets / rebalance (product truth)
+- **Off-chain wall-clock “cycle end”** (`cycle:sync` / **`cycle:daemon`**) updates **`vote-store`** / exports — **does not** auto-**`rebalance`** or auto-**`closeCycle`**.
+- **On-chain:** **`closeCycle`** (governance) only **increments `cycleId`** + **`CycleClosed`** — **no** aggregate targets written to storage.
+- **Targets:** **`castAllocationBallot`** → **events only**; aggregate weights are **off-chain** (**logs / indexer / UI math**, **`npm run aggregate`**, **`votes:export`** → **`frontend/public/allocation-votes.json`**); **`plan`** uses **`config/local/targets.json`** (operator copy). **`config/agent/runtime.yaml`** `on_cycle_close` is **aspirational** — **not** implemented as an auto-trigger in code.
+- **Future (optional):** on-chain **`setCycleTargets`** / commitment hash if **trust-minimized executor** or **dispute** surface needs it — **not required** for current MVP narrative.
+
+### Reality checks
+- Legacy vault: **cannot** submit a longer weights vector than **tracked** length without **contract upgrade / redeploy**.
+- **Rotate** any deploy key if it ever appeared in a **shared** terminal log.
+
+### Next session
+1. Optional: wire **post-frozen** export → **`targets.json`** or a small **cron** that runs **`rebalance`** when drift > band (still operator-owned).
+2. Optional: **target-aware** swap sizing from **`plan`** output.
+3. Polish **README / judge table** with **public** contract links only (no secrets).
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
-- **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`** ballot indexing on current `contracts/src/DAOVault.sol`); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
 - **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid (env-tunable; testnet bypass flag documented).
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + **Users** + **`DepositPanel`** + **`TestSwapDepositPanel`**, **Tracked assets** show **NAV weight %** (warn color) before asset name. See [`frontend/README.md`](../frontend/README.md).
-- **On-chain (Base Sepolia):** **DAOVault** deployed; **addresses** only in **local `.env`** / **`contracts/broadcast`** — not in this log. **Two** executor **`rebalance`** txs executed (WETH→USDC **SwapStep**); vault holds mixed WETH/USDC with **NAV** driven by **oracle** marks.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts** (ballot preview + aggregate targets), legacy **allowlist** banner, **NAV weight %** on tracked assets. **Addresses** only via **`VITE_*`** in **local** env; see [`frontend/README.md`](../frontend/README.md).
+- **Allocation voting (end-to-end):** **`vote-store`** + wall-clock **`cycle:*`** / **`cycle:daemon`** → **`cycle:snapshot`** (share balances) → trust-weighted **`npm run aggregate`** + **`npm run votes:export`** → **`frontend/public/allocation-votes.json`** for the **Voting** tab; holders submit **`castAllocationBallot(weightsBps)`** on **`DAOVault`** aligned to **`ballotAssets`**; UI **preview pies**, **aggregate blend**, **Reset to on-chain** from events. *(Contracts + UI + cycle semantics: **2026-03-20 — Ballot registry…** session block above this section.)*
+- **On-chain:** deploy + executor **`rebalance`** evidence live on explorer — **hashes and contract addresses stay out of this log**; use **local `.env`** and **`contracts/broadcast/`** (gitignored).
+- **`castAllocationBallot`:** current **`DAOVault`** includes **`ballotAssets`** + ballot-length voting; **older bytecode** lacks **`ballotAssetsLength`** — UI **falls back** to **tracked-only** ballot rows and shows **redeploy** guidance. Bytecode probe uses selector **`d87de598`**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) — **1 pp** epsilon floor, **min notional 0** (dollar gate off for now); **`config/local/targets.json`** gitignored — created from **aggregate** for **`plan`**.
-- **Tests:** **14** pass + **1** fork **skipped** unless `BASE_MAINNET_RPC_URL` is set (CI-safe).
+- **Tests:** **`DAOVault.t.sol`** **18** tests; other suites unchanged (**fork test** may still skip without `BASE_MAINNET_RPC_URL`).
 - **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; align **oracle** vs **pool** for coherent testnet NAV or lean on **guard** narrative; **Synthesis** draft update with demo artifacts.
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.
 - **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent (see live catalog UUIDs).

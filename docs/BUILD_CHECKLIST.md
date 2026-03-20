@@ -6,7 +6,7 @@ Use this as the **order of operations**. Check boxes as you go. Details live in 
 - **§4** = the **DAO Agent product loop** still to wire end-to-end (votes, trust-weighted targets, cycles, executor swaps, single-token exit UX, profit path).  
 - Aligns with [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 (MVP), §2.1 (bands), §2.2 (profit), §3 (architecture), §4 (backlog), §7 (open decisions).
 
-_Last reviewed: 2026-03-22._
+_Last reviewed: 2026-03-20._
 
 ---
 
@@ -61,7 +61,8 @@ _Last reviewed: 2026-03-22._
 - [x] **Executor `rebalance(SwapStep[])`** — allowlisted routers; gated **`onlyExecutor`**; pauses respected
 - [x] **Governance / safety surface** — token + router allowlists, **`pauseTrading` / `pauseDeposits` / `pauseAll`**, guardian vs governance pause story ([`docs/VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md))
 - [x] **Per-cycle P&L hook (Tier A)** — `cycleId`, **`closeCycle`**, **`CycleClosed`** with operator-posted NAV bounds ([`vault/spec.md`](../vault/spec.md) §6)
-- [x] **Foundry tests** — deposits, redeem, rebalance auth, pause, oracle paths (see `contracts/test/`); fork test optional on `BASE_MAINNET_RPC_URL`
+- [x] **Allocation ballots on-chain** — **`ballotAssets`** (allowlist order) + **`castAllocationBallot`** (bps sum 10_000); legacy deploys fall back to **tracked-only** ballot length in UI ([`BUILD_LOG.md`](./BUILD_LOG.md))
+- [x] **Foundry tests** — deposits, redeem, rebalance auth, pause, oracle paths, multi-slot ballots ( **`DAOVault.t.sol`** **18** tests); fork test optional on `BASE_MAINNET_RPC_URL`
 - [ ] **On-chain knobs still thin** — no **`maxSlippageBps`** / **`maxSingleAssetWeightBps`** / **on-chain ε**; drift + min-notional live in **YAML + `plan`** only
 - [x] **Testnet deploy path documented** — [`DEPLOY.md`](./DEPLOY.md) + `DeployConfigureDAOVault`
 - [ ] At least one **real executor `rebalance`** tx on testnet (built **`SwapStep[]`**, explorer hash) — **Uniswap track** credibility
@@ -73,8 +74,8 @@ _Last reviewed: 2026-03-22._
 This is the **story** beyond “we have a vault”: allocation **votes**, **trust × share** targets, **cycles**, **moving the vault** toward targets, **easy single-asset exit**, **profit** after a cycle.
 
 - [ ] **Cycles as a product** — define **open / close**, what gets **frozen** (target weights for cycle *N*), how **mid-cycle deposits** affect P&L/trust (document choice; may match spec default)
-- [ ] **Allocation voting** — users submit **target weights** over allowlisted assets for the active cycle; **persist** votes (DB, chain, or signed payloads — not only ad-hoc JSON for demos)
-- [ ] **Trust × share aggregation** — one pipeline: load **eligible voters**, **trust scores**, **share balances** → **single normalized target vector** per cycle (today: separate **`aggregate`** + **`trust`** CLIs, not cycle-keyed)
+- [x] **Allocation voting (MVP)** — **cycle-keyed** `vote-store.json` + operator **`cycle:snapshot`** (share `balanceOf` at block); see [`CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md) (DB / signed ballots still future)
+- [x] **Trust × share aggregation** — **`npm run aggregate`** / **`votes:export`**: **trust** (CSV) × **snapshot shares** × ballot **weights** → normalized targets; legacy **`votes.json`** if no vote-store
 - [ ] **Executor path** — read vault weights + NAV, compare to targets, apply **band rules** (`plan` logic), build **`SwapStep[]`**, set **minOut** from quotes, **`rebalance`** broadcast (or human confirm / delegation wrapper)
 - [ ] **Single-asset withdraw UX** — reliable **route + calldata builder** for `redeemToSingleAsset` in **agent and/or frontend** (users shouldn’t hand-roll Uniswap encoding)
 - [ ] **Profit after cycle** — per [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.2 + [`vault/spec.md`](../vault/spec.md) §6: **P&L** in one unit of account with **deposit/withdraw adjustments**; **profit** split with **`ŵ_i ∝ share_i × g(trust_i)`** (+ optional floor); **losses** by share only (no trust-skewed downside); **Tier A**: `CycleClosed` + auditable **CSV/JSON**; **optional** small **Merkle claim** if time ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §4 should-have path)
@@ -105,7 +106,7 @@ This is the **story** beyond “we have a vault”: allocation **votes**, **trus
 
 ## 6 — Frontend & demo UX
 
-- [x] **Dashboard** — [`frontend/`](../frontend/): NAV, pause, assets, roles, **Users** (share holders), **Deposit** (WETH / USDC / ETH→WETH)
+- [x] **Dashboard** — [`frontend/`](../frontend/): NAV, pause, assets, roles, **Users** (share holders), **Deposit** (WETH / USDC / ETH→WETH), **Voting** (on-chain ballots, **donut pies** for preview + aggregate targets, legacy allowlist banner)
 - [x] **TEST swap-deposit** (hackathon QA) — ETH → WETH → USDC → `deposit` ([`frontend/README.md`](../frontend/README.md))
 - [ ] **`redeemToSingleAsset` in UI** — pick **assetOut**, slippage, build **SwapStep[]** or call helper API
 - [ ] **Vote / cycle UX** (optional) — even a minimal **admin “set targets for cycle”** + display beats invisible JSON for judges

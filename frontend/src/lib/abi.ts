@@ -1,6 +1,10 @@
 import { parseAbi } from "viem";
 
 export const daovaultAbi = parseAbi([
+  "error Paused()",
+  "error MinShares()",
+  "error BadBallot()",
+  "error ReentrancyGuardReentrantCall()",
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function totalSupply() view returns (uint256)",
@@ -12,6 +16,8 @@ export const daovaultAbi = parseAbi([
   "function pauseDeposits() view returns (bool)",
   "function trackedAssetsLength() view returns (uint256)",
   "function trackedAssets(uint256) view returns (address)",
+  "function ballotAssetsLength() view returns (uint256)",
+  "function ballotAssets(uint256) view returns (address)",
   "function balanceOf(address account) view returns (uint256)",
   "function pricePerFullToken1e18(address) view returns (uint256)",
   "function isAssetAllowed(address) view returns (bool)",
@@ -19,6 +25,8 @@ export const daovaultAbi = parseAbi([
   "function manualPrice(address asset) view returns (uint256 price1e18, uint64 expiresAt)",
   "function navPricePerFullToken1e18(address) view returns (uint256)",
   "function deposit(address asset, uint256 amount, address receiver)",
+  "function castAllocationBallot(uint256[] weightsBps)",
+  "event AllocationBallotCast(address indexed voter, uint256 indexed cycleId, uint256[] weightsBps)",
 ]);
 
 export const erc20Abi = parseAbi([

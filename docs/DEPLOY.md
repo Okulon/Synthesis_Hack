@@ -1,6 +1,6 @@
 # Deploy on Base Sepolia (DAO Agent vault)
 
-_Last updated: 2026-03-21._
+_Last updated: 2026-03-20._
 
 **Total beginner?** Use [`STEP_BY_STEP.md`](./STEP_BY_STEP.md) first, then come back here for details.
 
@@ -43,7 +43,7 @@ Copy the logged **`DAOVault`** address into:
 - `CHAIN_ID=84532`
 - `CHAIN_RPC_URL` (same RPC you used)
 - `README` / `config/chain/contracts.yaml` (placeholders)
-- **`frontend/.env.local`** — `VITE_VAULT_ADDRESS` + `VITE_RPC_URL` (see [`frontend/README.md`](../frontend/README.md)) for the browser dashboard (**Deposit** + optional **TEST** WETH→USDC swap path)
+- **`frontend/.env.local`** (and optionally **`frontend/.env`**) — **`VITE_VAULT_ADDRESS`** + **`VITE_RPC_URL`** (must match repo-root **`VAULT_ADDRESS`**); optional **`VITE_ROLE_LOGS_FROM_BLOCK`**, **`VITE_HOLDER_LOGS_FROM_BLOCK`**, **`VITE_ALLOCATION_VOTE_LOGS_FROM_BLOCK`** set to the **deploy block** from **`contracts/broadcast/.../run-latest.json`** so log scans don’t miss **`AssetAllowed`** / ballots (see [`frontend/README.md`](../frontend/README.md))
 
 ## 3. Alternative: deploy only, configure later
 

@@ -284,6 +284,445 @@ a.ext:hover {
   letter-spacing: -0.02em;
 }
 
+.panel.nested-panel {
+  margin-top: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.panel.nested-panel h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.voting-warn {
+  color: var(--warn);
+}
+
+.vote-warnings {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 0;
+  color: var(--warn);
+}
+
+.managed-cycle.phase-voting {
+  border-color: rgba(61, 154, 139, 0.35);
+}
+
+.managed-cycle.phase-frozen {
+  border-color: rgba(212, 168, 75, 0.4);
+}
+
+/* —— Voting tab */
+.voting-page-title {
+  margin-top: 0;
+}
+
+.voting-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.voting-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.voting-card--muted {
+  opacity: 0.96;
+}
+
+.voting-card--error {
+  border-color: rgba(196, 92, 62, 0.55);
+  background: rgba(196, 92, 62, 0.07);
+}
+
+.voting-card--warn {
+  border-color: rgba(212, 168, 75, 0.45);
+}
+
+.voting-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.voting-card__header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.voting-card__sub {
+  max-width: 52ch;
+  font-size: 0.82rem;
+}
+
+.voting-card__body {
+  padding: 1rem 1.25rem;
+}
+
+.voting-card__footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.voting-card--cycle.phase-voting {
+  border-color: rgba(61, 154, 139, 0.4);
+}
+
+.voting-card--cycle.phase-frozen {
+  border-color: rgba(212, 168, 75, 0.45);
+}
+
+.voting-cycle-head-meta .phase-pill {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent2);
+}
+
+.voting-card--cycle.phase-frozen .phase-pill {
+  color: var(--warn);
+}
+
+.voting-cycle-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(11rem, auto);
+  gap: 1.5rem;
+  align-items: end;
+}
+
+@media (max-width: 720px) {
+  .voting-cycle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cycle-bar-caption {
+  margin-bottom: 0.4rem;
+}
+
+.cycle-bar-wrap {
+  position: relative;
+  height: 16px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border);
+}
+
+.cycle-bar-zones {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+
+.cycle-bar-zone--vote {
+  background: rgba(61, 154, 139, 0.22);
+}
+
+.cycle-bar-zone--frozen {
+  flex: 1;
+  background: rgba(212, 168, 75, 0.12);
+}
+
+.cycle-bar-elapsed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  max-width: 100%;
+  background: linear-gradient(90deg, rgba(232, 220, 200, 0.18), rgba(232, 220, 200, 0.04));
+  border-right: 2px solid var(--text);
+  box-sizing: border-box;
+  pointer-events: none;
+  transition: width 0.35s ease;
+  opacity: 0.95;
+}
+
+.cycle-bar-foot {
+  margin-top: 0.55rem;
+}
+
+.voting-quorum-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+}
+
+.quorum-heading {
+  width: 100%;
+}
+
+.quorum-visual {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.quorum-tower {
+  position: relative;
+  width: 36px;
+  height: 140px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.quorum-tower-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--warn);
+  z-index: 3;
+  opacity: 0.95;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.quorum-tower-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0%;
+  max-height: 100%;
+  background: linear-gradient(180deg, rgba(100, 200, 185, 0.95), rgba(61, 154, 139, 0.45));
+  border-radius: 0 0 8px 8px;
+  transition: height 0.45s ease;
+  z-index: 1;
+}
+
+.quorum-tower--met .quorum-tower-fill {
+  background: linear-gradient(180deg, #5fe0cd, var(--accent2));
+}
+
+.quorum-tower--met .quorum-tower-target {
+  background: var(--accent2);
+}
+
+.quorum-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: left;
+  margin-bottom: 0.15rem;
+}
+
+.quorum-ok {
+  color: var(--accent2);
+  font-weight: 500;
+}
+
+.quorum-warn {
+  color: var(--warn);
+}
+
+.voting-alert {
+  color: var(--warn);
+}
+
+.voting-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.voting-chip {
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.voting-chip--warn {
+  border-color: rgba(212, 168, 75, 0.55);
+  color: var(--warn);
+}
+
+.vote-status {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.vote-status--ok {
+  color: var(--accent2);
+  border-color: rgba(61, 154, 139, 0.45);
+  background: rgba(61, 154, 139, 0.1);
+}
+
+.vote-status--pending {
+  color: var(--muted);
+}
+
+.ballot-weights {
+  vertical-align: top;
+}
+
+.ballot-weight-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  max-width: 28rem;
+}
+
+.ballot-weight-list li {
+  margin-bottom: 0.2rem;
+}
+
+.allocation-ballot-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.allocation-ballot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.allocation-ballot-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.allocation-ballot-input {
+  width: 5.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+}
+
+.allocation-ballot-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.allocation-ballot-panel__power {
+  color: var(--muted);
+}
+
+.allocation-ballot-panel__power strong {
+  color: var(--text);
+}
+
+.allocation-ballot-chart-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.25rem 1.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.allocation-ballot-chart-row .allocation-ballot-chart-fields {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.allocation-pie {
+  flex: 0 0 auto;
+}
+
+.allocation-pie__title {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.allocation-pie__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.25rem;
+}
+
+.allocation-pie__svg {
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+}
+
+.allocation-pie__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 8.5rem;
+}
+
+.allocation-pie__legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.84rem;
+}
+
+.allocation-pie__swatch {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.allocation-pie__legend-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.allocation-pie__legend-pct {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.allocation-pie--empty .allocation-pie__empty {
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.voting-aggregate-split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.25rem 2rem;
+}
+
+.voting-aggregate-split .table-wrap {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
 .panel.setup .lede {
   color: var(--muted);
   max-width: 52ch;
@@ -423,6 +862,22 @@ td.mono.sm,
 .muted.small,
 .small {
   font-size: 0.82rem;
+}
+
+.trust-scores-hint code {
+  font-size: 0.85em;
+}
+
+.trust-score.trust-default {
+  color: var(--muted);
+}
+
+.trust-score.trust-high {
+  color: var(--accent2);
+}
+
+.trust-score.trust-low {
+  color: var(--warn);
 }
 
 .empty-hint {

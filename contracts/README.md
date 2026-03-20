@@ -68,7 +68,7 @@ Addresses: [`script/BaseSepolia.sol`](script/BaseSepolia.sol).
 
 | Contract     | Role |
 |-------------|------|
-| `DAOVault` | Multi-asset share token; `deposit` / `redeemToSingleAsset` (user `SwapStep` calldata) / `redeemProRata`; `rebalance` (executor); **Chainlink-style oracles** + optional cross-check / fallback + **expiring manual price**; Tier A `closeCycle` event. |
+| `DAOVault` | Multi-asset share token; `deposit` / `redeemToSingleAsset` (user `SwapStep` calldata) / `redeemProRata`; `rebalance` (executor); **`ballotAssets`** (allowlist order) + **`castAllocationBallot`** (events only — no stored aggregate targets); **Chainlink-style oracles** + optional cross-check / fallback + **expiring manual price**; Tier A `closeCycle` event. |
 
 **Pricing & votes:** see [`../docs/VAULT_ORACLE_AND_GOVERNANCE.md`](../docs/VAULT_ORACLE_AND_GOVERNANCE.md). **Only `GOVERNANCE_ROLE`** (timelock after share-votes) may change parameters **including** pause, executor, cycle close, oracles, allowlists. The **executor** only **`rebalance`s**.
 

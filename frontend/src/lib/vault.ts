@@ -20,6 +20,10 @@ const roleRevokedEvent = parseAbiItem(
 const transferEvent = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 );
+const allocationBallotEvent = parseAbiItem(
+  "event AllocationBallotCast(address indexed voter, uint256 indexed cycleId, uint256[] weightsBps)"
+);
+const assetAllowedEvent = parseAbiItem("event AssetAllowed(address indexed asset, bool allowed)");
 
 /** Public RPCs (e.g. `https://sepolia.base.org`) cap `eth_getLogs` to a 10,000-block window per request. */
 const ETH_GETLOGS_MAX_INCLUSIVE_SPAN = 10_000n;
@@ -30,14 +34,19 @@ const ETH_GETLOGS_MAX_INCLUSIVE_SPAN = 10_000n;
  */
 export const DEFAULT_ROLE_LOOKBACK_BLOCKS = 100_000n;
 
-type VaultLogEvent = typeof roleGrantedEvent | typeof roleRevokedEvent | typeof transferEvent;
+type VaultLogEvent =
+  | typeof roleGrantedEvent
+  | typeof roleRevokedEvent
+  | typeof transferEvent
+  | typeof allocationBallotEvent
+  | typeof assetAllowedEvent;
 
 async function getLogsChunked(
   client: PublicClient,
   q: {
     address: Address;
     event: VaultLogEvent;
-    args?: { role?: Hex };
+    args?: { role?: Hex; cycleId?: bigint };
     fromBlock: bigint;
     toBlock: bigint;
   }
@@ -85,6 +94,14 @@ export type AssetRow = {
   legacyNav1e18: bigint;
 };
 
+/** Allowlisted ballot slot order (matches `ballotAssets` / `castAllocationBallot` indices). */
+export type BallotAssetRow = {
+  address: Address;
+  name: string;
+  symbol: string;
+  decimals: number;
+};
+
 export type RoleSlice = {
   label: string;
   role: `0x${string}`;
@@ -96,6 +113,14 @@ export type HolderRow = {
   balance: bigint;
 };
 
+/** Latest on-chain ballot per voter for the snapshot `cycleId` (see `castAllocationBallot`). */
+export type OnChainAllocationBallot = {
+  voter: Address;
+  weightsBps: number[];
+  blockNumber: bigint;
+  logIndex: number;
+};
+
 export type VaultSnapshot = {
   chainId: number;
   blockNumber: bigint;
@@ -103,6 +128,8 @@ export type VaultSnapshot = {
   roleLogScan: { fromBlock: bigint; toBlock: bigint };
   /** Share-holder `Transfer` logs were scanned in `[from, to]`. */
   holderLogScan: { fromBlock: bigint; toBlock: bigint };
+  /** `AllocationBallotCast` logs for the current `cycleId` in `[from, to]`. */
+  allocationVoteLogScan: { fromBlock: bigint; toBlock: bigint };
   vault: Address;
   vaultName: string;
   vaultSymbol: string;
@@ -114,8 +141,18 @@ export type VaultSnapshot = {
   pauseTrading: boolean;
   pauseDeposits: boolean;
   assets: AssetRow[];
+  ballotAssets: BallotAssetRow[];
+  /** `false` if vault bytecode has no `ballotAssets` registry (legacy: ballot indices follow `trackedAssets`). */
+  ballotRegistryOnChain: boolean;
+  /**
+   * Tokens currently `isAssetAllowed` (from `AssetAllowed` logs + on-chain verify). On legacy vaults this can be
+   * wider than {@link ballotAssets} — voting still must follow ballot slots only.
+   */
+  governanceAllowedAssets: BallotAssetRow[];
   roles: RoleSlice[];
   holders: HolderRow[];
+  /** Deduped: newest log per voter for `cycleId` only. */
+  onChainAllocationBallots: OnChainAllocationBallot[];
 };
 
 const KNOWN: Record<string, string> = {
@@ -255,6 +292,100 @@ async function readRoleMembersFromLogs(
   return { label, role, members: [...set].map((a) => getAddress(a as Address)) };
 }
 
+/** Latest allow-state per asset from `AssetAllowed` in `[fromBlock, toBlock]` (same caveats as role log lookback). */
+async function readGovernanceAllowedAssetAddresses(
+  client: PublicClient,
+  vault: Address,
+  fromBlock: bigint,
+  toBlock: bigint,
+): Promise<Address[]> {
+  const logs = await getLogsChunked(client, {
+    address: vault,
+    event: assetAllowedEvent,
+    fromBlock,
+    toBlock,
+  });
+
+  type Log = {
+    blockNumber?: bigint | null;
+    logIndex?: number | null;
+    args?: { asset?: Address; allowed?: boolean };
+  };
+  const latest = new Map<string, { addr: Address; allowed: boolean; block: bigint; li: number }>();
+
+  for (const log of logs as Log[]) {
+    const asset = log.args?.asset;
+    const allowed = log.args?.allowed;
+    if (asset === undefined || allowed === undefined) continue;
+    const addr = getAddress(asset);
+    const key = addr.toLowerCase();
+    const block = log.blockNumber ?? 0n;
+    const li = log.logIndex ?? 0;
+    const prev = latest.get(key);
+    if (!prev || block > prev.block || (block === prev.block && li > prev.li)) {
+      latest.set(key, { addr, allowed, block, li });
+    }
+  }
+  return [...latest.values()]
+    .filter((x) => x.allowed)
+    .map((x) => x.addr)
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
+async function readAllocationBallotsForCycle(
+  client: PublicClient,
+  vault: Address,
+  fromBlock: bigint,
+  toBlock: bigint,
+  cycleId: bigint
+): Promise<OnChainAllocationBallot[]> {
+  const logs = await getLogsChunked(client, {
+    address: vault,
+    event: allocationBallotEvent,
+    args: { cycleId },
+    fromBlock,
+    toBlock,
+  });
+
+  type BallotLog = {
+    blockNumber?: bigint | null;
+    logIndex?: number | null;
+    args?: { voter?: Address; cycleId?: bigint; weightsBps?: readonly bigint[] };
+  };
+
+  const best = new Map<
+    string,
+    { voter: Address; weightsBps: number[]; blockNumber: bigint; logIndex: number }
+  >();
+
+  for (const log of logs as BallotLog[]) {
+    const voter = log.args?.voter;
+    const weightsBps = log.args?.weightsBps;
+    if (!voter || !weightsBps) continue;
+    const key = voter.toLowerCase();
+    const blockNumber = log.blockNumber ?? 0n;
+    const logIndex = log.logIndex ?? 0;
+    const prev = best.get(key);
+    if (!prev || blockNumber > prev.blockNumber || (blockNumber === prev.blockNumber && logIndex > prev.logIndex)) {
+      best.set(key, {
+        voter: getAddress(voter),
+        weightsBps: [...weightsBps].map((x) => Number(x)),
+        blockNumber,
+        logIndex,
+      });
+    }
+  }
+
+  return [...best.values()]
+    .sort((a, b) => (a.blockNumber === b.blockNumber ? a.logIndex - b.logIndex : a.blockNumber < b.blockNumber ? -1 : 1))
+    .map((b) => ({
+      voter: b.voter,
+      weightsBps: b.weightsBps,
+      blockNumber: b.blockNumber,
+      logIndex: b.logIndex,
+    }));
+}
+
 async function readHoldersFromLogs(
   client: PublicClient,
   vault: Address,
@@ -286,7 +417,11 @@ async function readHoldersFromLogs(
 export async function fetchVaultSnapshot(
   client: PublicClient,
   vaultAddress: string,
-  options?: { roleLogsFromBlock?: bigint; holderLogsFromBlock?: bigint }
+  options?: {
+    roleLogsFromBlock?: bigint;
+    holderLogsFromBlock?: bigint;
+    allocationVoteLogsFromBlock?: bigint;
+  }
 ): Promise<VaultSnapshot> {
   const cleaned = normalizeEnvString(vaultAddress);
   if (!cleaned) {
@@ -344,6 +479,30 @@ export async function fetchVaultSnapshot(
     }
   }
 
+  /** Newer DAOVault exposes `ballotAssets*`; older bytecode reverts — fall back to `trackedAssets` order (legacy ballots). */
+  const ballotLenProbe = await client.multicall({
+    contracts: [{ address: vault, abi: daovaultAbi, functionName: "ballotAssetsLength" }],
+    allowFailure: true,
+  });
+  const ballotProbeRow = ballotLenProbe[0];
+  const hasBallotRegistry =
+    ballotProbeRow.status === "success" && typeof ballotProbeRow.result === "bigint";
+  const ballotLen = hasBallotRegistry ? (ballotProbeRow.result as bigint) : trackedLen;
+
+  const ballotAddrs: Address[] = [];
+  if (hasBallotRegistry && ballotLen > 0n) {
+    const ballotCalls = Array.from({ length: Number(ballotLen) }, (_, i) => ({
+      address: vault,
+      abi: daovaultAbi,
+      functionName: "ballotAssets" as const,
+      args: [BigInt(i)] as const,
+    }));
+    const br = await client.multicall({ contracts: ballotCalls, allowFailure: false });
+    for (const row of br) {
+      ballotAddrs.push(getAddress(mc(row) as Address));
+    }
+  }
+
   const assetRows: AssetRow[] = [];
   for (const asset of tracked) {
     const chunk = await client.multicall({
@@ -397,6 +556,48 @@ export async function fetchVaultSnapshot(
     });
   }
 
+  let ballotAssetRows: BallotAssetRow[] = [];
+  if (hasBallotRegistry) {
+    for (const asset of ballotAddrs) {
+      const meta = await client.multicall({
+        contracts: [
+          { address: asset, abi: erc20Abi, functionName: "symbol" },
+          { address: asset, abi: erc20Abi, functionName: "decimals" },
+          { address: asset, abi: erc20Abi, functionName: "name" },
+        ],
+        allowFailure: false,
+      });
+      const symbol = mc(meta[0]) as string;
+      const decimals = Number(mc(meta[1]) as number);
+      const name = mc(meta[2]) as string;
+      ballotAssetRows.push({
+        address: asset,
+        name: labelAddr(asset) || name,
+        symbol,
+        decimals,
+      });
+    }
+  } else {
+    const byAddr = new Map(assetRows.map((r) => [r.address.toLowerCase(), r] as const));
+    ballotAssetRows = tracked.map((addr) => {
+      const r = byAddr.get(addr.toLowerCase());
+      if (!r) {
+        return {
+          address: addr,
+          name: labelAddr(addr),
+          symbol: shortAddr(addr, 4),
+          decimals: 18,
+        };
+      }
+      return {
+        address: r.address,
+        name: r.name,
+        symbol: r.symbol,
+        decimals: r.decimals,
+      };
+    });
+  }
+
   /** `undefined` → last {@link DEFAULT_ROLE_LOOKBACK_BLOCKS} blocks (public RPC-safe). `0n` → genesis (chunked). */
   const roleFrom =
     options?.roleLogsFromBlock !== undefined
@@ -410,6 +611,41 @@ export async function fetchVaultSnapshot(
     readRoleMembersFromLogs(client, vault, GUARDIAN_ROLE, "Guardian", roleFrom, blockNumber),
     readRoleMembersFromLogs(client, vault, DEFAULT_ADMIN_ROLE, "Admin (default)", roleFrom, blockNumber),
   ]);
+
+  const candidateAllowed = await readGovernanceAllowedAssetAddresses(client, vault, roleFrom, blockNumber);
+  let governanceAllowedAssets: BallotAssetRow[] = [];
+  if (candidateAllowed.length > 0) {
+    const verifyCalls = candidateAllowed.map((addr) => ({
+      address: vault,
+      abi: daovaultAbi,
+      functionName: "isAssetAllowed" as const,
+      args: [addr] as const,
+    }));
+    const ver = await client.multicall({ contracts: verifyCalls, allowFailure: true });
+    const stillAllowed: Address[] = [];
+    for (let i = 0; i < candidateAllowed.length; i += 1) {
+      const row = ver[i];
+      if (row.status === "success" && row.result === true) stillAllowed.push(candidateAllowed[i]!);
+    }
+    if (stillAllowed.length > 0) {
+      const metaContracts = stillAllowed.flatMap((asset) => [
+        { address: asset, abi: erc20Abi, functionName: "symbol" as const },
+        { address: asset, abi: erc20Abi, functionName: "decimals" as const },
+        { address: asset, abi: erc20Abi, functionName: "name" as const },
+      ]);
+      const metaRes = await client.multicall({ contracts: metaContracts, allowFailure: false });
+      for (let i = 0; i < stillAllowed.length; i += 1) {
+        const asset = stillAllowed[i]!;
+        const b = i * 3;
+        governanceAllowedAssets.push({
+          address: asset,
+          name: labelAddr(asset) || (mc(metaRes[b + 2]) as string),
+          symbol: mc(metaRes[b]) as string,
+          decimals: Number(mc(metaRes[b + 1]) as number),
+        });
+      }
+    }
+  }
 
   const holderFrom =
     options?.holderLogsFromBlock !== undefined
@@ -435,11 +671,25 @@ export async function fetchVaultSnapshot(
     holders.sort((a, b) => (a.balance === b.balance ? 0 : a.balance > b.balance ? -1 : 1));
   }
 
+  const allocationVoteFrom =
+    options?.allocationVoteLogsFromBlock !== undefined
+      ? options.allocationVoteLogsFromBlock
+      : holderFrom;
+
+  const onChainAllocationBallots = await readAllocationBallotsForCycle(
+    client,
+    vault,
+    allocationVoteFrom,
+    blockNumber,
+    cycleId
+  );
+
   return {
     chainId,
     blockNumber,
     roleLogScan: { fromBlock: roleFrom, toBlock: blockNumber },
     holderLogScan: { fromBlock: holderFrom, toBlock: blockNumber },
+    allocationVoteLogScan: { fromBlock: allocationVoteFrom, toBlock: blockNumber },
     vault,
     vaultName,
     vaultSymbol,
@@ -451,8 +701,12 @@ export async function fetchVaultSnapshot(
     pauseTrading,
     pauseDeposits,
     assets: assetRows,
+    ballotAssets: ballotAssetRows,
+    ballotRegistryOnChain: hasBallotRegistry,
+    governanceAllowedAssets,
     roles: [admin, gov, guardian],
     holders,
+    onChainAllocationBallots,
   };
 }
 

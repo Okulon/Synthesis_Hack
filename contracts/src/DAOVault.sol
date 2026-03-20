@@ -61,6 +61,10 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
     address[] public trackedAssets;
     mapping(address => bool) public isTrackedAsset;
 
+    /// @notice Allocation ballots use this order: assets governance has allowlisted (`setAssetAllowed`), independent of vault balances.
+    address[] public ballotAssets;
+    mapping(address => bool) public isBallotAssetListed;
+
     uint256 public cycleId;
 
     event Deposit(address indexed caller, address indexed receiver, address indexed asset, uint256 amount, uint256 shares);
@@ -79,6 +83,9 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
     event PauseUpdated(bool pauseAll, bool pauseTrading, bool pauseDeposits);
     event GuardianPause(address indexed guardian, string kind);
 
+    /// @notice On-chain allocation ballot for the current `cycleId`. `weightsBps[i]` aligns with `ballotAssets[i]` (allowlisted assets); must sum to 10_000 (100.00%). Latest log per voter wins off-chain.
+    event AllocationBallotCast(address indexed voter, uint256 indexed cycleId, uint256[] weightsBps);
+
     error ZeroAddress();
     error AssetNotAllowed();
     error RouterNotAllowed();
@@ -91,6 +98,7 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
     error NotExecutor();
     error OracleUnavailable();
     error OracleDeviation();
+    error BadBallot();
 
     /// @param governance Timelock after votes — `GOVERNANCE_ROLE` + `DEFAULT_ADMIN_ROLE` (can grant `GUARDIAN_ROLE`).
     /// @param guardian Optional multisig / committee for **emergency pause only** (`address(0)` to add guardians later via governance).
@@ -157,6 +165,8 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
         if (asset == address(0)) revert ZeroAddress();
         isAssetAllowed[asset] = allowed;
         emit AssetAllowed(asset, allowed);
+        if (allowed) _addBallotAsset(asset);
+        else _removeBallotAsset(asset);
     }
 
     function setRouterAllowed(address router, bool allowed) external onlyRole(GOVERNANCE_ROLE) {
@@ -208,7 +218,27 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
         emit CycleClosed(cycleId, navStart, navEnd, block.timestamp);
     }
 
+    /// @notice Record an allocation ballot for the current `cycleId`. UI/indexers should use the latest `AllocationBallotCast` per voter per cycle.
+    function castAllocationBallot(uint256[] calldata weightsBps) external nonReentrant {
+        if (pauseAll) revert Paused();
+        if (balanceOf(msg.sender) == 0) revert MinShares();
+        uint256 n = ballotAssets.length;
+        if (n == 0) revert BadBallot();
+        if (weightsBps.length != n) revert BadBallot();
+        uint256 sum;
+        for (uint256 i; i < n; ++i) {
+            if (!isAssetAllowed[ballotAssets[i]]) revert BadBallot();
+            sum += weightsBps[i];
+        }
+        if (sum != 10_000) revert BadBallot();
+        emit AllocationBallotCast(msg.sender, cycleId, weightsBps);
+    }
+
     // --- Views ---
+
+    function ballotAssetsLength() external view returns (uint256) {
+        return ballotAssets.length;
+    }
 
     function trackedAssetsLength() external view returns (uint256) {
         return trackedAssets.length;
@@ -299,6 +329,26 @@ contract DAOVault is ERC20, ERC20Burnable, AccessControl, ReentrancyGuard {
         if (!isTrackedAsset[asset]) {
             isTrackedAsset[asset] = true;
             trackedAssets.push(asset);
+        }
+    }
+
+    function _addBallotAsset(address asset) internal {
+        if (!isBallotAssetListed[asset]) {
+            isBallotAssetListed[asset] = true;
+            ballotAssets.push(asset);
+        }
+    }
+
+    function _removeBallotAsset(address asset) internal {
+        if (!isBallotAssetListed[asset]) return;
+        isBallotAssetListed[asset] = false;
+        uint256 n = ballotAssets.length;
+        for (uint256 i; i < n; ++i) {
+            if (ballotAssets[i] == asset) {
+                ballotAssets[i] = ballotAssets[n - 1];
+                ballotAssets.pop();
+                return;
+            }
         }
     }
 

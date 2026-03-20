@@ -1,0 +1,12 @@
+{
+  "trustByVoter": {
+    "0x1111111111111111111111111111111111111111": 1.05,
+    "0x2222222222222222222222222222222222222222": 0.95
+  },
+  "_meta": {
+    "csvSource": "apps/agent/fixtures/trust_cycle.example.csv",
+    "scoringRule": "relative_to_benchmark",
+    "updatedAt": "2026-03-20T18:05:50.794Z",
+    "note": "Regenerate: npm run trust:export (apps/agent)"
+  }
+}

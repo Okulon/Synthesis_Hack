@@ -4,7 +4,7 @@
 
 Built for **[The Synthesis](https://synthesis.md/)** hackathon (agentic × Ethereum).
 
-> **Status:** Foundry **`DAOVault`** + tests; **[`docs/DEPLOY.md`](docs/DEPLOY.md)** (Base Sepolia **DeployConfigure** one-shot + configure-only script); **agent** [`plan` / `aggregate` / `trust` / `quote`](apps/agent/README.md) (dry-run); **frontend** dashboard ([`frontend/README.md`](frontend/README.md)) with **Deposit** + hackathon **TEST** path (ETH → wrap → Uniswap v3 WETH→USDC → `deposit(USDC)` — not production). **You still:** broadcast deploy, paste **`VAULT_ADDRESS`**, add **real rebalance tx** + optional vote DB. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
+> **Status:** Foundry **`DAOVault`** + tests (incl. **`ballotAssets`**-indexed **`castAllocationBallot`** on current bytecode); **[`docs/DEPLOY.md`](docs/DEPLOY.md)** (Base Sepolia **DeployConfigure** one-shot); **agent** [`plan` / `aggregate` / `trust` / `quote` / `rebalance`](apps/agent/README.md); **frontend** ([`frontend/README.md`](frontend/README.md)) — **Deposit**, **Voting** (on-chain ballots + **pie** previews, trust-weighted aggregate table, legacy-vault fallback when bytecode predates **`ballotAssets`**), hackathon **TEST** swap path. **Aggregate targets** for **`plan`** stay **off-chain** (JSON / events), not written into vault storage. Session details: [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md).
 
 ---
 

@@ -84,8 +84,9 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 
 ---
 
-## 8 — Per-cycle P&L surface ([`spec.md` §6](spec.md) — Tier A bias)
+## 8 — Per-cycle P&L + on-chain allocation ballot ([`spec.md` §6](spec.md) — Tier A bias)
 
+- [x] **On-chain allocation ballot** — **`castAllocationBallot(weightsBps)`** keyed to **`cycleId`**; **`ballotAssets[]`** mirrors governance allowlist order (**not** vault balances); weights are **not** aggregated or stored in contract state (indexer / off-chain math)
 - [x] **`cycleId`** + **`closeCycle`** (`onlyOwner`)
 - [x] **`CycleClosed(cycleId, navStart, navEnd, timestamp)`** — NAV bounds operator-posted (Tier A trust model)
 - [x] **Emit** NAV fields (no extra on-chain storage required for Tier A)

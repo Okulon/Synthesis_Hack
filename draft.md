@@ -13,7 +13,7 @@
     "fdb76d08812b43f6a5f454744b66f590",
     "bf374c2134344629aaadb5d6e639e840"
   ],
-  "conversationLog": "Project built iteratively in a human-agent workflow documented in docs/BUILD_LOG.md. Core milestones include: defining MVP scope and governance model; implementing DAOVault contract + tests; deploying to Base Sepolia; building agent modules (plan/aggregate/trust/quote); and shipping a frontend dashboard for vault state and deposit flows. The collaboration log captures decisions, tradeoffs, risks, and next steps session-by-session, including the current scope lock: Base + Uniswap + delegation-style bounded execution narrative.",
+  "conversationLog": "Project built iteratively in a human-agent workflow documented in docs/BUILD_LOG.md. Core milestones include: MVP scope and governance model; DAOVault + tests (including ballotAssets-indexed castAllocationBallot); Base Sepolia deploy/configure; agent modules (plan, aggregate, trust, quote, executor rebalance); frontend dashboard (deposits, voting with on-chain ballots + pie charts, legacy-vault fallback, aggregate targets from events); env and docs hygiene without committing secrets. Latest session notes: wall-clock cycle end does not auto-rebalance; closeCycle does not store aggregate targets on-chain. Scope: Base + Uniswap + delegation-style bounded execution narrative.",
   "submissionMetadata": {
     "agentFramework": "other",
     "agentFrameworkOther": "custom Foundry + Node.js agent modules + Vite React frontend",

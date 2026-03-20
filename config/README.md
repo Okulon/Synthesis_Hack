@@ -22,7 +22,7 @@ YAML here holds **non-secret defaults** and structure. **Secrets** (`TELEGRAM_BO
 Recommended load order (agent implements **1 + 3** today; **2** optional):
 
 1. `config/**/*.yaml` (defaults)
-2. `config/local/**` — `targets.json`, `votes.json`, `trust_cycle.csv` (gitignored; see [`docs/DEPLOY.md`](../docs/DEPLOY.md))
+2. `config/local/**` — `targets.json`, **`vote-store.json`** (cycle ballots + share snapshot), `votes.json` (legacy), `trust_cycle.csv` (gitignored; see [`docs/DEPLOY.md`](../docs/DEPLOY.md), [`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md))
 3. Environment variables (highest priority for addresses, RPC URLs, tokens)
 
 `config/local/` is optional per-developer overrides; add `config/local/` to `.gitignore` when you create it.

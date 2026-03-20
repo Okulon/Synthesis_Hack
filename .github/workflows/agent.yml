@@ -25,4 +25,5 @@ jobs:
           cache-dependency-path: apps/agent/package-lock.json
       - run: npm ci
       - run: node src/aggregate.mjs
+      - run: node src/votes-export-frontend.mjs
       - run: node src/trust.mjs

@@ -16,7 +16,7 @@ Synthesis_Hack/
 ├── .env.example              # Secret *names* only; copy to .gitignored `.env`
 ├── .gitignore
 ├── .github/workflows/        # Foundry CI + apps/agent CI
-├── frontend/                 # Vite dashboard (port 1337): reads, deposit, TEST swap path — frontend/README.md
+├── frontend/                 # Vite dashboard (port 1337): reads, deposit, TEST swap path, public/trust-scores.json + allocation-votes.json — frontend/README.md
 ├── config/                   # Non-secret YAML defaults (see config/README.md)
 │   ├── agent/                # Worker loop, execution limits
 │   ├── chain/                # Base metadata, contract env keys
@@ -31,6 +31,7 @@ Synthesis_Hack/
 └── docs/
     ├── PROJECT_SPEC.md       # MVP, mechanics, backlog
     ├── GOVERNANCE_VOTING.md # How params vs allocation votes work
+    ├── CYCLES_AND_VOTING.md # Cycle-keyed vote-store + trust × share aggregation
     ├── BUILD_LOG.md         # Chronological build narrative
     ├── BUILD_CHECKLIST.md   # Ordered tasks to submission
     └── DEPLOY.md             # Base Sepolia deploy + agent wiring
@@ -171,7 +172,8 @@ Once the vault stores governance values on-chain, **chain wins** over file defau
 ## Related links
 
 - [`README.md`](README.md) — quick start and disclaimer  
-- [`frontend/README.md`](frontend/README.md) — dashboard (port 1337), Deposit + **TEST** swap path  
+- [`frontend/README.md`](frontend/README.md) — dashboard (port 1337), Deposit + **TEST** swap path, **Voting** (`castAllocationBallot`, SVG **pie** charts, **`ballotAssets`** vs legacy **tracked** fallback)  
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — Base Sepolia deploy + configure  
 - [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) — MVP and rebalance bands §2.1  
 - [`docs/GOVERNANCE_VOTING.md`](docs/GOVERNANCE_VOTING.md) — two vote streams  
+- [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md) — ballot registry, env **`VITE_`** mirroring, cycle/target semantics (no secrets in log)  
