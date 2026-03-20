@@ -46,6 +46,7 @@ vault/
 contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
 frontend/                     # Vite React dashboard — NAV, deposit, Users; TEST = WETH→USDC swap + USDC deposit (see frontend/README.md)
 apps/agent/                   # Node (viem): `plan` | `aggregate` | `trust` | `quote` — see apps/agent/README.md
+apps/agent/skills/            # Agent task playbooks: rebalancing, execution (rebalance tx)
 apps/bot/     (optional)     # Telegram webhook / long-poll service
 ```
 

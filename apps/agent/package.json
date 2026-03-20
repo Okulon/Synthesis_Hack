@@ -9,7 +9,8 @@
     "plan": "node src/cli.mjs",
     "quote": "node src/quote.mjs",
     "aggregate": "node src/aggregate.mjs",
-    "trust": "node src/trust.mjs"
+    "trust": "node src/trust.mjs",
+    "rebalance": "node src/rebalance.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

@@ -475,6 +475,16 @@ export function formatNav1e18(n: bigint, fractionDigits = 2): string {
   });
 }
 
+/** Share of total NAV for one asset (same units as `valueNav1e18` / `totalNAV1e18`). */
+export function formatAssetWeightPct(valueNav1e18: bigint, totalNAV1e18: bigint): string {
+  if (totalNAV1e18 === 0n) return "—";
+  // two decimal places: value/total * 100 == (value * 10000) / total / 100
+  const p100 = (valueNav1e18 * 10_000n) / totalNAV1e18;
+  const intPart = p100 / 100n;
+  const frac = p100 % 100n;
+  return `${intPart}.${frac.toString().padStart(2, "0")}%`;
+}
+
 export function shortAddr(a: string, n = 4): string {
   if (!a.startsWith("0x") || a.length < 10) return a;
   return `${a.slice(0, 2 + n)}…${a.slice(-n)}`;

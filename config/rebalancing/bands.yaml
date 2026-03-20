@@ -1,17 +1,23 @@
 # Rebalance band policy — aligns with docs/PROJECT_SPEC.md §2.1
 # Governance may override these on-chain or via DB; this file is agent bootstrap / fallback.
+#
+# Plan uses BOTH gates (AND):
+#   1) Drift must be >= global_epsilon_pp (or per-asset override), in percentage points.
+#   2) notionalRough must be >= min_trade_notional_quote (quote/USDC-ish); if 0, gate is off.
+# For now: percentage on, dollar floor off — raise min_trade_notional_quote when you want both.
 
 rebalancing:
   # How drift is measured: "absolute_pp" = |w_current - w_target| in percentage points (0–100 scale)
   # Alternative: "relative" = drift / max(w_target, epsilon_floor)
   drift_metric: absolute_pp
-  # Global minimum drift (percentage points) before an asset qualifies for a rebalance trade
-  # Example: 2.0 means 89.99% vs 90.00% target does not trade (drift 0.01 pp)
-  global_epsilon_pp: 2.0
+  # Global minimum drift (percentage points) before an asset may trade.
+  # Drift = |w_current − w_target| × 100  (e.g. 50% vs 51% target → 1 pp drift).
+  # 1.0 = do not rebalance if we are within 1 percentage point of target on that asset.
+  global_epsilon_pp: 1.0
   # Optional per-asset overrides (symbol -> epsilon_pp); omit to use global only
   per_asset_epsilon_pp: {}
-  # Skip trades smaller than this notional in quote currency (USDC units on Base)
-  min_trade_notional_quote: 25.0
+  # Flat dollar floor (quote / USDC-ish). 0 = disabled for now; still wired so you can set e.g. 25 later.
+  min_trade_notional_quote: 0
   # Floor on target weight when using relative metric (avoid div-by-zero)
   relative_metric_floor_pp: 0.01
 

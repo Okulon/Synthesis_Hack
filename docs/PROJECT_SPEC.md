@@ -36,12 +36,28 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 | **Chain** | Single L2 — **Base** (provisional; change only via `BUILD_LOG`). |
 | **Assets** | **2–3 allowlisted** ERC-20s (e.g. USDC + WETH + one volatile) — governance-controlled list. |
 | **Execution** | **Uniswap** (v3/v4 or API-assisted) swaps only; **real tx hashes** on testnet or mainnet. |
-| **Vault** | Users **deposit/withdraw** shares; minimal correct accounting for **no mid-cycle deposits** or document simplified assumptions. **Per-cycle NAV / P&L** surfaced for trust updates & profit split ([`vault/spec.md`](../vault/spec.md) §6). |
+| **Vault** | Users **deposit/withdraw anytime** (unless paused); **voting** uses a **snapshot** — new depositors vote **next** cycle ([`vault/spec.md`](../vault/spec.md) §3). **Per-cycle NAV / P&L** for trust updates & profit split ([`vault/spec.md`](../vault/spec.md) §6). |
 | **Votes** | One **cycle** demonstrable: collect votes (Telegram and/or web), compute **aggregate weights**, show math in logs/README. |
 | **Trust v0** | **One** benchmark, **one** update rule, **one** rolling window (e.g. last N cycles); output **auditable** (CSV or JSON + short explanation). |
 | **Agent** | Off-chain worker: fetch state, compute target vs holdings, **apply rebalance bands** (see §2.1), **build minimal trade list**, enforce caps, **submit txs** (or propose txs until delegation path is complete). |
 | **Telegram** | **UX + notifications**; **not** source of truth for balances — **chain + DB** are authoritative. |
 | **Guardrails** | **Executor caps** aligned with **MetaMask Delegations** narrative if that track is claimed: agent cannot exceed allowlist/slippage/max weight. |
+
+### 2.0 — Cycles: length (prod vs test), liquidity, and who can vote
+
+**Cycle length (product intent)**  
+- **Production-style cadence:** **~30-day** allocation cycles — one window to **cast allocation votes**, then a **frozen aggregate target** for the cycle, **executor** work under bands, then **`closeCycle`** (and trust / P&L bookkeeping). Exact boundaries are configurable.
+
+**Testing and demos (same mechanics, shorter wall-clock)**  
+- The **state machine** does not depend on 30 wall-clock days. On **Base Sepolia** (and in videos), use either:
+  - a **configurable shorter** `cycleLength` (e.g. hours), and/or  
+  - **operator-controlled** phase transitions (close voting / call `closeCycle` when ready)  
+  so a full **vote → aggregate → plan/rebalance → close** loop fits one session. **README / `DEPLOY`:** state that **mainnet-style parameterization is ~30d** while **testnet uses compressed or manual timing**.
+
+**Deposits and withdrawals (no cycle lockups)**  
+- **Deposit** and **withdraw** / **redeem** stay **permissionless** whenever the vault is not paused by governance — **no** alternating “only withdraw on Tuesdays” or cycle-phase lockouts for MVP.
+- **Voting voice:** allocation votes use a **snapshot** of **share** (and **trust** per your rules) at a **defined cutoff** (e.g. end of voting or a committed block height). Wallets that **first receive shares after** that snapshot **do not vote in that cycle**; they **gain a voice in the next cycle**. This is fair, simple to explain, and avoids punishing people who don’t trade during a vote window — they simply weren’t in the snapshot yet.
+- **P&L / trust:** Tier A and off-chain splits should **document** how **mid-cycle deposits/withdrawals** interact with `navStart` / `navEnd` and cycle boundaries ([`vault/spec.md`](../vault/spec.md) §3, §6).
 
 ### 2.1 — Rebalance bands (threshold policy)
 
@@ -147,7 +163,7 @@ Refresh UUIDs from **`https://synthesis.devfolio.co/catalog`** before `trackUUID
 ## 7 — Open decisions (resolve into `BUILD_LOG`)
 
 - **Vault vs smart account:** **vault contract** + executor (see [`vault/spec.md`](../vault/spec.md)); smart account optional later
-- **Mid-cycle deposit** — documented in [`vault/spec.md`](../vault/spec.md) §3 (hackathon default)
+- **Mid-cycle deposit / voting** — **locked:** deposits & withdrawals **always on** (unless pause); **snapshot** for allocation vote; shares minted **after** snapshot → **no vote until next cycle** (§2.0 above; [`vault/spec.md`](../vault/spec.md) §3)
 - **Benchmark** for trust (e.g. 60/40 vs equal-weight allowlist)
 - Whether **executor** is EOA with tight allowance or **contract** with immutable checks
 - **Drift metric:** absolute percentage points vs relative; single global `ε` vs per-asset (MVP can ship global + min-notional only)

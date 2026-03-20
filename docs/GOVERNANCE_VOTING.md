@@ -13,6 +13,12 @@ How holders change **rules** (allowlisted tokens, venues, chains, risk caps) vs 
 
 Keep them **separate in the product** so users don’t confuse “I voted my portfolio” with “I voted to change the rules.”
 
+### 1.1 — Cycle length, testing, liquidity vs voting
+
+- **Allocation cycle cadence (intent):** **~30 days** between cycle boundaries in a production-style deployment — see [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) **§2.0**.
+- **Demos / testnet:** same **phases** (vote → freeze target → execute → `closeCycle`) with **shorter configured duration** or **manual** phase closes so judges see a full loop without waiting a month.
+- **Liquidity:** **no** mandatory withdraw/deposit windows tied to the cycle; users **enter and exit** whenever the vault allows. **Allocation voting power** is based on a **snapshot** of **share** (and **trust**, if used) at vote cutoff — addresses that **receive shares only after** that snapshot **vote starting next cycle** (fair, avoids punishing non-traders; see **§2.0** in `PROJECT_SPEC`).
+
 ---
 
 ## 2 — What is “governable” (parameter registry)

@@ -81,7 +81,7 @@ This is the **story** beyond “we have a vault”: allocation **votes**, **trus
 - [ ] **Trust updates over time** — after each cycle, score each voter’s **proposed portfolio vs benchmark** (rolling window, floors/ceilings per [`config/trust/scoring.yaml`](../config/trust/scoring.yaml)); feed **next** cycle’s aggregation (not a one-off CSV demo only)
 - [ ] **Pricing consistency** — **current weights** for `plan` / executor use the **same** pricing method as **trust** and **on-chain NAV** (or document the MVP shortcut explicitly — [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 step 1)
 - [ ] **Band policy edge cases** — document in README or code: **rounding**, **new token at 0% target**, **withdrawals between vote and execution**, **stale prices** ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2.1 closing paragraph)
-- [ ] **Mid-cycle deposits** — explicit product choice + README/`BUILD_LOG`: either **exclude from cycle P&L** math, **document simplification**, or tighten rules ([`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §2 vault row + [`vault/spec.md`](../vault/spec.md) §3)
+- [x] **Mid-cycle deposits / liquidity** — **locked** in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md) **§2.0** + [`vault/spec.md`](../vault/spec.md) §3: **deposit/withdraw anytime** (unless pause); **vote snapshot** → new shares **after** cutoff **vote next cycle**; still **document** P&L boundary vs NAV flows in README/`BUILD_LOG`
 
 ---
 

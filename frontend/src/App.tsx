@@ -5,7 +5,13 @@ import { createVaultClient, explorerBase } from "./lib/client";
 import { normalizeEnvString, parseVaultAddress } from "./lib/env";
 import { DepositPanel } from "./components/DepositPanel";
 import { TestSwapDepositPanel } from "./components/TestSwapDepositPanel";
-import { fetchVaultSnapshot, formatNav1e18, shortAddr, type VaultSnapshot } from "./lib/vault";
+import {
+  fetchVaultSnapshot,
+  formatAssetWeightPct,
+  formatNav1e18,
+  shortAddr,
+  type VaultSnapshot,
+} from "./lib/vault";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -169,7 +175,12 @@ function AssetsTable({ snap }: { snap: VaultSnapshot }) {
           {snap.assets.map((a) => (
             <tr key={a.address}>
               <td>
-                <div className="asset-name">{a.name || a.symbol}</div>
+                <div className="asset-name">
+                  <span className="asset-weight mono" title="Share of vault NAV">
+                    {formatAssetWeightPct(a.valueNav1e18, snap.totalNAV1e18)}
+                  </span>
+                  <span>{a.name || a.symbol}</span>
+                </div>
                 <ExplorerLink chainId={snap.chainId} path={`/token/${a.address}`}>
                   {shortAddr(a.address, 5)}
                 </ExplorerLink>

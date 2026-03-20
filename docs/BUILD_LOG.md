@@ -365,17 +365,78 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Synthesis registration + online draft submission
+
+### Goal
+- Register the agent on Synthesis, verify access, and create an online project draft that can be iterated during build-out.
+
+### Human decisions
+- Proceed with **email OTP** verification for registration.
+- Keep model metadata explicit as **`auto (Cursor automatic model selection)`**.
+- Create draft now (instead of waiting for final polish) and update incrementally.
+- Expand submission tracks from 3 to 4 by adding **Autonomous Trading Agent**.
+
+### Agent / automation
+- Completed registration flow: `/register/init` → `/register/verify/email/send` → `/register/verify/email/confirm` → `/register/complete`.
+- Validated authenticated API access via team endpoint.
+- Added local env wiring for Synthesis API usage in `.env` and placeholders in `.env.example`.
+- Pulled live catalog and prepared track UUID shortlist.
+- Saved project payload to [`draft.md`](../draft.md), created online draft via `/projects`, then updated `trackUUIDs` to include a fourth track.
+
+### Reality checks
+- Project exists online in **draft** state and is editable.
+- Draft metadata is intentionally MVP-accurate and not final (video/deployed URL can be added later).
+- No secrets are logged in this file.
+
+### Next session
+1. Generate one real **rebalance/swap tx hash** and add proof links.
+2. Tighten `conversationLog`, `description`, and `problemStatement` after latest implementation work.
+3. Add `videoURL`, optional `deployedURL`, and finalize publish checklist (including self-custody requirement).
+
+---
+
+## 2026-03-20 — Agent skills, targets cadence, on-chain rebalance, NAV vs pool, UI asset weights, execution guards
+
+### Goal
+- Ship an **executor `rebalance` path** with clear docs; align **`plan`** with real target files; explain **NAV** behavior vs **DEX** prices; harden the **agent** with preflight-style protections.
+
+### Human decisions
+- Use **`config/local/targets.json`** (gitignored) populated from **`npm run aggregate`** output instead of fixture placeholder addresses.
+- Rebalance **band policy:** keep **both** gates — **`global_epsilon_pp`** (percentage-point drift) and **`min_trade_notional_quote`** — with notional set to **0** for now so **%-only** thresholding applies; documented AND semantics in [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml).
+- Frontend: show **NAV share %** beside each tracked asset name; style the **%** in the theme **warn** (yellow/gold) color.
+
+### Agent / automation
+- **Skills:** added [`apps/agent/skills/`](../apps/agent/skills/) — [`rebalancing/SKILL.md`](../apps/agent/skills/rebalancing/SKILL.md) (plan/aggregate/quote flow), [`execution/SKILL.md`](../apps/agent/skills/execution/SKILL.md) (`SwapStep[]`, `rebalance`, safety); index in [`skills/README.md`](../apps/agent/skills/README.md); linked from [`apps/agent/README.md`](../apps/agent/README.md) and [`STRUCTURE.md`](../STRUCTURE.md).
+- **`plan` / targets:** clarified that **`fixtures/targets.example.json`** uses placeholder token addresses so **`wTgt`** was effectively **0** for real assets until **`config/local/targets.json`** existed; after copying aggregated targets, **`plan`** showed real drift vs targets; **`notionalRough`** vs **`min_trade_notional`** documented in session.
+- **Bands:** lowered **`global_epsilon_pp`** to **1.0** and **`min_trade_notional_quote`** to **0** so small test portfolios can get **`would_trade`** without a dollar floor (notional can be re-enabled later).
+- **`rebalance.mjs` + `npm run rebalance`:** executor-only script builds **Uniswap v3 `SwapRouter02`** **`exactInputSingle`** (WETH→USDC, **recipient = vault**), **`vault.rebalance(steps)`**; default sells **`REBALANCE_BPS`** of vault WETH (default half). Documented in agent README and `.env.example`.
+  - **Two successful testnet `rebalance` txs** (sequential halving of remaining WETH slice) — proof on chain explorer; **hashes not pasted here** (see explorer / wallet history).
+- **Post-trade investigation (read-only):** **`totalNAV()`** equals **sum of balances × `pricePerFullToken1e18`**; **`slot0`** on WETH/USDC v3 pool gives **mid** USDC-per-ETH far below **oracle WETH USD** on testnet → selling WETH at **pool** prices while NAV marks WETH at **oracle** explains **large reported NAV drops** when converting to USDC at **~$1** NAV units — **not** primarily swap dust fees.
+- **Execution guards (agent-side, before `writeContract`):** **`rebalance.mjs`** now optionally **compares vault oracle ETH/USD to pool-implied mid** and **aborts** if deviation exceeds **`REBALANCE_ORACLE_POOL_MAX_DEVIATION_BPS`** (default **2000**); **`REBALANCE_DISABLE_ORACLE_POOL_GUARD=1`** bypasses for rough testnet; sets **`amountOutMinimum`** from mid + **997/1000** one-hop fee fudge minus **`REBALANCE_SLIPPAGE_BPS`** (still not a full **Quoter** — noted in README). Shared math helper [`apps/agent/src/lib/poolMidPrice.mjs`](../apps/agent/src/lib/poolMidPrice.mjs).
+- **Frontend:** [`formatAssetWeightPct`](../frontend/src/lib/vault.ts) + **Tracked assets** table shows **`XX.XX%`** left of name; styles in [`index.css`](../frontend/src/index.css) (`.asset-weight` uses **`var(--warn)`**).
+
+### Reality checks
+- **`rebalance` script** is a **nudge** (fixed BPS of WETH → USDC), **not** target-closing-to-completion in one shot; **target-aware sizing** remains a follow-up.
+- **Oracle vs pool** divergence on **thin / odd-testnet** pools is expected; **mainnet** liquidity usually aligns better, but **NAV is oracle-based** and **fills are pool-based** — document for judges.
+- **No secrets** (private keys, API keys) and **no raw chain addresses / tx hashes** in this log entry — those stay in **local `.env`**, **broadcast artifacts**, or **explorer**.
+
+### Next session
+1. Optional: **target-aware** `amountIn` from **`plan`** gap + **QuoterV2** for tighter **`amountOutMinimum`**.
+2. **Tune mock oracles** toward pool-mid on testnet **or** keep **guard on** and document intentional **refusal** to trade on bad prints.
+3. **Submission polish:** refresh **`draft.md`** / Devfolio draft with **rebalance evidence**, **`conversationLog`**, video when ready.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
-- **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **2026-03-20** session: dashboard reads, **Users** (share holders), **`DepositPanel`** (ETH→WETH wrap / WETH / USDC). **2026-03-21** session: **`TestSwapDepositPanel`** (ETH → WETH → Uniswap v3 WETH→USDC → **`deposit(USDC)`**, **`minOut = 0`**, testnet-only). See [`frontend/README.md`](../frontend/README.md).
-- **On-chain (Base Sepolia 84532):** **`DAOVault`** deployed — **`0xc738Fd6CD6CDe70e30F979fe62a0332ad37a5543`** (broadcast JSON / Basescan). **`npm run plan`** smoke OK (**NAV 0**, no rows until funded + targets).
+- **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid (env-tunable; testnet bypass flag documented).
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + **Users** + **`DepositPanel`** + **`TestSwapDepositPanel`**, **Tracked assets** show **NAV weight %** (warn color) before asset name. See [`frontend/README.md`](../frontend/README.md).
+- **On-chain (Base Sepolia):** **DAOVault** deployed; **addresses** only in **local `.env`** / **`contracts/broadcast`** — not in this log. **Two** executor **`rebalance`** txs executed (WETH→USDC **SwapStep**); vault holds mixed WETH/USDC with **NAV** driven by **oracle** marks.
+- **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) — **1 pp** epsilon floor, **min notional 0** (dollar gate off for now); **`config/local/targets.json`** gitignored — created from **aggregate** for **`plan`**.
 - **Tests:** **14** pass + **1** fork **skipped** unless `BASE_MAINNET_RPC_URL` is set (CI-safe).
-- **Blocked on (you):** optional **Basescan verify**; **`rebalance`** / swap calldata path for a **real tx hash** (Uniswap track); fund vault / set targets for non-empty **`plan`** output.
-- **Next 3 tasks:**
-  1. Document **`VAULT_ADDRESS`** in README + `config/chain/contracts.yaml` (and keep **`.env`** local).
-  2. End-to-end demo: **aggregate** → **targets** → **plan** → (optional) **`quote`** → build **`rebalance`** calldata + **one explorer tx**.
-  3. **Submission:** video / track UUIDs / `conversationLog` polish from this file.
+- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; align **oracle** vs **pool** for coherent testnet NAV or lean on **guard** narrative; **Synthesis** draft update with demo artifacts.
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.
-- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations.
+- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent (see live catalog UUIDs).
+- **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root holds payload template — refine before publish (self-custody, video, etc.).
