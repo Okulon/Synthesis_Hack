@@ -4,24 +4,26 @@ End-to-end model for **target-weight** votes keyed by cycle, with **trust × sha
 
 ## Wall-clock windows (agent-managed)
 
-Default: **30 minutes** per allocation window (`duration_minutes: 30` in [`config/agent/cycles.yaml`](../config/agent/cycles.yaml)): **25 min voting**, **5 min frozen** (snapshot / export prep). This is **off-chain**; vault `cycleId` still only advances on `closeCycle`.
+Default in repo: **15 minutes** per allocation window ([`config/agent/cycles.yaml`](../config/agent/cycles.yaml)): **12 min voting**, **3 min frozen** (snapshot / export prep). Adjust `duration_minutes` / voting+frozen there; the next **`cycle:sync`** (or **`npm run agent`**) re-pins genesis if the clock file is missing or invalid. This is **off-chain**; vault `cycleId` still only advances on `closeCycle`.
 
 | Command | Purpose |
 |---------|---------|
-| `npm run cycle:clock-init` | Writes `config/local/cycle-clock.json` — pins **genesis** to start of current window |
+| `npm run cycle:clock-init` | Same as auto-init inside **`cycle:sync`**: writes `config/local/cycle-clock.json` — pins **genesis** to start of current window (manual/CI only; **`npm run agent`** does not require this first) |
 | `npm run cycle:status` | JSON: live phase, window index, schedules |
 | `npm run cycle:sync` | Creates/updates **current** window in `vote-store.json`, seeds ballots from previous/default cycle, sets `votingOpen` from phase, optional `onChainCycleId` from `VAULT_ADDRESS` |
 | `npm run cycle:snapshot` | Share balances at block (frozen phase) |
 | `npm run votes:export` | Embeds **`managedClock`** in `allocation-votes.json` for **live** Voting UI countdown |
-| `npm run cycle:daemon` | **Loop**: auto `cycle:clock-init` if missing, then every **`CYCLE_DAEMON_INTERVAL_SEC`** (default 60): **`cycle:sync`** + **`votes:export`** (optional **`CYCLE_DAEMON_TRUST_EXPORT=1`**) |
+| `npm run cycle:daemon` | **Loop**: every **`CYCLE_DAEMON_INTERVAL_SEC`** (default 60): **`cycle:sync`** (auto-inits clock if needed) + **`votes:export`** (optional **`CYCLE_DAEMON_TRUST_EXPORT=1`**) |
+| **`npm run agent`** (repo root) | **Recommended:** one process — sync, stamp prices (voting), **`aggregate` → `targets.json`**, votes export, trust finalize on rollover, and (if **`GOVERNANCE_PRIVATE_KEY`** is set) **`closeCycle`** so on-chain **`cycleId`** matches wall-clock boundaries (`AGENT_CLOSE_CYCLE_ON_ROLLOVER`, default on when key present). Optional **`AGENT_AUTO_REBALANCE=1`**. See [`apps/agent/src/agent.mjs`](../apps/agent/src/agent.mjs). |
+| `npm run close-cycle` | One-shot **`DAOVault.closeCycle(navStart, navEnd)`** (same NAV bookkeeping as agent). |
 
-After clone: `cycle:clock-init` → `cycle:sync` → edit ballots → (frozen) `cycle:snapshot` → `votes:export` — **or** run **`npm run cycle:daemon`** and edit `vote-store` while it runs.
+After clone: **`npm run agent`** from repo root (or `cycle:daemon` for sync+export only); wall-clock + `vote-store` alignment run automatically. Optional manual **`cycle:clock-init`** only if you want to pin genesis without running **`cycle:sync`**.
 
 ## Artifacts
 
 | File | Purpose |
 |------|---------|
-| `config/local/cycle-clock.json` | Genesis + durations (gitignored); created by **`cycle:clock-init`**. |
+| `config/local/cycle-clock.json` | **Genesis unix only** (gitignored). Window length / voting / frozen come from **`config/agent/cycles.yaml`** only. Created on first **`cycle:sync`** / **`npm run agent`** (or **`cycle:clock-init`**). |
 | `config/local/vote-store.json` | **Source of truth** for ballots (gitignored). Copy from [`apps/agent/fixtures/vote-store.example.json`](../apps/agent/fixtures/vote-store.example.json). |
 | `config/local/votes.json` | **Legacy** single-file votes; used only if **no** `vote-store.json` exists. |
 | `config/local/trust_cycle.csv` + `config/trust/scoring.yaml` | Trust multipliers (same as `npm run trust`). |
@@ -35,6 +37,32 @@ Each `cycles["<key>"]` entry has:
 - **`votingOpen`** — whether you still accept new/edited ballots (off-chain convention).
 - **`snapshotBlock`** + **`shares1e18`** — **snapshot** of vault **share** `balanceOf(voter)` at `snapshotBlock` (18 decimals string).
 - **`ballots`** — one object per voter; **last ballot wins** if the same voter appears twice. **Weights** should sum to ~1 per voter.
+  - **`priceMarksUsdc`** (optional) — per asset, **USDC per 1 full token** at vote time, lowercase keys. Filled by **`npm run trust:stamp-prices`** (live Uniswap v3 mid) or manually. Needed for portfolio-based trust (below).
+  - **`priceMarksCapturedAt`** — ISO timestamp when marks were written.
+
+## Trust from portfolio performance (time-weighted)
+
+For each voter’s **last ballot** in a **completed** wall-clock window:
+
+1. **Basket return** (decimal): \(\sum_a w_a \bigl(\frac{P^{\mathrm{end}}_a}{P^{\mathrm{vote}}_a} - 1\bigr)\) using `priceMarksUsdc` as \(P^{\mathrm{vote}}\) and **fresh** pool mids at finalize as \(P^{\mathrm{end}}\) (USDC quote, same tokens as weights).
+2. **Time weight** (fraction of window still *after* the vote, in \([0,1]\)):  
+   \(\displaystyle \frac{t_{\mathrm{end}} - t_{\mathrm{vote}}}{t_{\mathrm{end}} - t_{\mathrm{start}}}\)  
+   with \(t_{\mathrm{vote}}\) from **`submittedAt`** (ISO), clamped to \([t_{\mathrm{start}}, t_{\mathrm{end}}]\).  
+   Example: vote at the midpoint → weight **0.5**; vote at window end → **0**; vote at start → **1**.
+3. **Effective return** = basket return × time weight → stored as **`vote_return_bps`** in `trust_cycle.csv` (`round(effective * 10000)`).
+
+Commands (from `apps/agent`, needs `CHAIN_RPC_URL`):
+
+| Command | When |
+|--------|------|
+| `npm run trust:stamp-prices` | After votes / edits — writes **`priceMarksUsdc`** on ballots (optional `VOTE_CYCLE_KEY`, `TRUST_STAMP_OVERWRITE=1`). |
+| `npm run trust:finalize-window` | After the window ends — defaults to **`managed.index - 1`**; upserts `config/local/trust_cycle.csv`; set **`TRUST_FINALIZE_CYCLE_KEY`** to override. |
+
+Then set `config/trust/scoring.yaml` **`update_rule: time_weighted_portfolio_return`** and run **`npm run trust`** + **`npm run trust:export`**.  
+Trust multiplier update: `trust *= 1 + portfolio_trust.linear_scale * (vote_return_bps / 10000)` (then floor/ceiling).  
+**`benchmark_return_bps`** in the CSV is the **full-window** basket return (no time scaling), for your own analysis or future rules.
+
+**Caveats:** prices are **Uniswap v3 mid** (one hop to USDC, tier sweep); thin pools = noisy marks. No historical oracle at past `submittedAt` unless you stamped at vote time.
 
 ## Aggregation formula
 
@@ -51,7 +79,7 @@ If **`shares1e18`** is missing for a voter, aggregation falls back to **trust-on
 ## Operator flow
 
 1. **Copy / edit** `config/local/vote-store.json` (add `cycles`, ballots, set `onChainCycleId`).
-2. **Optional:** `npm run trust:export` so the dashboard shows the same trust as aggregation.
+2. **Optional (portfolio trust):** during voting, after ballots are set, `cd apps/agent && npm run trust:stamp-prices` (needs RPC). When the window is over, `npm run trust:finalize-window`, then set **`update_rule: time_weighted_portfolio_return`** in `config/trust/scoring.yaml` and run **`npm run trust`** + **`npm run trust:export`**. For **manual / benchmark CSV** trust only, skip stamping and run **`npm run trust:export`** after editing `trust_cycle.csv`.
 3. **Snapshot shares** at cutoff (requires RPC + deployed vault):
    ```bash
    cd apps/agent && npm run cycle:snapshot

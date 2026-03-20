@@ -11,4 +11,9 @@ trust:
   # Examples: "60_40_weth_usdc", "equal_weight_allowlist"
   benchmark_id: equal_weight_allowlist
   # How to map cycle return to trust delta (implement in code — stub enum)
-  update_rule: relative_to_benchmark  # or absolute_return
+  # - relative_to_benchmark: CSV vote_return_bps vs benchmark_return_bps (+5% / -5% step)
+  # - time_weighted_portfolio_return: CSV vote_return_bps = effective decimal gain × 10000
+  #   (portfolio basket return × remaining-cycle fraction); trust *= 1 + linear_scale * (bps/10000)
+  update_rule: time_weighted_portfolio_return
+  portfolio_trust:
+    linear_scale: 1.0

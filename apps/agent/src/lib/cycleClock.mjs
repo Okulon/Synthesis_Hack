@@ -1,5 +1,8 @@
 /**
- * Wall-clock allocation cycles (e.g. 30 min) — off-chain schedule independent from vault.closeCycle.
+ * Wall-clock allocation cycles — off-chain schedule independent from vault.closeCycle.
+ *
+ * - **Schedule** (duration, voting vs frozen): `config/agent/cycles.yaml` only.
+ * - **Pinned time origin**: `config/local/cycle-clock.json` — `genesisUnix` only (v2 schema).
  */
 import fs from "fs";
 import path from "path";
@@ -42,32 +45,31 @@ export function loadCycleClockState() {
   return {
     version: j.version ?? 1,
     genesisUnix: Number(j.genesisUnix),
-    durationSec: Number(j.durationSec ?? y.durationSec),
-    votingSec: Number(j.votingSec ?? y.votingSec),
-    frozenSec: Number(j.frozenSec ?? y.frozenSec),
+    /** Always from `cycles.yaml` so schedule edits apply without deleting cycle-clock.json. */
+    durationSec: y.durationSec,
+    votingSec: y.votingSec,
+    frozenSec: y.frozenSec,
   };
 }
 
 /**
- * Pin genesis to the start of the current window (floor now to duration boundary).
- * @returns {object} written state
+ * Pin genesis to the start of the current window (floor now to duration boundary from YAML).
+ * Writes only genesis to disk; schedule always comes from `cycles.yaml`.
+ * @returns {NonNullable<ReturnType<typeof loadCycleClockState>>}
  */
 export function initCycleClockState() {
   const y = loadCycleClockYaml();
   const now = Math.floor(Date.now() / 1000);
   const genesisUnix = now - (now % y.durationSec);
-  const state = {
-    version: 1,
+  const file = {
+    version: 2,
     genesisUnix,
-    durationSec: y.durationSec,
-    votingSec: y.votingSec,
-    frozenSec: y.frozenSec,
     updatedAt: new Date().toISOString(),
   };
   const dest = cycleClockStatePath();
   fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, JSON.stringify(state, null, 2));
-  return state;
+  fs.writeFileSync(dest, JSON.stringify(file, null, 2));
+  return /** @type {NonNullable<ReturnType<typeof loadCycleClockState>>} */ (loadCycleClockState());
 }
 
 /**
@@ -106,6 +108,69 @@ export function computeManagedCycle(nowSec = Math.floor(Date.now() / 1000)) {
     calendarCycleStartIso: new Date(cycleStartSec * 1000).toISOString(),
     calendarCycleEndIso: new Date(cycleEndSec * 1000).toISOString(),
   };
+}
+
+/**
+ * Ensures `cycle-clock.json` exists and describes a valid current window (same as `cycle:clock-init` when needed).
+ * Call from `cycle:sync`, agent, etc. — no separate manual clock-init step.
+ * @returns {NonNullable<ReturnType<typeof loadCycleClockState>>}
+ */
+export function ensureCycleClockReady() {
+  migrateCycleClockFileToGenesisOnly();
+
+  let state = null;
+  try {
+    state = loadCycleClockState();
+  } catch (e) {
+    console.warn("[cycle-clock] cycle-clock.json unreadable — re-initializing:", (e && e.message) || e);
+    state = null;
+  }
+
+  const looksBroken = () => {
+    if (!state) return true;
+    if (!Number.isFinite(state.genesisUnix) || !(state.durationSec > 0)) return true;
+    const m = computeManagedCycle();
+    if (!m) return true;
+    if (m.phase === "before_genesis") return true;
+    return false;
+  };
+
+  if (looksBroken()) {
+    console.warn("[cycle-clock] missing or invalid — pinning genesis to current window (same as cycle:clock-init)");
+    state = initCycleClockState();
+  }
+  return /** @type {NonNullable<typeof state>} */ (state);
+}
+
+/** Drop legacy schedule fields from disk — schedule lives in `cycles.yaml` only (v2 = genesis only). */
+function migrateCycleClockFileToGenesisOnly() {
+  const p = cycleClockStatePath();
+  if (!fs.existsSync(p)) return;
+  let j;
+  try {
+    j = JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch {
+    return;
+  }
+  const allowed = new Set(["version", "genesisUnix", "updatedAt"]);
+  const hasDisallowed = Object.keys(j).some((k) => !allowed.has(k));
+  if (!hasDisallowed && j.version === 2) return;
+
+  const genesisUnix = Number(j.genesisUnix);
+  if (!Number.isFinite(genesisUnix)) return;
+
+  fs.writeFileSync(
+    p,
+    JSON.stringify(
+      {
+        version: 2,
+        genesisUnix,
+        updatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 /**

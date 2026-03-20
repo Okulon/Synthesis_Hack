@@ -1,0 +1,7 @@
+{
+  "name": "synthesis-hack",
+  "private": true,
+  "scripts": {
+    "agent": "node apps/agent/src/agent.mjs"
+  }
+}

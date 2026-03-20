@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "agent": "node src/agent.mjs",
     "plan": "node src/cli.mjs",
     "quote": "node src/quote.mjs",
     "aggregate": "node src/aggregate.mjs",
@@ -16,8 +17,11 @@
     "cycle:sync": "node src/cycle-sync.mjs",
     "cycle:daemon": "node src/cycle-daemon.mjs",
     "trust": "node src/trust.mjs",
+    "trust:stamp-prices": "node src/trust-stamp-prices.mjs",
+    "trust:finalize-window": "node src/trust-finalize-window.mjs",
     "trust:export": "node src/trust-export-frontend.mjs",
-    "rebalance": "node src/rebalance.mjs"
+    "rebalance": "node src/rebalance.mjs",
+    "close-cycle": "node src/close-cycle.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

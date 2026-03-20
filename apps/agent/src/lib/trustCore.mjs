@@ -11,11 +11,15 @@ export function loadScoring() {
   const p = path.join(repoRoot, "config/trust/scoring.yaml");
   const doc = parseYaml(fs.readFileSync(p, "utf8"));
   const t = doc.trust;
+  const pt = t.portfolio_trust ?? {};
   return {
     floor: Number(t.trust_floor ?? 0.1),
     ceiling: Number(t.trust_ceiling ?? 3),
     defaultTrust: Number(t.default_trust ?? 1),
     updateRule: t.update_rule ?? "relative_to_benchmark",
+    portfolioTrust: {
+      linearScale: Number(pt.linear_scale ?? 1),
+    },
   };
 }
 
@@ -53,7 +57,11 @@ export function buildTrustByVoter(rows, scoring) {
     const v = Number(r.vote_return_bps ?? 0);
     const b = Number(r.benchmark_return_bps ?? 0);
     let t0 = trust[voter] ?? scoring.defaultTrust;
-    if (scoring.updateRule === "relative_to_benchmark") {
+    if (scoring.updateRule === "time_weighted_portfolio_return") {
+      const gain = v / 10000;
+      const scale = scoring.portfolioTrust?.linearScale ?? 1;
+      t0 *= 1 + scale * gain;
+    } else if (scoring.updateRule === "relative_to_benchmark") {
       if (v >= b) t0 *= 1.05;
       else t0 *= 0.95;
     }

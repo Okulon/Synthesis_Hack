@@ -4,7 +4,11 @@ _Last reviewed: 2026-03-21._
 
 Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate` / `trust` (read-only).
 
-**Wall-clock cycle sync** (`cycle:sync` / `cycle:daemon`) updates the vote-store + dashboard JSON — it does **not** broadcast **`rebalance`** or **`closeCycle`** on-chain ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)).
+### One command (`npm run agent` from repo root)
+
+Keeps wall-clock windows aligned. On each **closed** wall-clock window: **`closeCycle`** (if gov key — must succeed before advancing), **trust finalize** + export; optional one-shot rollover rebalance only if **`AGENT_REBALANCE_TO_TARGET=0`**. Every tick (after aggregate): **`AGENT_REBALANCE_TO_TARGET`** (default on with executor key) runs **`plan` → `rebalance`** in a loop until no **`would_trade`** or **`AGENT_REBALANCE_MAX_STEPS_PER_TICK`** (continues on later ticks until converged). Set **`AGENT_REBALANCE_FROZEN_PHASE_ONLY=1`** to rebalance only in the frozen slice. **`rebalance.mjs`** is WETH→USDC only — tune **`REBALANCE_BPS`** and **`config/rebalancing/bands.yaml`**. See [`src/agent.mjs`](./src/agent.mjs).
+
+**Wall-clock only** (`cycle:sync` / `cycle:daemon`) does **not** broadcast **`rebalance`** or **`closeCycle`** unless you use **`agent`** with **`AGENT_AUTO_REBALANCE=1`** ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)).
 
 ## Setup
 
@@ -51,6 +55,8 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 
 | Script | Purpose |
 |--------|---------|
+| `npm run agent` | **All-in-one loop** — sync, trust stamp/finalize, **`closeCycle`** on rollover if gov key set, aggregate→targets, votes export, optional auto-rebalance ([`src/agent.mjs`](./src/agent.mjs)) |
+| `npm run close-cycle` | Governance **`closeCycle`** once (NAV snapshot in `config/local/agent-close-cycle-state.json`) |
 | `npm run plan` | Current vault weights vs `targets.json` + band policy → JSON (`would_trade` / `skip`) |
 | `npm run aggregate` | **Trust × snapshot shares × weights** (vote-store) or legacy trust-only → `targets` for `targets.json` |
 | `npm run votes:export` | Writes **`frontend/public/allocation-votes.json`** for dashboard **Voting** tab |
@@ -58,6 +64,8 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | `npm run cycle:daemon` | **Keeps managing cycles**: init clock if missing, then on an interval runs **`cycle:sync`** + **`votes:export`** (`CYCLE_DAEMON_INTERVAL_SEC`, optional `CYCLE_DAEMON_TRUST_EXPORT`) |
 | `npm run cycle:snapshot` | Captures vault **share** balances at block → `config/local/vote-store.json` (needs `VAULT_ADDRESS`, RPC) |
 | `npm run trust` | Trust v0 from CSV + `config/trust/scoring.yaml` |
+| `npm run trust:stamp-prices` | Writes ballot **`priceMarksUsdc`** from pool mid (stamp at vote time; optional `VOTE_CYCLE_KEY`, `TRUST_STAMP_OVERWRITE=1`) |
+| `npm run trust:finalize-window` | **Previous** wall-clock window → upserts **`trust_cycle.csv`** with time-weighted portfolio `vote_return_bps` (`TRUST_FINALIZE_CYCLE_KEY` optional) |
 | `npm run trust:export` | Writes **`frontend/public/trust-scores.json`** for dashboard Users tab |
 | `npm run quote` | Uniswap V3 **factory → pool → slot0 + liquidity** (uses `config/chain/base.yaml` or `base_sepolia.yaml` by `CHAIN_ID`) |
 | `npm run rebalance` | **Executor-only:** `vault.rebalance` WETH→USDC; **oracle vs pool mid-price guard** + **`amountOutMinimum`** from mid (+ fee fudge). See env vars below. |

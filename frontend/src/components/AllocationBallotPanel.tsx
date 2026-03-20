@@ -273,10 +273,22 @@ export function AllocationBallotPanel({ snap, trustMap }: Props) {
 
   const submitLabel = myBallot ? "Update ballot" : "Submit ballot";
 
+  const ballotStatus =
+    address && !wrongChain && hasShares && n > 0 ? (
+      myBallot && myBallot.weightsBps.length === n ? (
+        <span className="ballot-status-pill ballot-status-pill--voted">Voted</span>
+      ) : (
+        <span className="ballot-status-pill ballot-status-pill--pending">Pending</span>
+      )
+    ) : null;
+
   return (
     <div className="voting-card allocation-ballot-panel">
       <div className="voting-card__header allocation-ballot-panel__head">
-        <h3>Cast ballot</h3>
+        <div className="allocation-ballot-panel__title-block">
+          <h3>Cast ballot</h3>
+          {ballotStatus}
+        </div>
         {votingPower != null ? (
           <div className="mono sm allocation-ballot-panel__power">
             Power <strong>{votingPower.toFixed(4)}</strong>

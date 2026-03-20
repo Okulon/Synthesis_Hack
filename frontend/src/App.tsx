@@ -273,7 +273,9 @@ export default function App() {
         holderLogsFromBlock: HOLDER_FROM_BLOCK,
         allocationVoteLogsFromBlock: ALLOCATION_VOTE_FROM_BLOCK,
       }),
-    refetchInterval: 20_000,
+    staleTime: 8_000,
+    refetchInterval: 12_000,
+    refetchOnWindowFocus: true,
   });
 
   return (
@@ -439,12 +441,10 @@ function Dashboard({ snap }: { snap: VaultSnapshot }) {
 
 function CycleManagementPanel({
   clock,
-  activeVoteCycleKey,
   quorumStats,
   quorumFraction,
 }: {
   clock: ManagedClockPayload;
-  activeVoteCycleKey: string | null | undefined;
   quorumStats: QuorumStats | null;
   quorumFraction: number;
 }) {
@@ -461,9 +461,6 @@ function CycleManagementPanel({
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
   }, [clock.genesisUnix, clock.durationSec, clock.votingSec, clock.frozenSec]);
-
-  const drift =
-    activeVoteCycleKey != null && activeVoteCycleKey !== "" && String(live.index) !== String(activeVoteCycleKey);
 
   const nowSec = Math.floor(Date.now() / 1000);
   const elapsedInWindow = Math.max(0, Math.min(clock.durationSec, nowSec - live.cycleStartSec));
@@ -549,12 +546,6 @@ function CycleManagementPanel({
           </div>
         </div>
       </div>
-      {drift ? (
-        <div className="voting-card__footer voting-alert">
-          Saved schedule points at window <strong>{activeVoteCycleKey}</strong> but live is <strong>{live.index}</strong> — run{" "}
-          <code>cycle:sync</code> + <code>votes:export</code>.
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -563,7 +554,9 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
   const votesQ = useQuery({
     queryKey: ["allocation-votes"],
     queryFn: fetchAllocationVotes,
-    staleTime: 15_000,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
   const trustQ = useQuery({
     queryKey: ["trust-scores"],
@@ -605,19 +598,13 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
 
         {votesQ.isError ? (
           <div className="voting-card voting-card--muted">
-            <div className="voting-card__body">
-              <strong>No cycle schedule file.</strong> The voting/frozen window UI reads{" "}
-              <code className="mono">allocation-votes.json</code>. From <code>apps/agent</code> run{" "}
-              <code>cycle:clock-init</code>, <code>cycle:sync</code>, <code>votes:export</code> (or{" "}
-              <code>cycle:daemon</code>). On-chain totals below still work from RPC.
-            </div>
+            <div className="voting-card__body muted small">Voting schedule unavailable.</div>
           </div>
         ) : null}
 
         {!votesQ.isLoading && data?.managedClock ? (
           <CycleManagementPanel
             clock={data.managedClock}
-            activeVoteCycleKey={data.activeVoteCycleKey ?? data.cycleKey}
             quorumStats={quorumStats}
             quorumFraction={governance.quorumFraction}
           />
@@ -625,10 +612,7 @@ function VotingPage({ snap }: { snap: VaultSnapshot }) {
 
         {!votesQ.isLoading && !votesQ.isError && data && !data.managedClock ? (
           <div className="voting-card voting-card--muted">
-            <div className="voting-card__body">
-              <strong>No wall-clock in schedule file.</strong> Run <code>cycle:clock-init</code>, <code>cycle:sync</code>,{" "}
-              <code>votes:export</code> (or start <code>cycle:daemon</code>).
-            </div>
+            <div className="voting-card__body muted small">Wall-clock schedule unavailable.</div>
           </div>
         ) : null}
 
@@ -766,7 +750,9 @@ function VotingTables({
                         </td>
                         <td>
                           {row.voted ? (
-                            <span className="vote-status vote-status--ok">Voted on-chain</span>
+                            <span className="vote-status vote-status--ok" title={`Ballot events filtered for vault cycleId ${snap.cycleId}`}>
+                              Voted · vault cycle {snap.cycleId.toString()}
+                            </span>
                           ) : (
                             <span className="vote-status vote-status--pending">No ballot</span>
                           )}
@@ -816,9 +802,8 @@ function UsersPage({ snap }: { snap: VaultSnapshot }) {
     <section className="panel">
       <h2>Vault users (share holders)</h2>
       <p className="muted small trust-scores-hint">
-        <strong>Trust score</strong> is off-chain v0 (cycle CSV + <code>config/trust/scoring.yaml</code>), surfaced via{" "}
-        <code>public/trust-scores.json</code>. Regenerate: <code>cd apps/agent && npm run trust:export</code>. Missing
-        addresses use default <strong>1.00</strong> (same as <code>aggregate</code>).
+        <strong>Trust score</strong> is off-chain v0 (same multipliers as aggregate). Missing addresses use default{" "}
+        <strong>1.00</strong>.
       </p>
       {trustQ.isLoading ? <p className="muted small">Loading trust scores…</p> : null}
       {trustQ.isError ? (

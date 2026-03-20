@@ -467,18 +467,55 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Unified agent, wall-clock SSOT, trust pipeline, rebalance hardening, voting UI
+
+### Goal
+- One long-running **agent** process for wall-clock sync, exports, optional **`closeCycle`**, trust, aggregate → targets, and rebalance convergence — without duplicating manual **`cycle:clock-init`** / stale dashboard JSON.
+- **Single source of truth** for wall-clock **schedule** vs pinned **genesis**; align **frontend** with live operator behavior (no dev-only instructions in the UI).
+
+### Human decisions
+- **Schedule:** [`config/agent/cycles.yaml`](../config/agent/cycles.yaml) is authoritative for **duration + voting/frozen**; [`config/local/cycle-clock.json`](../config/local/cycle-clock.json) stores **genesis unix only** (v2 schema), migrated from legacy rows that duplicated seconds.
+- **Trust:** portfolio / time-weighted path uses [`config/trust/scoring.yaml`](../config/trust/scoring.yaml) **`update_rule: time_weighted_portfolio_return`** (with **`portfolio_trust.linear_scale`**) when finalizing windows from stamped ballot prices — **no CSV secrets**; keys stay in **local `.env`** only.
+- **Rebalance:** executor script supports **Base** and **Base Sepolia** via **`CHAIN_ID`** + per-chain YAML; **oracle vs pool** guard remains configurable — on **Sepolia**, guard defaults **off** when the env toggle is **unset** (rough pools), **on** when explicitly forced — **documented in code**, not credential-related.
+
+### Agent / automation
+- **Root / worker:** [`package.json`](../package.json) **`npm run agent`** → [`apps/agent/src/agent.mjs`](../apps/agent/src/agent.mjs) — tick: **`cycle:sync`** (auto **`ensureCycleClockReady`** in [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs)), rollover handling (**`closeCycle`** when governance key + env allow), **`trust:stamp-prices`** in voting, **`aggregate` → `targets.json`**, **`votes:export`**, optional **`trust:export`**, **`plan` → `rebalance`** loop (`AGENT_REBALANCE_TO_TARGET`, step cap, optional frozen-only).
+- **`votes-export-frontend.mjs`:** runs **`cycle:sync`** before resolve when **not** invoked from an agent tick (**`AGENT_SKIP_VOTES_EXPORT_SYNC=1`** skips duplicate sync); **`activeVoteCycleKey` / `managedWindowIndex`** taken from **`computeManagedCycle()`** at export time so JSON matches live wall-clock index.
+- **`trust:export`:** default **on** each tick (`AGENT_TRUST_EXPORT` defaults true) so **`frontend/public/trust-scores.json`** tracks CSV + scoring changes.
+- **`rebalance.mjs`:** loads factory / **SwapRouter02** / WETH / USDC from **`config/chain/base.yaml`** or **`base_sepolia.yaml`**; **`base.yaml`** gained **`swap_router02`** for mainnet-shaped config.
+- **`trust-finalize-window.mjs`:** calls **`ensureCycleClockReady()`** before finalize.
+- **`cycle-daemon`:** passes **`AGENT_SKIP_VOTES_EXPORT_SYNC`** when chaining sync → export.
+- **Docs / config samples:** [`.env.example`](../.env.example) and [`docs/CYCLES_AND_VOTING.md`](./CYCLES_AND_VOTING.md) updated for agent + clock semantics (no secrets).
+
+### Frontend
+- **Voting:** removed operator-facing “run **`cycle:sync`** / **`npm run agent`**” copy; short fallbacks for missing schedule JSON; **Cast ballot** header shows **Voted** / **Pending** (on-chain ballot for current **`cycleId`**); **`allocation-votes.json`** query **polls** on an interval so exports propagate without hard refresh.
+- **Users / trust:** trust hint text no longer instructs CLI regeneration — describes behavior only.
+
+### Reality checks
+- **`rebalance.mjs`** remains **WETH → USDC** one-hop MVP; **not** full multi-asset target completion in one tx — convergence is **multi-tick** **`plan` → `rebalance`** when enabled.
+- **Trust** updates on **closed** windows when stamp + finalize + export pipelines succeed; **on-chain `cycleId`** still advances only via **`closeCycle`** (governance).
+- **No secrets** in this entry — **private keys**, **RPC URLs with embedded tokens**, and **deployed addresses / tx hashes** stay in **local env**, **explorer**, or **gitignored broadcast/cache**.
+
+### Next session
+1. Optional: **target-aware** swap sizing + **Quoter** for production-grade **`minOut`**.
+2. Optional: **USDC → WETH** (or multi-hop) when targets require buying risk assets — beyond current script.
+3. **Synthesis** draft: refresh **`conversationLog`** / demo links when stable.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
-- **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`** ballot indexing on current `contracts/src/DAOVault.sol`); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
-- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid (env-tunable; testnet bypass flag documented).
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts** (ballot preview + aggregate targets), legacy **allowlist** banner, **NAV weight %** on tracked assets. **Addresses** only via **`VITE_*`** in **local** env; see [`frontend/README.md`](../frontend/README.md).
-- **Allocation voting (end-to-end):** **`vote-store`** + wall-clock **`cycle:*`** / **`cycle:daemon`** → **`cycle:snapshot`** (share balances) → trust-weighted **`npm run aggregate`** + **`npm run votes:export`** → **`frontend/public/allocation-votes.json`** for the **Voting** tab; holders submit **`castAllocationBallot(weightsBps)`** on **`DAOVault`** aligned to **`ballotAssets`**; UI **preview pies**, **aggregate blend**, **Reset to on-chain** from events. *(Contracts + UI + cycle semantics: **2026-03-20 — Ballot registry…** session block above this section.)*
-- **On-chain:** deploy + executor **`rebalance`** evidence live on explorer — **hashes and contract addresses stay out of this log**; use **local `.env`** and **`contracts/broadcast/`** (gitignored).
-- **`castAllocationBallot`:** current **`DAOVault`** includes **`ballotAssets`** + ballot-length voting; **older bytecode** lacks **`ballotAssetsLength`** — UI **falls back** to **tracked-only** ballot rows and shows **redeploy** guidance. Bytecode probe uses selector **`d87de598`**.
-- **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) — **1 pp** epsilon floor, **min notional 0** (dollar gate off for now); **`config/local/targets.json`** gitignored — created from **aggregate** for **`plan`**.
+- **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`** ballot indexing on current `contracts/src/DAOVault.sol`); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`npm run rebalance`**, **`npm run agent`** (orchestrator); **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`** (incl. **SwapRouter02** on Base mainnet YAML); **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = **only** schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = **genesis unix** (v2); durations never duplicated in JSON — see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
+- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid (chain-aware YAML; Sepolia default guard behavior when env unset — see script header).
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + voting **pie charts**, **Voted/Pending** ballot status, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**. **Addresses** only via **`VITE_*`** in **local** env; see [`frontend/README.md`](../frontend/README.md).
+- **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** (auto clock init) → **`cycle:snapshot`** (share balances) → trust-weighted **`aggregate`** + **`votes:export`** → **`frontend/public/allocation-votes.json`**; **`trust:export`** keeps **`trust-scores.json`** in sync when agent runs; holders **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** optional **`closeCycle`** + trust finalize pipeline when keys + env allow.
+- **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**; use **local `.env`** and **`contracts/broadcast/`** (gitignored).
+- **`castAllocationBallot`:** current **`DAOVault`** includes **`ballotAssets`**; **older bytecode** lacks **`ballotAssetsLength`** — UI **falls back** to **tracked-only** ballot rows. Bytecode probe uses selector **`d87de598`**.
+- **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers (rule enum + portfolio scale).
 - **Tests:** **`DAOVault.t.sol`** **18** tests; other suites unchanged (**fork test** may still skip without `BASE_MAINNET_RPC_URL`).
-- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; align **oracle** vs **pool** for coherent testnet NAV or lean on **guard** narrative; **Synthesis** draft update with demo artifacts.
+- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; multi-asset / reverse swap path; **Synthesis** draft update with demo artifacts.
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.
 - **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent (see live catalog UUIDs).
 - **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root holds payload template — refine before publish (self-custody, video, etc.).

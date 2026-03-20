@@ -3,14 +3,14 @@
  * Ensures cycles[<index>] exists, seeds ballots from previous window (or prior default), sets defaultCycleKey,
  * toggles votingOpen from phase (voting vs frozen). Optional: sync onChainCycleId from VAULT_ADDRESS.
  *
- * Requires: npm run cycle:clock-init first. Copies fixture vote-store if no local file.
+ * Auto-initializes wall-clock if needed (same as `cycle:clock-init`). Copies fixture vote-store if no local file.
  */
 import fs from "fs";
 import path from "path";
 import { createPublicClient, http, parseAbi } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
-import { computeManagedCycle } from "./lib/cycleClock.mjs";
+import { computeManagedCycle, ensureCycleClockReady } from "./lib/cycleClock.mjs";
 import { repoRoot } from "./lib/env.mjs";
 import {
   normalizeVoteStore,
@@ -59,9 +59,10 @@ async function tryVaultCycleId() {
 }
 
 async function main() {
+  ensureCycleClockReady();
   const managed = computeManagedCycle();
   if (!managed || managed.phase === "before_genesis") {
-    console.error("Managed clock not ready — run: npm run cycle:clock-init");
+    console.error("Managed clock still not ready after repair — check config/agent/cycles.yaml");
     process.exit(1);
   }
 

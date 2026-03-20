@@ -1,5 +1,5 @@
 /**
- * Pin wall-clock cycle genesis (start of current 30m window). Writes config/local/cycle-clock.json
+ * Pin wall-clock genesis (start of current window per `config/agent/cycles.yaml`). Writes `cycle-clock.json` (genesis only).
  */
 import path from "path";
 

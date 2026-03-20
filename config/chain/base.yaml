@@ -21,6 +21,7 @@ explorer:
 # Uniswap v3 (mainnet) — https://docs.uniswap.org/contracts/v3/reference/deployments/base-deployments
 uniswap:
   v3_factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
+  swap_router02: "0x2626664c2603336E57B271c5C0b26F421741e481"
 
 tokens:
   WETH:

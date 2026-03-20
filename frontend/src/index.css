@@ -629,6 +629,41 @@ a.ext:hover {
   gap: 0.5rem 1rem;
 }
 
+.allocation-ballot-panel__title-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.allocation-ballot-panel__title-block h3 {
+  margin: 0;
+}
+
+.ballot-status-pill {
+  display: inline-block;
+  font-family: var(--sans, system-ui, sans-serif);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.ballot-status-pill--voted {
+  color: #b8e6c8;
+  background: rgba(46, 160, 90, 0.2);
+  border-color: rgba(80, 200, 120, 0.45);
+}
+
+.ballot-status-pill--pending {
+  color: #f0e0a8;
+  background: rgba(200, 160, 40, 0.2);
+  border-color: rgba(220, 180, 60, 0.5);
+}
+
 .allocation-ballot-panel__power {
   color: var(--muted);
 }

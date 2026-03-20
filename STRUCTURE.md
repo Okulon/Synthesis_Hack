@@ -10,6 +10,7 @@ How the **DAO Agent** repo and runtime pieces fit together. For product behavior
 
 ```
 Synthesis_Hack/
+├── package.json              # `npm run agent` → unified worker loop (see apps/agent/src/agent.mjs)
 ├── README.md                 # Judge / contributor entry point
 ├── STRUCTURE.md              # This file
 ├── LICENSE                   # MIT

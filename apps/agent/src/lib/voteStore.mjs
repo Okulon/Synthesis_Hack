@@ -39,6 +39,8 @@ export function saveVoteStore(store) {
  * @property {string} voter
  * @property {Record<string, number>} weights
  * @property {string} [submittedAt]
+ * @property {Record<string, number> | null} [priceMarksUsdc] lowercase token → USDC per 1 token (human) at vote time
+ * @property {string | null} [priceMarksCapturedAt] ISO timestamp when marks were stamped
  */
 
 /**
@@ -88,6 +90,16 @@ function normalizeShares(s) {
   return out;
 }
 
+function normalizePriceMarks(m) {
+  if (!m || typeof m !== "object") return null;
+  const out = {};
+  for (const [k, v] of Object.entries(m)) {
+    const n = Number(v);
+    if (Number.isFinite(n)) out[k.toLowerCase()] = n;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 /** @param {any} b */
 function normalizeBallot(b) {
   const voter = (b.voter ?? b.address ?? "").toLowerCase();
@@ -100,6 +112,8 @@ function normalizeBallot(b) {
     voter,
     weights,
     submittedAt: b.submittedAt ?? null,
+    priceMarksUsdc: normalizePriceMarks(b.priceMarksUsdc),
+    priceMarksCapturedAt: b.priceMarksCapturedAt ?? null,
   };
 }
 

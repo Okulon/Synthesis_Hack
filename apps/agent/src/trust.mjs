@@ -1,6 +1,7 @@
 /**
- * Trust v0 — read cycle CSV + scoring.yaml; apply simple relative_to_benchmark rule; output JSON lines.
+ * Trust v0 — read cycle CSV + scoring.yaml; apply update rule; output JSON.
  * CSV columns: cycle_id,voter_address,vote_return_bps,benchmark_return_bps
+ * Rules: relative_to_benchmark | time_weighted_portfolio_return (see config/trust/scoring.yaml)
  */
 import { buildTrustByVoter, loadCsv, loadScoring } from "./lib/trustCore.mjs";
 

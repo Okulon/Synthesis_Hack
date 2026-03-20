@@ -24,7 +24,7 @@ Full problem/solution and MVP scope: [**docs/PROJECT_SPEC.md**](docs/PROJECT_SPE
 
 ```
 contracts/      # Foundry: DAOVault + tests (see contracts/README.md)
-apps/agent/     # Node: plan | aggregate | trust | quote (dry-run; see apps/agent/README.md)
+apps/agent/     # Node: **`npm run agent`** (repo root) or plan | aggregate | trust | quote — see apps/agent/README.md
 frontend/       # Vite React dashboard @ localhost:1337 (see frontend/README.md)
 docs/           # Spec, build log, governance model, checklist
 vault/          # Vault spec + checklist
