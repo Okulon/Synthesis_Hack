@@ -26,3 +26,7 @@ Recommended load order (agent implements **1 + 3** today; **2** optional):
 3. Environment variables (highest priority for addresses, RPC URLs, tokens)
 
 `config/local/` is optional per-developer overrides; add `config/local/` to `.gitignore` when you create it.
+
+## See also
+
+- [`frontend/README.md`](../frontend/README.md) — browser dashboard uses **`VITE_*`** env vars (not this YAML tree); token/router addresses align with `config/chain/base_sepolia.yaml` for Base Sepolia.

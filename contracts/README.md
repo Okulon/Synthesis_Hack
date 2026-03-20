@@ -1,6 +1,6 @@
 # Contracts (DAO Agent vault)
 
-Foundry project implementing [`../vault/spec.md`](../vault/spec.md). **Deploy:** [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
+Foundry project implementing [`../vault/spec.md`](../vault/spec.md). **Deploy:** [`../docs/DEPLOY.md`](../docs/DEPLOY.md). **Browser QA (deposits / swap path):** [`../frontend/README.md`](../frontend/README.md).
 
 ## Prereqs
 

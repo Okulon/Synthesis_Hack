@@ -177,7 +177,30 @@ Open **Base Sepolia** explorer (e.g. [sepolia.basescan.org](https://sepolia.base
 
 ---
 
-## 10 — If something fails
+## 10 — Dashboard in the browser (optional)
+
+Point the **React** UI at the same chain and vault:
+
+```bash
+cd frontend
+cp .env.example .env.local
+```
+
+Edit **`frontend/.env.local`**: set **`VITE_RPC_URL`** (public HTTPS RPC for Base Sepolia) and **`VITE_VAULT_ADDRESS`** (same `0x…` as **`VAULT_ADDRESS`** in repo root). Then:
+
+```bash
+npm install
+npm run dev
+```
+
+Open **http://localhost:1337** — connect a wallet on **Base Sepolia**.
+
+- **Deposit:** normal path — WETH / USDC (approve + deposit) or **ETH** (wrap to WETH, then deposit).
+- **TEST** (hackathon / QA): enter **ETH** → app wraps, swaps **WETH→USDC** via Uniswap v3, then **deposits USDC** into the vault. Uses **`amountOutMinimum: 0`** (unsafe outside testnets). Details: [`frontend/README.md`](../frontend/README.md).
+
+---
+
+## 11 — If something fails
 
 | Symptom | Likely fix |
 |--------|------------|
@@ -187,6 +210,7 @@ Open **Base Sepolia** explorer (e.g. [sepolia.basescan.org](https://sepolia.base
 | `npm` errors | Use Node 20+, run `npm install` inside `apps/agent` |
 | `plan` says wrong/missing | Check `VAULT_ADDRESS`, `CHAIN_ID=84532`, same RPC as deploy |
 | `targets.json` wrong addresses | Use addresses from [`config/chain/base_sepolia.yaml`](../config/chain/base_sepolia.yaml) |
+| Dashboard won’t connect | Same chain ID (**84532**), **`VITE_*`** vars set in `frontend/.env.local` |
 
 ---
 
@@ -200,4 +224,5 @@ Open **Base Sepolia** explorer (e.g. [sepolia.basescan.org](https://sepolia.base
 ## Same info, shorter path
 
 - Technical detail: [`DEPLOY.md`](./DEPLOY.md)  
+- Dashboard: [`frontend/README.md`](../frontend/README.md)  
 - Current priorities: [`BUILD_LOG.md`](./BUILD_LOG.md) → **Current state**

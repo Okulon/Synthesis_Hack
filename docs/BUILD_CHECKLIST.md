@@ -2,7 +2,7 @@
 
 Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
 
-_Last reviewed: 2026-03-20._
+_Last reviewed: 2026-03-21._
 
 ---
 
@@ -84,6 +84,7 @@ _Last reviewed: 2026-03-20._
 
 - [ ] **Deployed URL** and/or **recorded video** (2–5 min): problem → vote → rebalance (and ideally **one “below ε, no swap”** clip) → governance / thresholds visible
 - [x] **Architecture / trust / limits** — `docs/` + README + [`DEPLOY.md`](./DEPLOY.md) (judge path: clone → configure env → deploy)
+- [x] **Frontend TEST path** (optional QA) — [`frontend/README.md`](../frontend/README.md): ETH → WETH → Uniswap v3 WETH→USDC → `deposit(USDC)` on Base Sepolia (`minOut = 0`; hackathon only)
 - [ ] Explorer links for **key txs** in README or demo script
 
 ---

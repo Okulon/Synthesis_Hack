@@ -1,6 +1,6 @@
 # DAO Agent — off-chain worker
 
-_Last reviewed: 2026-03-20._
+_Last reviewed: 2026-03-21._
 
 Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate` / `trust` (read-only).
 
@@ -54,6 +54,8 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | `POOL_FEE` | no | default `3000` for `quote` |
 
 Deploy: [`docs/DEPLOY.md`](../../docs/DEPLOY.md).
+
+**Dashboard:** [`frontend/README.md`](../../frontend/README.md) — point `VITE_VAULT_ADDRESS` / `VITE_RPC_URL` at the same vault; optional **TEST** flow deposits **USDC** after an on-chain WETH→USDC swap (see frontend README).
 
 ## Next
 

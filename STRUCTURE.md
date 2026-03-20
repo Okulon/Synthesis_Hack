@@ -16,6 +16,7 @@ Synthesis_Hack/
 ├── .env.example              # Secret *names* only; copy to .gitignored `.env`
 ├── .gitignore
 ├── .github/workflows/        # Foundry CI + apps/agent CI
+├── frontend/                 # Vite dashboard (port 1337): reads, deposit, TEST swap path — frontend/README.md
 ├── config/                   # Non-secret YAML defaults (see config/README.md)
 │   ├── agent/                # Worker loop, execution limits
 │   ├── chain/                # Base metadata, contract env keys
@@ -43,6 +44,7 @@ vault/
 └── checklist.md              # Implementation checklist
 
 contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
+frontend/                     # Vite React dashboard — NAV, deposit, Users; TEST = WETH→USDC swap + USDC deposit (see frontend/README.md)
 apps/agent/                   # Node (viem): `plan` | `aggregate` | `trust` | `quote` — see apps/agent/README.md
 apps/bot/     (optional)     # Telegram webhook / long-poll service
 ```
@@ -168,6 +170,7 @@ Once the vault stores governance values on-chain, **chain wins** over file defau
 ## Related links
 
 - [`README.md`](README.md) — quick start and disclaimer  
+- [`frontend/README.md`](frontend/README.md) — dashboard (port 1337), Deposit + **TEST** swap path  
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — Base Sepolia deploy + configure  
 - [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) — MVP and rebalance bands §2.1  
 - [`docs/GOVERNANCE_VOTING.md`](docs/GOVERNANCE_VOTING.md) — two vote streams  

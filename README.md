@@ -4,7 +4,7 @@
 
 Built for **[The Synthesis](https://synthesis.md/)** hackathon (agentic × Ethereum).
 
-> **Status:** Foundry **`DAOVault`** + tests; **[`docs/DEPLOY.md`](docs/DEPLOY.md)** (Base Sepolia **DeployConfigure** one-shot + configure-only script); **agent** [`plan` / `aggregate` / `trust` / `quote`](apps/agent/README.md) (dry-run). **You still:** broadcast deploy, paste **`VAULT_ADDRESS`**, add **real rebalance tx** + optional vote DB. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
+> **Status:** Foundry **`DAOVault`** + tests; **[`docs/DEPLOY.md`](docs/DEPLOY.md)** (Base Sepolia **DeployConfigure** one-shot + configure-only script); **agent** [`plan` / `aggregate` / `trust` / `quote`](apps/agent/README.md) (dry-run); **frontend** dashboard ([`frontend/README.md`](frontend/README.md)) with **Deposit** + hackathon **TEST** path (ETH → wrap → Uniswap v3 WETH→USDC → `deposit(USDC)` — not production). **You still:** broadcast deploy, paste **`VAULT_ADDRESS`**, add **real rebalance tx** + optional vote DB. See [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md).
 
 ---
 
@@ -25,6 +25,7 @@ Full problem/solution and MVP scope: [**docs/PROJECT_SPEC.md**](docs/PROJECT_SPE
 ```
 contracts/      # Foundry: DAOVault + tests (see contracts/README.md)
 apps/agent/     # Node: plan | aggregate | trust | quote (dry-run; see apps/agent/README.md)
+frontend/       # Vite React dashboard @ localhost:1337 (see frontend/README.md)
 docs/           # Spec, build log, governance model, checklist
 vault/          # Vault spec + checklist
 config/         # Non-secret agent defaults (YAML); see config/README.md
@@ -32,7 +33,8 @@ config/         # Non-secret agent defaults (YAML); see config/README.md
 ```
 
 `contracts/` — Foundry vault (`forge build` / `forge test`); see [`contracts/README.md`](contracts/README.md).  
-`apps/agent/` — [`apps/agent/README.md`](apps/agent/README.md). Optional Telegram bot later.
+`apps/agent/` — [`apps/agent/README.md`](apps/agent/README.md). Optional Telegram bot later.  
+`frontend/` — read-only vault UI: [`frontend/README.md`](frontend/README.md).
 
 ---
 
@@ -63,6 +65,14 @@ Dry-run rebalance planner (needs `CHAIN_RPC_URL`, `VAULT_ADDRESS` in `.env`):
 cd apps/agent && npm install && npm run plan
 ```
 
+**Vault dashboard** (set `VITE_RPC_URL` + `VITE_VAULT_ADDRESS` in `frontend/.env.local`; see [`frontend/.env.example`](frontend/.env.example)):
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+→ **http://localhost:1337**
+
 Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.example.json) to `config/local/targets.json` and set real token addresses.
 
 **Deploy on Base Sepolia:** step-by-step [`docs/DEPLOY.md`](docs/DEPLOY.md) (recommended: `DeployConfigureDAOVault` one-shot). Then set `VAULT_ADDRESS` in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Contract commands: [`contracts/README.md`](contracts/README.md).
@@ -77,6 +87,7 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 |-----|---------|
 | [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture (links to `DEPLOY`, specs) |
 | [apps/agent/README.md](apps/agent/README.md) | `plan` / `aggregate` / `trust` / `quote` (dry-run) |
+| [frontend/README.md](frontend/README.md) | Read-only vault dashboard (`npm run dev` → port 1337) |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Base Sepolia deploy + configure + agent wiring |
 | [docs/STEP_BY_STEP.md](docs/STEP_BY_STEP.md) | **Start here** if you’re new: wallet, RPC, deploy, `npm run plan` |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |

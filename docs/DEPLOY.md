@@ -1,6 +1,6 @@
 # Deploy on Base Sepolia (DAO Agent vault)
 
-_Last updated: 2026-03-20._
+_Last updated: 2026-03-21._
 
 **Total beginner?** Use [`STEP_BY_STEP.md`](./STEP_BY_STEP.md) first, then come back here for details.
 
@@ -43,6 +43,7 @@ Copy the logged **`DAOVault`** address into:
 - `CHAIN_ID=84532`
 - `CHAIN_RPC_URL` (same RPC you used)
 - `README` / `config/chain/contracts.yaml` (placeholders)
+- **`frontend/.env.local`** — `VITE_VAULT_ADDRESS` + `VITE_RPC_URL` (see [`frontend/README.md`](../frontend/README.md)) for the browser dashboard (**Deposit** + optional **TEST** WETH→USDC swap path)
 
 ## 3. Alternative: deploy only, configure later
 
@@ -66,22 +67,32 @@ npm run plan          # needs VAULT_ADDRESS + CHAIN_RPC_URL
 npm run quote         # pool slot0 + liquidity (Uniswap factory)
 ```
 
-## 5. Canonical addresses (Base Sepolia)
+## 5. Frontend dashboard (optional)
+
+```bash
+cd frontend && cp .env.example .env.local
+# Set VITE_RPC_URL + VITE_VAULT_ADDRESS (same vault as VAULT_ADDRESS)
+npm install && npm run dev
+```
+
+→ **http://localhost:1337** — connect wallet on Base Sepolia. Full notes: [`frontend/README.md`](../frontend/README.md) (including **TEST**: wrap + Uniswap v3 WETH→USDC + `deposit(USDC)`).
+
+## 6. Canonical addresses (Base Sepolia)
 
 See [`contracts/script/BaseSepolia.sol`](../contracts/script/BaseSepolia.sol) and [`config/chain/base_sepolia.yaml`](../config/chain/base_sepolia.yaml). **Uniswap** addresses match [official Uniswap Base deployments](https://docs.uniswap.org/contracts/v3/reference/deployments/base-deployments).
 
-## 6. Governance bootstrap (hackathon)
+## 7. Governance bootstrap (hackathon)
 
 - **Today:** `GOVERNANCE_ROLE` is the **deployer EOA** — you can change params, pause, executor, cycle close.
 - **North star:** timelock + `Governor` + share voting — see [`VAULT_ORACLE_AND_GOVERNANCE.md`](./VAULT_ORACLE_AND_GOVERNANCE.md).
 - **Honest demo:** document “EOA governance until timelock” in README / submission.
 
-## 7. Tokens
+## 8. Tokens
 
 - **USDC** on Base Sepolia: `0x036CbD53842c5426634e7929541eC2318f3dCF7e` (test USDC; verify on [Basescan Sepolia](https://sepolia.basescan.org)).
 - Fund the vault with small test amounts for deposits/rebalances; use **faucets** / **bridges** as needed.
 
-## 8. What you cannot automate without keys
+## 9. What you cannot automate without keys
 
 - Broadcasting `forge script` (needs `PRIVATE_KEY`).
 - Basescan verification (needs `BASESCAN_API_KEY` + successful deploy).

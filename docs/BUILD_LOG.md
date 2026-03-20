@@ -313,10 +313,63 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Frontend dashboard (Vite, wagmi, reads + deposits)
+
+### Goal
+- Ship a **browser dashboard** for **`DAOVault`**: public RPC reads, explorer links, and **wallet deposits** on **Base Sepolia** — complementing the agent CLI and deploy path.
+
+### Human decisions
+- **Vite + React + TypeScript**, dev server on port **1337**; env only via **`VITE_*`** in **`frontend/.env.local`** (no implicit read of repo-root **`.env`** — document duplicate **`VITE_VAULT_ADDRESS`** / **`VITE_RPC_URL`**).
+- **wagmi** + injected connector for writes; **TanStack Query** for snapshot polling + refetch after deposits.
+
+### Agent / automation
+- New app under [`frontend/`](../frontend/): [`App.tsx`](../frontend/src/App.tsx) — setup / bad-address panels, **Dashboard** vs **Users** toggle, Basescan links, refresh.
+- **Reads:** [`lib/vault.ts`](../frontend/src/lib/vault.ts) (`fetchVaultSnapshot` — NAV, share supply, pause flags, per-asset balances/oracles, `RoleGranted`/`RoleRevoked` members, share **`Transfer`** log scan + holder **`balanceOf`**); [`lib/client.ts`](../frontend/src/lib/client.ts), [`lib/abi.ts`](../frontend/src/lib/abi.ts), [`lib/contracts.ts`](../frontend/src/lib/contracts.ts), [`lib/tokens.ts`](../frontend/src/lib/tokens.ts), [`lib/env.ts`](../frontend/src/lib/env.ts).
+- **Deposits:** [`DepositPanel.tsx`](../frontend/src/components/DepositPanel.tsx) — **USDC** / **WETH** (approve + `deposit`); **ETH** path wraps via **WETH `deposit{value}`** then same flow; receipts checked for **`success`**.
+- **UX:** [`index.css`](../frontend/src/index.css) + [`main.tsx`](../frontend/src/main.tsx) / [`wagmi-config.ts`](../frontend/src/wagmi-config.ts); [`frontend/README.md`](../frontend/README.md), [`frontend/.env.example`](../frontend/.env.example).
+
+### Reality checks
+- **Read-only** except user-initiated **deposit** txs; no executor / **`rebalance`** in the UI yet.
+- Optional **`VITE_ROLE_LOGS_FROM_BLOCK`** / **`VITE_HOLDER_LOGS_FROM_BLOCK`** if default log windows are too heavy for the RPC.
+
+### Next session
+1. Fund vault via UI or cast; confirm **NAV** / **Users** / **`plan`** rows update.
+2. Optional **hackathon TEST** path: swap into a second asset before **`deposit`** (see **2026-03-21** session).
+
+---
+
+## 2026-03-21 — Frontend TEST swap-deposit (WETH→USDC) + docs pass
+
+### Goal
+- **Hackathon-only TEST path** in the dashboard: user supplies **ETH**, app **wraps → swaps WETH→USDC** (Uniswap v3 `SwapRouter02`) → **`deposit(USDC)`** into **`DAOVault`**, to validate multi-token / NAV behavior without expecting the vault to accept native ETH directly.
+- Sync **markdown** (README, `frontend/README`, checklist, `STRUCTURE`, `vault/*`, `STEP_BY_STEP`) and this log.
+
+### Human decisions
+- Label the flow **TEST** with explicit **not production** / **`amountOutMinimum: 0`** warnings; keep normal **Deposit** panel for straight ERC-20 / ETH→WETH paths.
+
+### Agent / automation
+- **Adds on top of the prior “Frontend dashboard (Vite…)” session (2026-03-20):** [`TestSwapDepositPanel.tsx`](../frontend/src/components/TestSwapDepositPanel.tsx) in [`App.tsx`](../frontend/src/App.tsx) below **`DepositPanel`**; [`swapRouter02Abi.ts`](../frontend/src/lib/swapRouter02Abi.ts); router + fee tier aligned with [`BaseSepolia.sol`](../contracts/script/BaseSepolia.sol) (`SWAP_ROUTER02`, **3000** WETH/USDC).
+- **Styles:** `btn-warn` + `test-swap-panel` in [`index.css`](../frontend/src/index.css).
+- **Docs:** Root README status line; [`frontend/README.md`](../frontend/README.md); [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md); [`STRUCTURE.md`](../STRUCTURE.md); [`vault/spec.md`](../vault/spec.md) §3 UX note; [`vault/checklist.md`](../vault/checklist.md); [`STEP_BY_STEP.md`](./STEP_BY_STEP.md) dashboard section.
+
+### Reality checks
+- **Vault** still only receives **ERC-20**; swap + wrap happen **outside** `deposit`.
+- Swap can **revert** on testnet if the **WETH/USDC** pool at the chosen fee tier is missing or illiquid — panel messaging documents that.
+
+### Open questions / risks
+- Replace **`minOut = 0`** with a real quote/slippage cap before any mainnet-style use.
+
+### Next session
+1. **`rebalance`** / **`SwapStep[]`** tx path for Uniswap track evidence.
+2. Optional: promote TEST into a guarded “advanced” flow or remove post-demo.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` — **ahead of** `e22a254` by **local changes** (this log + `.gitignore`; sync `origin` after commit).
+- **Branch / commit:** `main` — sync `origin` after your latest commit.
 - **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **2026-03-20** session: dashboard reads, **Users** (share holders), **`DepositPanel`** (ETH→WETH wrap / WETH / USDC). **2026-03-21** session: **`TestSwapDepositPanel`** (ETH → WETH → Uniswap v3 WETH→USDC → **`deposit(USDC)`**, **`minOut = 0`**, testnet-only). See [`frontend/README.md`](../frontend/README.md).
 - **On-chain (Base Sepolia 84532):** **`DAOVault`** deployed — **`0xc738Fd6CD6CDe70e30F979fe62a0332ad37a5543`** (broadcast JSON / Basescan). **`npm run plan`** smoke OK (**NAV 0**, no rows until funded + targets).
 - **Tests:** **14** pass + **1** fork **skipped** unless `BASE_MAINNET_RPC_URL` is set (CI-safe).
 - **Blocked on (you):** optional **Basescan verify**; **`rebalance`** / swap calldata path for a **real tx hash** (Uniswap track); fund vault / set targets for non-empty **`plan`** output.

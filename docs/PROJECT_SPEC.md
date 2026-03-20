@@ -3,7 +3,7 @@
 **Working name:** DAO Agent  
 **Elevator pitch:** A pooled treasury where stakeholders vote on target portfolio weights; an autonomous executor rebalances on-chain within governance caps; influence and (eventually) profit skew reflect **trust** earned from past voting performance — without giving the agent unchecked custody.
 
-**Status:** **On-chain vault** + tests + **Base Sepolia deploy/configure scripts** ([`docs/DEPLOY.md`](../docs/DEPLOY.md)); **agent** dry-run (`plan`, `aggregate`, `trust`, `quote`). **Remaining** for a full demo: **broadcast deploy** + documented **`VAULT_ADDRESS`**, **real `rebalance` / swap tx**, optional **vote DB**. **Hackathon MVP** below is the build target; full mechanics are a north star.
+**Status:** **On-chain vault** + tests + **Base Sepolia deploy/configure scripts** ([`docs/DEPLOY.md`](../docs/DEPLOY.md)); **agent** dry-run (`plan`, `aggregate`, `trust`, `quote`); **frontend** dashboard ([`frontend/README.md`](../frontend/README.md)) with deposits + hackathon **TEST** path (ETH → WETH → Uniswap WETH→USDC → `deposit(USDC)` on Base Sepolia). **Remaining** for a full demo: documented **`VAULT_ADDRESS`** in README/config, **real `rebalance` / swap tx** from executor, optional **vote DB**. **Hackathon MVP** below is the build target; full mechanics are a north star.
 
 Related: [`BUILD_LOG.md`](./BUILD_LOG.md) (process), [`BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md) (build order), [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md) (how users vote on tokens, DEXes, chains, caps), [`vault/spec.md`](../vault/spec.md) (on-chain vault design).
 
@@ -114,7 +114,7 @@ Goal: **credible vertical slice** matching Synthesis judging: real on-chain exec
 - [ ] **Uniswap Developer Platform** integration with **real API key** and **tx proof** (if claiming Uniswap track)
 - [ ] **Delegation / smart account** demo: agent operates under **caveats** (if claiming MetaMask track)
 - [ ] **Short video** walkthrough
-- [ ] **Deployed** minimal UI or dashboard (even static status page)
+- [x] **Deployed** minimal UI — Vite dashboard in [`frontend/`](../frontend/) (NAV, deposit, Users, optional **TEST** swap-deposit for QA on testnet)
 
 ### Nice-to-have (time permitting)
 - [ ] Telegram **inline** vote UX with **deep links** to wallet signing

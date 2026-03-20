@@ -129,6 +129,7 @@ Everything to ship the on-chain treasury per [`spec.md`](./spec.md). Check boxes
 ## 12 — Docs & demo
 
 - [x] **`vault/spec.md`** §4.2 — **`SwapStep`** implementation note
+- [x] **Frontend** — [`frontend/README.md`](../frontend/README.md): dashboard + **TEST** WETH→USDC swap + USDC `deposit` (Base Sepolia; not production)
 - [ ] README **judge path**: deposit / redeem steps + **Basescan** (after deploy)
 - [ ] One line: **agent down, calldata redeem still works** ([`spec.md` §1](spec.md))
 - [x] [`STRUCTURE.md`](../STRUCTURE.md) lists **`contracts/`**

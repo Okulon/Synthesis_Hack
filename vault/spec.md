@@ -37,6 +37,8 @@
 - **Formula (conceptual):** `shares_minted = f(deposit_value, total_assets_before, total_shares_before)` with standard ERC-4626 rounding rules when using that base.
 - **Events:** `Deposit`, updated totals for indexers.
 
+**UX note (native ETH):** The vault API is **ERC-20 `deposit(asset, …)`** — it does **not** take native ETH. Clients that start from ETH must **wrap** (e.g. WETH) and/or **swap** via external routers *before* calling `deposit` on an allowlisted token. The hackathon **frontend** exposes a labeled **TEST** flow: wrap → Uniswap v3 WETH→USDC → `deposit(USDC, …)` (testnet-oriented; see [`frontend/README.md`](../frontend/README.md)).
+
 **MVP simplification (optional):** disallow deposits mid-rebalance window or document **no dilution fix** for the demo — align with `PROJECT_SPEC` open decisions.
 
 **Hackathon default:** treat **mid-cycle deposits as allowed** unless you explicitly pause deposits for the demo window; if allowed, **Tier A** P&L and trust splits should either exclude new deposits from the cycle boundary math or document a deliberate simplification (e.g. “small TVL / short cycles so dilution is negligible”) in `BUILD_LOG` / README.

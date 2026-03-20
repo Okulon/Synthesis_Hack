@@ -27,5 +27,6 @@
 
 - [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md) — **Current state**  
 - [`docs/DEPLOY.md`](docs/DEPLOY.md) — Base Sepolia deploy + agent wiring  
+- [`frontend/README.md`](frontend/README.md) — dashboard; **TEST** uses on-chain Uniswap **SwapRouter02** (testnet QA, not Uniswap API platform)  
 - [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md) — MVP  
 - [Submission skill](https://synthesis.md/submission/skill.md) — `trackUUIDs`, metadata honesty  
