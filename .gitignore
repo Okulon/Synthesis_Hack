@@ -10,8 +10,11 @@ node_modules/
 dist/
 build/
 out/
-cache/
-broadcast/
+
+# Foundry: forge script cache/broadcast may contain private keys (never commit)
+contracts/cache/
+contracts/broadcast/
+
 *.log
 
 # OS / IDE

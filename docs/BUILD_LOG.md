@@ -285,14 +285,43 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-20 — Base Sepolia broadcast, agent smoke, Foundry gitignore
+
+### Goal
+- Run **`DeployConfigureDAOVault`** with **`--broadcast`** on **Base Sepolia (84532)**; confirm **`npm run plan`** against **`VAULT_ADDRESS`**; keep **Foundry** script artifacts out of git.
+
+### Human decisions
+- Use **repo-root** `set -a && source .env && set +a` before **`forge script`** so **`PRIVATE_KEY`** is visible to Forge (Forge does not auto-load `.env`).
+- Treat **`contracts/cache/`** (sensitive JSON) and **`contracts/broadcast/`** as **never commit** — scope **`.gitignore`** to **`contracts/cache/`** + **`contracts/broadcast/`** with an explicit comment (replaces broad **`cache/`** / **`broadcast/`** at repo root for clarity).
+
+### Agent / automation
+- **On-chain:** `DeployConfigureDAOVault.s.sol` completed; **`DAOVault`** at **`0xc738Fd6CD6CDe70e30F979fe62a0332ad37a5543`** (confirm in `contracts/broadcast/.../run-latest.json` / Basescan); mock aggregators deployed in same sequence.
+- **Agent:** `npm run plan` with **`VAULT_ADDRESS`** set — **`totalNAV` `0`**, **`rows` []** (empty vault / nothing to rebalance yet); targets file was example/fixture path as printed by CLI.
+- **Repo:** [`.gitignore`](../.gitignore) updated for Foundry paths + comment.
+
+### Reality checks
+- **Verify** on Basescan still optional (**`BASESCAN_API_KEY`** + **`--verify`**); addresses not yet necessarily mirrored in README / **`config/chain/contracts.yaml`** (do when polishing for judges).
+- **Next build step** unchanged: **`SwapStep[]`** + **`rebalance`** tx (or delegations story) for a **real** explorer hash.
+
+### Open questions / risks
+- If a **testnet private key** was ever pasted into committed files, **rotate** the key; **`cache/`** JSON must stay untracked.
+
+### Next session
+1. Fill **`VAULT_ADDRESS`** into README + **`config/chain/contracts.yaml`** when ready; optional **contract verify**.
+2. **Deposit / NAV > 0** (or configured targets) so **`plan`** returns non-empty **`rows`**; then **`quote`** / **`rebalance`** path.
+3. **`SwapStep[]`** builder + signed **`rebalance`** for Uniswap track evidence.
+
+---
+
 ## Current state (update every session)
 
-- **Branch / commit:** `main` @ **`e22a254`** (sync with `origin` via `git status`).
+- **Branch / commit:** `main` — **ahead of** `e22a254` by **local changes** (this log + `.gitignore`; sync `origin` after commit).
 - **Shipped in repo:** **`DAOVault`** + unit tests; **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles** for testnet configure; **agent:** `plan`, `aggregate`, `trust`, `quote`; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
+- **On-chain (Base Sepolia 84532):** **`DAOVault`** deployed — **`0xc738Fd6CD6CDe70e30F979fe62a0332ad37a5543`** (broadcast JSON / Basescan). **`npm run plan`** smoke OK (**NAV 0**, no rows until funded + targets).
 - **Tests:** **14** pass + **1** fork **skipped** unless `BASE_MAINNET_RPC_URL` is set (CI-safe).
-- **Blocked on (you):** **`forge script --broadcast`** + verify; funded testnet wallet; **`rebalance`** / swap calldata path for a **real tx hash** (Uniswap track).
+- **Blocked on (you):** optional **Basescan verify**; **`rebalance`** / swap calldata path for a **real tx hash** (Uniswap track); fund vault / set targets for non-empty **`plan`** output.
 - **Next 3 tasks:**
-  1. **Deploy** per [`DEPLOY.md`](./DEPLOY.md) → document **`VAULT_ADDRESS`** (README, `config/chain/contracts.yaml`, `.env`).
+  1. Document **`VAULT_ADDRESS`** in README + `config/chain/contracts.yaml` (and keep **`.env`** local).
   2. End-to-end demo: **aggregate** → **targets** → **plan** → (optional) **`quote`** → build **`rebalance`** calldata + **one explorer tx**.
   3. **Submission:** video / track UUIDs / `conversationLog` polish from this file.
 - **Scope locks (provisional):** **Base** + **Uniswap** + **delegations** narrative; rebalance bands in config; **Tier A** P&L bias unless upgraded.

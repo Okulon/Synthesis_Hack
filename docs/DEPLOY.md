@@ -2,6 +2,8 @@
 
 _Last updated: 2026-03-20._
 
+**Total beginner?** Use [`STEP_BY_STEP.md`](./STEP_BY_STEP.md) first, then come back here for details.
+
 You need: **ETH on Base Sepolia** for gas, **RPC URL**, **deployer private key** (never commit). Optional: **Basescan API key** for verification.
 
 ## 1. Environment

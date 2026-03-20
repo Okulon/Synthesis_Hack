@@ -67,6 +67,8 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 
 **Deploy on Base Sepolia:** step-by-step [`docs/DEPLOY.md`](docs/DEPLOY.md) (recommended: `DeployConfigureDAOVault` one-shot). Then set `VAULT_ADDRESS` in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Contract commands: [`contracts/README.md`](contracts/README.md).
 
+**New to this?** Follow the hand-holding guide: [**`docs/STEP_BY_STEP.md`**](docs/STEP_BY_STEP.md).
+
 ---
 
 ## Documentation
@@ -76,6 +78,7 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 | [STRUCTURE.md](STRUCTURE.md) | Repo layout + Mermaid architecture (links to `DEPLOY`, specs) |
 | [apps/agent/README.md](apps/agent/README.md) | `plan` / `aggregate` / `trust` / `quote` (dry-run) |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Base Sepolia deploy + configure + agent wiring |
+| [docs/STEP_BY_STEP.md](docs/STEP_BY_STEP.md) | **Start here** if you’re new: wallet, RPC, deploy, `npm run plan` |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |
 | [TRACKS.md](TRACKS.md) | Synthesis prize tracks we target + fit notes |
 | [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md) | MVP, rebalance bands, backlog |
