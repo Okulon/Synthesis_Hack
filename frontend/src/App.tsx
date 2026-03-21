@@ -36,6 +36,7 @@ import {
 import { VotingHistoryTab } from "./components/VotingHistoryTab";
 import { ProfitsTab } from "./components/ProfitsTab";
 import { TrustLeaderboardTab } from "./components/TrustLeaderboardTab";
+import { WithdrawPanel } from "./components/WithdrawPanel";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -239,7 +240,7 @@ function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
 
 export default function App() {
   const [view, setView] = useState<
-    "dashboard" | "users" | "voting" | "history" | "profits" | "leaderboard"
+    "dashboard" | "users" | "voting" | "history" | "profits" | "withdraw" | "leaderboard"
   >("dashboard");
   if (!RPC) {
     return (
@@ -327,6 +328,13 @@ export default function App() {
             </button>
             <button
               type="button"
+              className={`btn ${view === "withdraw" ? "btn-primary" : ""}`}
+              onClick={() => setView("withdraw")}
+            >
+              Withdraw
+            </button>
+            <button
+              type="button"
               className={`btn ${view === "leaderboard" ? "btn-primary" : ""}`}
               onClick={() => setView("leaderboard")}
             >
@@ -365,6 +373,8 @@ export default function App() {
           <VotingHistoryTab snap={q.data} />
         ) : view === "profits" ? (
           <ProfitsTab snap={q.data} />
+        ) : view === "withdraw" ? (
+          <WithdrawPanel snap={q.data} />
         ) : (
           <TrustLeaderboardTab snap={q.data} />
         )
@@ -390,7 +400,7 @@ export default function App() {
             {String(q.data.allocationVoteLogScan.toBlock)}
           </>
         ) : null}{" "}
-        · wallet optional (deposit below)
+        · wallet optional (deposit / withdraw tabs)
       </footer>
     </div>
   );

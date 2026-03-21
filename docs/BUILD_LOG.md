@@ -670,6 +670,61 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-21 — Frontend Withdraw tab (`redeemProRata` + `redeemToSingleAsset`)
+
+### Goal
+- Let connected wallets **exit** the vault from the dashboard: burn **shares** and receive underlying tokens using existing **`DAOVault`** redeem entrypoints (no contract changes).
+
+### Human decisions
+- **Two modes:** **Basket (pro-rata)** = one tx, no swaps (**`redeemProRata`** + **`assetsHint`** in **`trackedAssets`** order). **Single asset** = **`redeemToSingleAsset`** with **`SwapStep[]`** built in the browser.
+- **Auto swap path (MVP):** only **Base Sepolia** vaults whose **tracked** set is exactly **canonical WETH + USDC** — single **`SwapRouter02` `exactInputSingle`** (fee **3000**), **`recipient = vault`**, **`minAmountOut = 0`** (testnet / demo parity with the existing TEST deposit swap). Other compositions: UI directs users to **basket** redeem or future extension of **[`redeemSwapSteps.ts`](../frontend/src/lib/redeemSwapSteps.ts)**.
+- **`pauseAll`** blocks redeem (matches contract **`whenRedeemOpen`**).
+
+### Frontend
+- **[`WithdrawPanel.tsx`](../frontend/src/components/WithdrawPanel.tsx)** — share amount + **Max**, slice preview, wagmi **`redeemProRata`** / **`redeemToSingleAsset`**; friendly reverts via **`formatContractRevert`**.
+- **[`redeemSwapSteps.ts`](../frontend/src/lib/redeemSwapSteps.ts)** — **`computeRedeemSlices`** (floor math aligned with vault) + **`buildSingleAssetRedeemSteps`**.
+- **[`App.tsx`](../frontend/src/App.tsx)** — nav view **`withdraw`**; footer copy **deposit / withdraw**.
+- **[`abi.ts`](../frontend/src/lib/abi.ts)** — **`redeemProRata`**, **`redeemToSingleAsset`** (tuple steps as **`(address,address,bytes)[]`** for **`parseAbi`**); redeem-related **errors** for decode.
+- **[`vaultWriteErrors.ts`](../frontend/src/lib/vaultWriteErrors.ts)** — **`MinOut`**, **`IncompleteRedeem`**, **`BadStep`**, **`ZeroAmount`**, **`AssetNotAllowed`**, **`RouterNotAllowed`** messages.
+- **[`index.css`](../frontend/src/index.css)** — withdraw layout (mode radios, preview, inputs).
+
+### Docs
+- **[`frontend/README.md`](../frontend/README.md)** — **Withdraw tab** section (behavior + limits).
+
+### Reality checks
+- **`redeemToSingleAsset`** is still **hard** for arbitrary multi-asset baskets without route building; the checklist item “reliable route + calldata for every vault shape” is **not** fully solved — only the **WETH/USDC** shortcut + **pro-rata** path.
+- Production would need **Quoter**-driven **`minOut`**, more pools / hops, and optional **WETH → ETH** unwrap as a follow-up wallet step.
+
+### Next session
+1. Optional: slippage UI + **`minAmountOut`** for single-asset redeem.
+2. Optional: generalize swap routing beyond **WETH↔USDC** (or document agent-side **`redeem`** helper).
+
+---
+
+## 2026-03-22 — History tab: switchable charts (trust, profits, balance)
+
+### Goal
+- One **History** surface with **three metrics over the same trust cycle order**, toggled by buttons (not all charts at once): **trust**, per-close **profit attribution**, and **cumulative attributed “balance”**.
+
+### Human decisions
+- **Profits / balance** series come from **`frontend/public/cycle-profits.json`** (same **`fetchCycleProfits`** as **Profits** tab). Join each **`trust-history.json`** step’s **`cycle_id`** to a profit row via **`voteStoreCycleKey`** or **`wallClockIndex`**.
+- **“Balance”** = **running sum** of the viewer’s **`allocation1e18`** slices (Tier A off-chain accounting). **Not** live vault **share balance** or wallet token balance — caption + README say so explicitly (avoids confusion with **deposits** / **NAV**).
+
+### Frontend
+- **[`VotingHistoryTab.tsx`](../frontend/src/components/VotingHistoryTab.tsx)** — **`HistoryLineChart`** (shared SVG); **`buildTrustChartSeries`**, **`buildProfitChartSeries`**, **`buildBalanceChartSeries`**; **`history-chart-tabs`** (**Trust** / **Profits** / **Balance**) with **`role="tab"`**; **`useQuery`** for **`cycle-profits`**; loading/error + “no match / no allocation” hints.
+- **[`index.css`](../frontend/src/index.css)** — **`.history-chart-tabs`**, **`.voting-card__header--wrap`**.
+
+### Docs
+- **[`frontend/README.md`](../frontend/README.md)** — **History** section updated (toggle behavior, data sources, balance semantics).
+
+### Reality checks
+- If **trust** **`cycle_id`** and **profit** keys drift, matched rows can be sparse — UI warns. **NAV** on the dashboard is **on-chain**; **TESTGAINS** / profit JSON do not move **`totalNAV()`**.
+
+### Next session
+1. Optional: **share balance over time** (logs/indexer) if judges need “deposits only” narrative on a chart.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -679,11 +734,11 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
 - **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
 - **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** — trust trajectory + vote/benchmark bps + weights) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Withdraw** tab (**`redeemProRata`** basket exit + **`redeemToSingleAsset`** with auto **WETH↔USDC** **`SwapRouter02`** steps on Base Sepolia, **`minOut = 0`** demo) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** + table; **toggle charts** — **Trust** / **Profits** / **Balance** with **`/cycle-profits.json`** join by cycle id; **Balance** = cumulative **attributed** profit slices, not on-chain share balance) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**.
 - **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** writes **`trust-scores.json`** + **`trust-history.json`**; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
 - **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.
-- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; multi-asset / reverse swap path; **Synthesis** draft update with demo artifacts.
+- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; multi-asset / reverse swap path (redeem UI still **WETH+USDC** auto path or **pro-rata**); **Synthesis** draft update with demo artifacts.
 - **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent.
 - **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root — refine before publish.

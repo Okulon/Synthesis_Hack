@@ -21,6 +21,13 @@ function mapErrorName(n: string): string | null {
   if (n === "MinShares") return "MinShares — caller has no vault shares (deposit with this wallet as receiver).";
   if (n === "BadBallot")
     return "BadBallot — weights must match every tracked asset and sum to exactly 10_000 bps.";
+  if (n === "MinOut") return "MinOut — output below minAmountOut (slippage) or vault swap failed.";
+  if (n === "IncompleteRedeem")
+    return "IncompleteRedeem — not all non-output slices were swapped away (check steps / liquidity).";
+  if (n === "BadStep") return "BadStep — swap step invalid, router not allowed, or slice mismatch.";
+  if (n === "ZeroAmount") return "ZeroAmount — shares must be > 0.";
+  if (n === "AssetNotAllowed") return "AssetNotAllowed — asset not allowlisted for this vault.";
+  if (n === "RouterNotAllowed") return "RouterNotAllowed — swap router not allowlisted.";
   if (n === "ReentrancyGuardReentrantCall") return "ReentrancyGuardReentrantCall — re-entrancy (unexpected).";
   return null;
 }

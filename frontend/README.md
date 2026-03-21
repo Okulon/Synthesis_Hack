@@ -1,6 +1,6 @@
 # DAO Vault dashboard
 
-Read-only **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets (balances, oracle config), **Access Control** members (from `RoleGranted` / `RoleRevoked` logs), **Users** tab with **off-chain trust scores**, **Voting** tab for allocation ballots, and **History** tab for **per-cycle trust** and **ballot performance** (see below).
+**React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets, **Access Control**, **Users** / trust, **Voting**, **History**, **Profits**, **Withdraw** (redeem), **Trust leaderboard** (see below).
 
 ## Run (port **1337**)
 
@@ -19,6 +19,13 @@ Open **http://localhost:1337**
 - **Deposit** uses **wagmi** + **injected** wallet (**Rabby**, MetaMask, …). You must be on **Base Sepolia**.
 - **ETH** in the asset dropdown: wraps via canonical WETH `deposit{value}`, then **approve** + vault **deposit** (three txs). The vault contract still only ever receives **WETH** as ERC-20.
 - **USDC** / **WETH**: approve + deposit as before.
+
+## Withdraw tab (redeem)
+
+- **`redeemProRata`** — burn shares; receive each **tracked** asset in proportion (no swaps). `assetsHint` matches on-chain **`trackedAssets`** order (same as the dashboard table).
+- **`redeemToSingleAsset`** — burn shares; vault swaps non-output slices via allowlisted **`SwapRouter02`** + **`exactInputSingle`**. The UI only **auto-builds** swap calldata for a **two-asset WETH+USDC** vault on Base Sepolia (fee tier **3000**); otherwise use **basket** redeem or extend [`redeemSwapSteps.ts`](src/lib/redeemSwapSteps.ts).
+- **`minAmountOut = 0`** on single-asset path — **testnet / demo only** (same idea as the TEST deposit swap).
+- Blocked when **`pauseAll`** (same as contract `whenRedeemOpen` for redeem).
 
 ## TEST (hackathon / QA only)
 
@@ -77,7 +84,7 @@ Wallets not listed get **default 1.00** (asterisk in UI). **Influence** ≈ shar
 After **`npm run trust:export`**, the agent also writes **`frontend/public/trust-history.json`** (same command as trust-scores). The **History** tab:
 
 - Connect wallet **or** paste a voter `0x…` address.
-- **Line chart:** trust score **after** each finalized wall-clock window.
+- **Line chart (one at a time):** toggle **Trust** / **Profits** / **Balance** — trust from `trust-history.json`; profits and cumulative balance from `cycle-profits.json` slices matched to the same cycle ids (`voteStoreCycleKey` / `wallClockIndex`). Balance is **cumulative attributed profit** (Tier A JSON), not live wallet token balance.
 - **Table:** per window — **trust Δ**, **vote return** (bps / %), **benchmark** (bps), and **your ballot weights** (from `vote-store` when available).
 
 Regenerate whenever `trust_cycle.csv` changes (agent rollover runs **`trust:export`** when trust pipeline is on).

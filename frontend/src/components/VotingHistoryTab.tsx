@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
 import {
   fetchTrustHistory,
@@ -7,9 +7,35 @@ import {
   type TrustHistoryPayload,
   type TrustHistoryStep,
 } from "../lib/trustHistory";
+import { fetchCycleProfits, type CycleProfitRow } from "../lib/cycleProfits";
 import { explorerBase } from "../lib/client";
 import { shortAddr, type VaultSnapshot } from "../lib/vault";
 import { pctFromFraction } from "../lib/allocationVotes";
+
+type HistoryChartMode = "trust" | "profits" | "balance";
+
+function profitCycleForTrustStep(cycles: CycleProfitRow[], cycleId: string): CycleProfitRow | undefined {
+  return cycles.find(
+    (c) =>
+      (c.voteStoreCycleKey != null && String(c.voteStoreCycleKey) === cycleId) ||
+      (c.wallClockIndex != null && String(c.wallClockIndex) === cycleId),
+  );
+}
+
+function allocationForVoter(cycle: CycleProfitRow | undefined, voterLc: string): bigint {
+  if (!cycle) return 0n;
+  const p = cycle.participants.find((x) => x.address.toLowerCase() === voterLc);
+  if (!p?.allocation1e18) return 0n;
+  try {
+    return BigInt(p.allocation1e18);
+  } catch {
+    return 0n;
+  }
+}
+
+function nav1e18ToNumber(n: bigint): number {
+  return Number(n) / 1e18;
+}
 
 function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
   const key = addr.toLowerCase();
@@ -19,51 +45,39 @@ function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
   return ballot?.symbol ?? shortAddr(addr, 5);
 }
 
-function TrustOverCyclesChart({
-  steps,
-  defaultTrust,
-  floor,
-  ceiling,
-}: {
-  steps: TrustHistoryStep[];
-  defaultTrust: number;
-  floor: number;
-  ceiling: number;
-}) {
-  const series = useMemo(() => {
-    const padL = 44;
-    const padR = 16;
-    const padT = 12;
-    const W = 560;
-    const H = 200;
-    const innerW = W - padL - padR;
-    const innerH = H - padT - 36;
-    if (steps.length === 0) {
-      return { points: [] as { x: number; y: number; label: string }[], yMin: 0, yMax: 1, padL, padT, W, H, innerW, innerH };
-    }
-    const vals = [defaultTrust, ...steps.map((s) => s.trust_after), ...steps.map((s) => s.trust_before)];
-    let yMin = Math.min(floor, ...vals);
-    let yMax = Math.max(ceiling, ...vals);
-    if (yMax - yMin < 0.05) {
-      yMin -= 0.05;
-      yMax += 0.05;
-    }
-    const n = steps.length;
-    const points = steps.map((s, i) => {
-      const x = n === 1 ? padL + innerW / 2 : padL + (innerW * i) / Math.max(1, n - 1);
-      const t = s.trust_after;
-      const yn = (t - yMin) / (yMax - yMin || 1);
-      const y = padT + innerH * (1 - yn);
-      return { x, y, label: s.cycle_id };
-    });
-    return { points, yMin, yMax, padL, padT, W, H, innerW, innerH };
-  }, [steps, defaultTrust, floor, ceiling]);
+type ChartPoint = { x: number; y: number; label: string };
 
-  if (steps.length === 0) {
-    return <p className="muted small">No finalized cycles yet.</p>;
+function HistoryLineChart({
+  points,
+  yMin,
+  yMax,
+  formatYTick,
+  stroke,
+  gradientId,
+  caption,
+  emptyHint,
+}: {
+  points: ChartPoint[];
+  yMin: number;
+  yMax: number;
+  formatYTick: (v: number) => string;
+  stroke: string;
+  gradientId: string;
+  caption: string;
+  emptyHint?: string;
+}) {
+  const padL = 52;
+  const padR = 16;
+  const padT = 12;
+  const W = 560;
+  const H = 200;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - 36;
+
+  if (points.length === 0) {
+    return <p className="muted small">{emptyHint ?? "No data points."}</p>;
   }
 
-  const { points, yMin, yMax, padL, padT, W, H, innerW, innerH } = series;
   const pathD =
     points.length > 0
       ? `M ${points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L ")}`
@@ -75,9 +89,9 @@ function TrustOverCyclesChart({
     <div className="trust-chart-wrap">
       <svg className="trust-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
         <defs>
-          <linearGradient id="trustLineGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3d9a8b" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#3d9a8b" stopOpacity="0.2" />
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0.2" />
           </linearGradient>
         </defs>
         <rect x={padL} y={padT} width={innerW} height={innerH} fill="none" stroke="#444" strokeWidth="1" opacity="0.5" />
@@ -88,16 +102,16 @@ function TrustOverCyclesChart({
             <g key={i}>
               <line x1={padL} x2={padL + innerW} y1={y} y2={y} stroke="#555" strokeDasharray="4 4" opacity="0.4" />
               <text x={padL - 6} y={y + 4} textAnchor="end" className="trust-chart-tick" fontSize="10">
-                {yt.toFixed(2)}
+                {formatYTick(yt)}
               </text>
             </g>
           );
         })}
         {pathD ? (
           <>
-            <path d={pathD} fill="none" stroke="#3d9a8b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={pathD} fill="none" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             {points.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r="5" fill="#14121a" stroke="#3d9a8b" strokeWidth="2" />
+              <circle key={i} cx={p.x} cy={p.y} r="5" fill="#14121a" stroke={stroke} strokeWidth="2" />
             ))}
           </>
         ) : null}
@@ -107,15 +121,134 @@ function TrustOverCyclesChart({
           </text>
         ))}
       </svg>
-      <p className="muted small trust-chart-caption">Trust score after each finalized wall-clock window (y-axis).</p>
+      <p className="muted small trust-chart-caption">{caption}</p>
     </div>
   );
+}
+
+function buildTrustChartSeries(
+  steps: TrustHistoryStep[],
+  defaultTrust: number,
+  floor: number,
+  ceiling: number,
+): { points: ChartPoint[]; yMin: number; yMax: number } {
+  const padL = 52;
+  const padR = 16;
+  const padT = 12;
+  const W = 560;
+  const innerW = W - padL - padR;
+  const innerH = 200 - padT - 36;
+  if (steps.length === 0) return { points: [], yMin: 0, yMax: 1 };
+  const vals = [defaultTrust, ...steps.map((s) => s.trust_after), ...steps.map((s) => s.trust_before)];
+  let yMin = Math.min(floor, ...vals);
+  let yMax = Math.max(ceiling, ...vals);
+  if (yMax - yMin < 0.05) {
+    yMin -= 0.05;
+    yMax += 0.05;
+  }
+  const n = steps.length;
+  const points = steps.map((s, i) => {
+    const x = n === 1 ? padL + innerW / 2 : padL + (innerW * i) / Math.max(1, n - 1);
+    const t = s.trust_after;
+    const yn = (t - yMin) / (yMax - yMin || 1);
+    const y = padT + innerH * (1 - yn);
+    return { x, y, label: s.cycle_id };
+  });
+  return { points, yMin, yMax };
+}
+
+function buildProfitChartSeries(
+  steps: TrustHistoryStep[],
+  cycles: CycleProfitRow[],
+  voterLc: string,
+): { points: ChartPoint[]; yMin: number; yMax: number } {
+  const padL = 52;
+  const padR = 16;
+  const padT = 12;
+  const W = 560;
+  const innerW = W - padL - padR;
+  const innerH = 200 - padT - 36;
+  const ys: number[] = [];
+  const n = steps.length;
+  const raw = steps.map((s, i) => {
+    const c = profitCycleForTrustStep(cycles, s.cycle_id);
+    const alloc = allocationForVoter(c, voterLc);
+    const yv = nav1e18ToNumber(alloc);
+    ys.push(yv);
+    const x = n === 1 ? padL + innerW / 2 : padL + (innerW * i) / Math.max(1, n - 1);
+    return { x, y: yv, label: s.cycle_id, yv };
+  });
+  let yMin = Math.min(0, ...ys);
+  let yMax = Math.max(1e-9, ...ys);
+  if (yMax - yMin < 1e-12) {
+    yMax = yMin + 1e-6;
+  } else if (yMax - yMin < (yMax + yMin) * 0.05) {
+    const pad = (yMax - yMin) * 0.1 || 0.01;
+    yMin -= pad;
+    yMax += pad;
+  }
+  const points = raw.map((r) => {
+    const yn = (r.yv - yMin) / (yMax - yMin || 1);
+    const y = padT + innerH * (1 - yn);
+    return { x: r.x, y, label: r.label };
+  });
+  return { points, yMin, yMax };
+}
+
+function buildBalanceChartSeries(
+  steps: TrustHistoryStep[],
+  cycles: CycleProfitRow[],
+  voterLc: string,
+): { points: ChartPoint[]; yMin: number; yMax: number } {
+  const padL = 52;
+  const padR = 16;
+  const padT = 12;
+  const W = 560;
+  const innerW = W - padL - padR;
+  const innerH = 200 - padT - 36;
+  let cum = 0n;
+  const ys: number[] = [];
+  const n = steps.length;
+  const raw = steps.map((s, i) => {
+    const c = profitCycleForTrustStep(cycles, s.cycle_id);
+    cum += allocationForVoter(c, voterLc);
+    const yv = nav1e18ToNumber(cum);
+    ys.push(yv);
+    const x = n === 1 ? padL + innerW / 2 : padL + (innerW * i) / Math.max(1, n - 1);
+    return { x, y: yv, label: s.cycle_id, yv };
+  });
+  let yMin = Math.min(0, ...ys);
+  let yMax = Math.max(1e-9, ...ys);
+  if (yMax - yMin < 1e-12) {
+    yMax = yMin + 1e-6;
+  } else if (yMax - yMin < (yMax + yMin) * 0.05) {
+    const pad = (yMax - yMin) * 0.1 || 0.01;
+    yMin -= pad;
+    yMax += pad;
+  }
+  const points = raw.map((r) => {
+    const yn = (r.yv - yMin) / (yMax - yMin || 1);
+    const y = padT + innerH * (1 - yn);
+    return { x: r.x, y, label: r.label };
+  });
+  return { points, yMin, yMax };
+}
+
+function formatNavTick(v: number): string {
+  if (!Number.isFinite(v)) return "—";
+  const ax = Math.abs(v);
+  if (ax >= 1e9) return v.toExponential(1);
+  if (ax >= 1) return v.toFixed(2);
+  if (ax >= 0.01) return v.toFixed(4);
+  return v.toExponential(1);
 }
 
 export function VotingHistoryTab({ snap }: { snap: VaultSnapshot }) {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const [manualAddr, setManualAddr] = useState("");
+  const [chartMode, setChartMode] = useState<HistoryChartMode>("trust");
+  const chartUid = useId().replace(/:/g, "");
 
   const q = useQuery({
     queryKey: ["trust-history"],
@@ -123,6 +256,15 @@ export function VotingHistoryTab({ snap }: { snap: VaultSnapshot }) {
     staleTime: 20_000,
     refetchInterval: 30_000,
   });
+
+  const profitsQ = useQuery({
+    queryKey: ["cycle-profits"],
+    queryFn: fetchCycleProfits,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+
+  const profitCycles = profitsQ.data?.cycles ?? [];
 
   const lookupKey = (isConnected && address ? address : manualAddr.trim()).toLowerCase();
 
@@ -135,13 +277,40 @@ export function VotingHistoryTab({ snap }: { snap: VaultSnapshot }) {
 
   const payload = q.data;
 
+  const trustSeries = useMemo(() => {
+    if (!payload || !steps?.length) return null;
+    return buildTrustChartSeries(steps, payload.defaultTrust, payload.trustFloor, payload.trustCeiling);
+  }, [payload, steps]);
+
+  const profitSeries = useMemo(() => {
+    if (!steps?.length) return null;
+    return buildProfitChartSeries(steps, profitCycles, lookupKey);
+  }, [steps, profitCycles, lookupKey]);
+
+  const balanceSeries = useMemo(() => {
+    if (!steps?.length) return null;
+    return buildBalanceChartSeries(steps, profitCycles, lookupKey);
+  }, [steps, profitCycles, lookupKey]);
+
+  const profitMatchCount = useMemo(() => {
+    if (!steps?.length) return 0;
+    return steps.filter((s) => profitCycleForTrustStep(profitCycles, s.cycle_id) != null).length;
+  }, [steps, profitCycles]);
+
+  const hasAnyAllocation = useMemo(() => {
+    if (!steps?.length) return false;
+    return steps.some((s) => allocationForVoter(profitCycleForTrustStep(profitCycles, s.cycle_id), lookupKey) > 0n);
+  }, [steps, profitCycles, lookupKey]);
+
   return (
     <section className="panel voting-history-page">
       <h2 className="voting-page-title">Voting &amp; trust history</h2>
       <p className="muted small" style={{ marginTop: 0 }}>
-        Per-cycle data from <code className="mono">trust-history.json</code> (run <code className="mono">npm run trust:export</code> in{" "}
-        <code className="mono">apps/agent</code> or let the agent export on rollover). Shows how your ballot weights performed vs benchmark
-        (bps) and how trust moved (floor {payload?.trustFloor ?? "—"} … ceiling {payload?.trustCeiling ?? "—"}).
+        Per-cycle data from <code className="mono">trust-history.json</code> (<code className="mono">npm run trust:export</code> in{" "}
+        <code className="mono">apps/agent</code>). Use the chart toggles for <strong>trust</strong>, per-close <strong>profits</strong>, and
+        cumulative <strong>balance</strong> (profit slices from <code className="mono">cycle-profits.json</code> /{" "}
+        <code className="mono">npm run profit:export</code>, matched by cycle id). Table below: benchmark (bps) and trust floor{" "}
+        {payload?.trustFloor ?? "—"} … ceiling {payload?.trustCeiling ?? "—"}.
       </p>
 
       <div className="voting-card voting-card--muted" style={{ marginBottom: "1rem" }}>
@@ -197,19 +366,106 @@ export function VotingHistoryTab({ snap }: { snap: VaultSnapshot }) {
       {payload && steps && steps.length > 0 ? (
         <>
           <div className="voting-card">
-            <div className="voting-card__header">
-              <h3>Trust over cycles</h3>
+            <div className="voting-card__header voting-card__header--wrap">
+              <h3>Over cycles</h3>
               {payload._meta?.updatedAt ? (
-                <span className="muted small mono">Updated {payload._meta.updatedAt}</span>
+                <span className="muted small mono">Trust export {payload._meta.updatedAt}</span>
               ) : null}
             </div>
             <div className="voting-card__body">
-              <TrustOverCyclesChart
-                steps={steps}
-                defaultTrust={payload.defaultTrust}
-                floor={payload.trustFloor}
-                ceiling={payload.trustCeiling}
-              />
+              <div className="history-chart-tabs" role="tablist" aria-label="History chart metric">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={chartMode === "trust"}
+                  className={`btn ${chartMode === "trust" ? "btn-primary" : ""}`}
+                  onClick={() => setChartMode("trust")}
+                >
+                  Trust
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={chartMode === "profits"}
+                  className={`btn ${chartMode === "profits" ? "btn-primary" : ""}`}
+                  onClick={() => setChartMode("profits")}
+                >
+                  Profits
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={chartMode === "balance"}
+                  className={`btn ${chartMode === "balance" ? "btn-primary" : ""}`}
+                  onClick={() => setChartMode("balance")}
+                >
+                  Balance
+                </button>
+              </div>
+
+              {chartMode !== "trust" && profitsQ.isError ? (
+                <p className="muted small" style={{ marginTop: "0.75rem" }}>
+                  Could not load <code className="mono">/cycle-profits.json</code> — profit/balance charts need{" "}
+                  <code className="mono">npm run profit:export</code>.
+                </p>
+              ) : null}
+              {chartMode !== "trust" && !profitsQ.isError && profitsQ.isLoading ? (
+                <p className="muted small" style={{ marginTop: "0.75rem" }}>
+                  Loading <code className="mono">cycle-profits.json</code>…
+                </p>
+              ) : null}
+
+              {chartMode === "trust" && trustSeries ? (
+                <HistoryLineChart
+                  points={trustSeries.points}
+                  yMin={trustSeries.yMin}
+                  yMax={trustSeries.yMax}
+                  formatYTick={(v) => v.toFixed(2)}
+                  stroke="#3d9a8b"
+                  gradientId={`${chartUid}-grad-trust`}
+                  caption="Trust score after each finalized window (y-axis). X-axis: cycle id from trust export."
+                  emptyHint="No finalized cycles yet."
+                />
+              ) : null}
+
+              {chartMode === "profits" && !profitsQ.isError && !profitsQ.isLoading && profitSeries ? (
+                <>
+                  {profitMatchCount === 0 ? (
+                    <p className="muted small" style={{ marginTop: "0.5rem" }}>
+                      No <code className="mono">cycle-profits.json</code> rows matched these trust cycle ids (check{" "}
+                      <code className="mono">voteStoreCycleKey</code> / <code className="mono">wallClockIndex</code>).
+                    </p>
+                  ) : null}
+                  {profitMatchCount > 0 && !hasAnyAllocation ? (
+                    <p className="muted small" style={{ marginTop: "0.5rem" }}>
+                      Matched {profitMatchCount} close(s) but no profit allocation row for this address (did not vote on-chain for that close).
+                    </p>
+                  ) : null}
+                  <HistoryLineChart
+                    points={profitSeries.points}
+                    yMin={profitSeries.yMin}
+                    yMax={profitSeries.yMax}
+                    formatYTick={formatNavTick}
+                    stroke="#d4a84b"
+                    gradientId={`${chartUid}-grad-profit`}
+                    caption="Attributed profit slice per close (NAV-scale units ÷ 1e18). Sourced from cycle-profits.json, aligned to the same cycle order as trust."
+                    emptyHint="No data points."
+                  />
+                </>
+              ) : null}
+
+              {chartMode === "balance" && !profitsQ.isError && !profitsQ.isLoading && balanceSeries ? (
+                <HistoryLineChart
+                  points={balanceSeries.points}
+                  yMin={balanceSeries.yMin}
+                  yMax={balanceSeries.yMax}
+                  formatYTick={formatNavTick}
+                  stroke="#7eb8da"
+                  gradientId={`${chartUid}-grad-balance`}
+                  caption="Cumulative attributed profit (sum of slices above) in cycle order — Tier A JSON accounting, not wallet token balance."
+                  emptyHint="No data points."
+                />
+              ) : null}
             </div>
           </div>
 
