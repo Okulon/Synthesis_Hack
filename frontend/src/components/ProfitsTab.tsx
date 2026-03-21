@@ -26,6 +26,16 @@ function normalizeAddr(a: string): string {
   return a.trim().toLowerCase();
 }
 
+/** Format `testGainsRawSample1e18` (signed NAV-scale) for display */
+function formatRawSample1e18(s: string | null | undefined): string {
+  if (s == null || s === "") return "—";
+  try {
+    return formatNav1e18(BigInt(s), 4);
+  } catch {
+    return s;
+  }
+}
+
 function cycleLabel(c: CycleProfitRow, i: number): string {
   return c.voteStoreCycleKey ?? (c.wallClockIndex != null ? `#${c.wallClockIndex}` : `C${i + 1}`);
 }
@@ -39,6 +49,8 @@ type YourCycleRow = {
   participants: number;
   closedAt: string | null;
   txHash: string | null;
+  /** Pre-clamp uniform draw when `TESTGAINS` synthetic pools are active */
+  rawSample1e18: string | null | undefined;
 };
 
 function buildYourCycleRows(cycles: CycleProfitRow[], addr: string | null): YourCycleRow[] {
@@ -67,6 +79,7 @@ function buildYourCycleRows(cycles: CycleProfitRow[], addr: string | null): Your
       participants: c.participantCount,
       closedAt: c.closedAt,
       txHash: c.txHash,
+      rawSample1e18: c.testGainsRawSample1e18,
     };
   });
 }
@@ -329,6 +342,7 @@ export function ProfitsTab({ snap }: { snap: VaultSnapshot }) {
   }, [manual, wagmiAddr]);
 
   const cycles = q.data?.cycles ?? [];
+  const testGainsActive = q.data?.testGainsActive ?? false;
   const yourKey = effectiveAddr ? normalizeAddr(effectiveAddr) : null;
 
   const yourTotal = useMemo(() => {
@@ -392,6 +406,20 @@ export function ProfitsTab({ snap }: { snap: VaultSnapshot }) {
       return ta - tb;
     });
     return chrono.map((c) => BigInt(c.profitPool1e18));
+  }, [cycles]);
+
+  const perCycleDetailRows = useMemo(() => {
+    const chrono = [...cycles].sort((a, b) => {
+      const ta = Date.parse(a.closedAt ?? "") || 0;
+      const tb = Date.parse(b.closedAt ?? "") || 0;
+      return ta - tb;
+    });
+    return chrono.map((c, i) => ({
+      label: cycleLabel(c, i),
+      pool: BigInt(c.profitPool1e18),
+      rawSample1e18: c.testGainsRawSample1e18,
+      txHash: c.txHash,
+    }));
   }, [cycles]);
 
   const cumulativeValues = useMemo(() => {
@@ -540,6 +568,9 @@ export function ProfitsTab({ snap }: { snap: VaultSnapshot }) {
                     <tr>
                       <th>Cycle</th>
                       <th>Pool</th>
+                      {testGainsActive ? (
+                        <th title="Uniform draw (1e18 NAV units) before max(0,·) → pool">Raw draw</th>
+                      ) : null}
                       <th>Yours</th>
                       <th>% pool</th>
                       <th>Rank</th>
@@ -551,6 +582,9 @@ export function ProfitsTab({ snap }: { snap: VaultSnapshot }) {
                       <tr key={r.label + (r.closedAt ?? "")} className={r.yours > 0n ? "profits-v2__tr--on" : ""}>
                         <td className="mono">{r.label}</td>
                         <td className="mono sm">{formatNav1e18(r.pool, 3)}</td>
+                        {testGainsActive ? (
+                          <td className="mono sm">{formatRawSample1e18(r.rawSample1e18)}</td>
+                        ) : null}
                         <td className="mono sm">{formatNav1e18(r.yours, 4)}</td>
                         <td className="mono sm">{r.yours > 0n ? `${r.pctOfPool.toFixed(2)}%` : "—"}</td>
                         <td className="mono sm">
@@ -585,6 +619,45 @@ export function ProfitsTab({ snap }: { snap: VaultSnapshot }) {
               <StatTile label="Recipients" value={String(leaderboard.length)} />
               <StatTile label="Largest single" value={formatNav1e18(maxSinglePayout, 4)} />
             </div>
+
+            {testGainsActive && perCycleDetailRows.length > 0 ? (
+              <>
+                <p className="profits-v2__hint">
+                  Per close: random draw in the configured range, then clamped to <strong>pool</strong>.{" "}
+                  <span className="mono">testGainsRawSample1e18</span> is the pre-clamp value (same units as NAV).
+                </p>
+                <div className="table-wrap profits-v2__table-wrap">
+                  <table className="profits-v2__table">
+                    <thead>
+                      <tr>
+                        <th>Cycle</th>
+                        <th>Pool</th>
+                        <th>Raw draw</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {perCycleDetailRows.map((row) => (
+                        <tr key={row.label}>
+                          <td className="mono">{row.label}</td>
+                          <td className="mono sm">{formatNav1e18(row.pool, 3)}</td>
+                          <td className="mono sm">{formatRawSample1e18(row.rawSample1e18)}</td>
+                          <td className="mono sm">
+                            {row.txHash ? (
+                              <ExplorerLink chainId={snap.chainId} path={`/tx/${row.txHash}`}>
+                                tx
+                              </ExplorerLink>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : null}
 
             <div className="profits-v2__charts-row">
               <ProfitsBarChart labels={poolChartLabels} values={poolChartValues} title="Pool size" accent="coral" />

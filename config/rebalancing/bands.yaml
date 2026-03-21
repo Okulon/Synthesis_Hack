@@ -1,4 +1,4 @@
-# Rebalance band policy — aligns with docs/PROJECT_SPEC.md §2.1
+# Rebalance band policy — aligns with docs/PROJECT_SPEC.md §2.1 and docs/BAND_POLICY.md
 # Governance may override these on-chain or via DB; this file is agent bootstrap / fallback.
 #
 # Plan uses BOTH gates (AND):

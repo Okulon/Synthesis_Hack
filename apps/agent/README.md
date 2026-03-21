@@ -6,9 +6,23 @@ Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate
 
 ### One command (`npm run agent` from repo root)
 
-Keeps wall-clock windows aligned. On each **closed** wall-clock window: **sync on-chain ballots** → **stamp prices** → **trust finalize** (time-weighted portfolio return → `trust_cycle.csv`) → **trust scoring** → **export** (`trust-scores.json`) → **`closeCycle`** (if gov key — must succeed before advancing); optional one-shot rollover rebalance only if **`AGENT_REBALANCE_TO_TARGET=0`**. Every tick (after aggregate): **`AGENT_REBALANCE_TO_TARGET`** (default on with executor key) runs **`plan` → `rebalance`** in a loop until no **`would_trade`** or **`AGENT_REBALANCE_MAX_STEPS_PER_TICK`** (continues on later ticks until converged). Set **`AGENT_REBALANCE_FROZEN_PHASE_ONLY=1`** to rebalance only in the frozen slice. **`rebalance.mjs`** is WETH→USDC only — tune **`REBALANCE_BPS`** and **`config/rebalancing/bands.yaml`**. See [`src/agent.mjs`](./src/agent.mjs).
+Keeps wall-clock windows aligned. On each **closed** wall-clock window: **sync on-chain ballots** → **stamp prices** → **trust finalize** (time-weighted portfolio return → `trust_cycle.csv`) → **trust scoring** → **export** (`trust-scores.json`) → **`closeCycle`** (if gov key — must succeed before advancing); optional one-shot rollover rebalance only if **`AGENT_REBALANCE_TO_TARGET=0`**. Every tick (after aggregate): **`AGENT_REBALANCE_TO_TARGET`** (default on with executor key) runs **`plan` → `rebalance`** in a loop until no **`would_trade`** or **`AGENT_REBALANCE_MAX_STEPS_PER_TICK`** (continues on later ticks until converged). Set **`AGENT_REBALANCE_FROZEN_PHASE_ONLY=1`** to rebalance only in the frozen slice. **`rebalance.mjs`** picks the **most overweight** tracked asset vs **`targets.json`** + bands (same math as **`plan`**) and swaps toward the **most underweight** asset. **WETH↔USDC** is one hop; a **third token** in **`config/chain/base.yaml`** (e.g. **cbETH**) uses **USDC as hub** — two hops via **`exactInput`** when moving between WETH and that token. Base Sepolia defaults to **WETH + USDC only** (add a `tokens.<SYMBOL>` block + `usdc_pool_fee` if you have a test pool). Tune **`config/rebalancing/bands.yaml`** and slippage / Quoter env vars. See [`src/agent.mjs`](./src/agent.mjs).
 
 **Wall-clock only** (`cycle:sync` / `cycle:daemon`) does **not** broadcast **`rebalance`** or **`closeCycle`** unless you use **`agent`** with **`AGENT_AUTO_REBALANCE=1`** ([`docs/CYCLES_AND_VOTING.md`](../docs/CYCLES_AND_VOTING.md)).
+
+### Autonomy (Base / Synthesis — what runs without UI)
+
+| Piece | Role |
+|--------|------|
+| **`npm run agent`** (repo root) or `cd apps/agent && npm run agent` | Single long-running tick ([`src/agent.mjs`](./src/agent.mjs)) |
+| **`AGENT_INTERVAL_SEC`** | Seconds between ticks (default **60**; can align with `CYCLE_DAEMON_INTERVAL_SEC`) |
+| **`EXECUTOR_PRIVATE_KEY`** | Enables **`AGENT_REBALANCE_TO_TARGET`** (default **on** when key set): each tick loops **`plan` → `rebalance`** until no `would_trade` or **`AGENT_REBALANCE_MAX_STEPS_PER_TICK`** |
+| **`GOVERNANCE_PRIVATE_KEY`** | Enables **`closeCycle`** on wall-clock rollover when **`AGENT_CLOSE_CYCLE_ON_ROLLOVER`** (default **on** when key set) |
+| **No keys** | **`plan`**, **`aggregate`**, **`quote`** stay read-only; no on-chain sends |
+
+Optional: **`AGENT_REBALANCE_FROZEN_PHASE_ONLY=1`** — only rebalance during the frozen slice of the wall-clock window. **`AGENT_CLOSE_CYCLE_ON_ROLLOVER=0`** — skip **`closeCycle`** even if governance key is set.
+
+Env names for the full surface are also documented in the **header comment** of [`src/agent.mjs`](./src/agent.mjs).
 
 ## Setup
 
@@ -70,7 +84,7 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | `npm run trust:finalize-window` | **Previous** wall-clock window → upserts **`trust_cycle.csv`** with time-weighted portfolio `vote_return_bps` (`TRUST_FINALIZE_CYCLE_KEY` optional) |
 | `npm run trust:export` | Writes **`frontend/public/trust-scores.json`** + **`frontend/public/trust-history.json`** (per-cycle trust Δ, bps, weights) for Users + History tabs |
 | `npm run quote` | Uniswap V3 **factory → pool → slot0 + liquidity** (uses `config/chain/base.yaml` or `base_sepolia.yaml` by `CHAIN_ID`) |
-| `npm run rebalance` | **Executor-only:** `vault.rebalance` WETH→USDC; **oracle vs pool mid-price guard** + **`amountOutMinimum`** from mid (+ fee fudge). See env vars below. |
+| `npm run rebalance` | **Executor-only:** `vault.rebalance` per **`plan`** (overweight → underweight); **WETH↔USDC** and optional **hub** routes (`exactInput`); **oracle guard** when the route hits the **WETH/USDC 0.3%** pool; **QuoterV2** (`quoteExactInput` / `quoteExactInputSingle`). See env vars below. |
 
 **`npm run rebalance` env (repo root `.env`)**
 
@@ -78,9 +92,10 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 |----------|---------|---------|
 | `REBALANCE_DISABLE_ORACLE_POOL_GUARD` | off | Set `1` on rough testnet pools (skip divergence check). |
 | `REBALANCE_ORACLE_POOL_MAX_DEVIATION_BPS` | `2000` | Abort if `abs(oracle − poolMid) / oracle` exceeds this (basis points). |
-| `REBALANCE_SLIPPAGE_BPS` | `100` | Tightens `amountOutMinimum` vs mid estimate. |
-| `REBALANCE_BPS` | `5000` | Fraction of vault WETH to sell (basis points). |
-| `REBALANCE_FEE_FUDGE_NUM` / `DEN` | `997` / `1000` | One-hop v3 fee approximation for minOut. |
+| `REBALANCE_SLIPPAGE_BPS` | `100` | Tightens `amountOutMinimum` vs **Quoter** output (or mid if Quoter off). |
+| `REBALANCE_USE_QUOTER` | `1` | Set `0` to skip **QuoterV2** and use mid + fee fudge only. |
+| `REBALANCE_QUOTER_ADDRESS` | — | Optional override; else `uniswap.quoter_v2` from `config/chain/base*.yaml`. |
+| `REBALANCE_FEE_FUDGE_NUM` / `DEN` | `997` / `1000` | One-hop v3 fee approximation when Quoter is off. |
 
 ## Skills
 
@@ -115,5 +130,5 @@ Deploy: [`docs/DEPLOY.md`](../../docs/DEPLOY.md).
 
 ## Next
 
-- Build **`SwapStep[]`** for `rebalance` (Uniswap API / quoter + `contracts` ABI)
+- Optional: **`SwapStep[]`** for **third+ assets** or multi-hop when the vault tracks more than WETH/USDC
 - Persist votes in DB; wire **executor** key only in a signer process (not this repo)

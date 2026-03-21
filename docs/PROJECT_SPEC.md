@@ -160,10 +160,10 @@ Refresh UUIDs from **`https://synthesis.devfolio.co/catalog`** before `trackUUID
 
 ---
 
-## 7 — Open decisions (resolve into `BUILD_LOG`)
+## 7 — Product decisions (see [`BUILD_LOG.md`](./BUILD_LOG.md) **Current state** for dated notes)
 
-- **Vault vs smart account:** **vault contract** + executor (see [`vault/spec.md`](../vault/spec.md)); smart account optional later
-- **Mid-cycle deposit / voting** — **locked:** deposits & withdrawals **always on** (unless pause); **snapshot** for allocation vote; shares minted **after** snapshot → **no vote until next cycle** (§2.0 above; [`vault/spec.md`](../vault/spec.md) §3)
-- **Benchmark** for trust (e.g. 60/40 vs equal-weight allowlist)
-- Whether **executor** is EOA with tight allowance or **contract** with immutable checks
-- **Drift metric:** absolute percentage points vs relative; single global `ε` vs per-asset (MVP can ship global + min-notional only)
+- **Vault vs smart account:** **Vault contract** + scoped **executor** for `rebalance` (see [`vault/spec.md`](../vault/spec.md)); smart account / MetaMask Delegations optional later.
+- **Mid-cycle deposit / voting:** **locked** — §2.0 and [`vault/spec.md`](../vault/spec.md) §3 (snapshot voting; deposits/withdrawals not cycle-locked except pause).
+- **Trust benchmark (v0):** configurable in trust pipeline / CSV; compare **proposed portfolio** vs **vault oracle–priced** marks at vote time — exact index (e.g. 60/40) is a **documentation** choice; tune in trust scripts, not in core vault math for MVP.
+- **Executor shape:** **EOA executor** with vault **`executor` role** calling **`rebalance`**; caps enforced in contract (allowlisted routers/tokens). A dedicated **executor contract** with immutable checks is future work.
+- **Drift / ε:** **`absolute_pp`** implemented (`|w_cur − w_tgt| × 100`); **`relative`** in `bands.yaml` is **not** implemented — `plan` warns and uses absolute drift. **Global `ε`** + optional **`per_asset_epsilon_pp`** + optional **`min_trade_notional_quote`** — see [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml) and [`docs/BAND_POLICY.md`](./BAND_POLICY.md).

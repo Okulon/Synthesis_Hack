@@ -63,7 +63,7 @@ function rebalance(SwapStep[] calldata steps) external;
   - **`recipient` = `VAULT_ADDRESS`**
   - **`amountOutMinimum`** / slippage per governance (never `0` on mainnet-style deploys)
 
-**Repo helper:** `npm run rebalance` (see `apps/agent/README.md`) applies an **oracle vs Uniswap pool mid-price** divergence check and sets a non-zero **`amountOutMinimum`** from mid + fee fudge (not a full Quoter). Use **`REBALANCE_DISABLE_ORACLE_POOL_GUARD=1`** only when testnet pools disagree wildly with mocks.
+**Repo helper:** `npm run rebalance` (see `apps/agent/README.md`) picks **overweight → underweight** from **`plan`**, builds **WETH/USDC** single hops or **USDC-hub** two-hop **`exactInput`** when **`config/chain/base.yaml`** lists a third token (e.g. cbETH), sets **`amountOutMinimum`** from **QuoterV2** (`quoteExactInput` / `quoteExactInputSingle`), and applies the **oracle vs pool mid** guard when the route touches the **WETH/USDC 0.3%** pool. Use **`REBALANCE_DISABLE_ORACLE_POOL_GUARD=1`** only when testnet pools disagree wildly with mocks.
 
 Reference ABI fragments: [`frontend/src/lib/swapRouter02Abi.ts`](../../../frontend/src/lib/swapRouter02Abi.ts).
 

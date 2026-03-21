@@ -11,9 +11,10 @@ import { waitForTransactionReceipt } from "viem/actions";
 import { baseSepolia } from "wagmi/chains";
 import { useAccount, useBalance, usePublicClient, useWriteContract } from "wagmi";
 import { daovaultAbi, erc20Abi, weth9Abi } from "../lib/abi";
-import { SWAP_ROUTER02, UNISWAP_POOL_FEE_WETH_USDC } from "../lib/contracts";
+import { DEFAULT_SWAP_SLIPPAGE_BPS, SWAP_ROUTER02, UNISWAP_POOL_FEE_WETH_USDC } from "../lib/contracts";
 import { swapRouter02Abi } from "../lib/swapRouter02Abi";
 import { TOKENS } from "../lib/tokens";
+import { quoteExactInputSingleOrZero } from "../lib/uniswapQuote";
 
 type Props = {
   vaultAddress: Address;
@@ -24,7 +25,7 @@ type Props = {
 
 /**
  * TEST ONLY: wrap ETH → swap WETH→USDC on Uniswap v3 → deposit USDC into vault.
- * Uses `amountOutMinimum = 0` — unsafe for prod; for hackathon / illiquid testnet pools.
+ * Uses QuoterV2 + slippage when the quote succeeds; falls back to `minOut = 0` if the quoter reverts.
  */
 export function TestSwapDepositPanel({ vaultAddress, chainId, pauseAll, pauseDeposits }: Props) {
   const queryClient = useQueryClient();
@@ -105,7 +106,18 @@ export function TestSwapDepositPanel({ vaultAddress, chainId, pauseAll, pauseDep
         args: [address],
       });
 
-      setStatus("TEST 3/5 — Swap WETH → USDC (Uniswap)…");
+      const quote = await quoteExactInputSingleOrZero(publicClient, {
+        tokenIn: TOKENS.WETH.address,
+        tokenOut: TOKENS.USDC.address,
+        fee: UNISWAP_POOL_FEE_WETH_USDC,
+        amountIn: amountWei,
+        slippageBps: DEFAULT_SWAP_SLIPPAGE_BPS,
+      });
+      setStatus(
+        quote.usedQuoter
+          ? "TEST 3/5 — Swap WETH → USDC (Uniswap, Quoter minOut)…"
+          : "TEST 3/5 — Swap WETH → USDC (Uniswap, minOut=0 — quoter failed)…",
+      );
       const h3 = await writeContractAsync({
         address: SWAP_ROUTER02,
         abi: swapRouter02Abi,
@@ -117,7 +129,7 @@ export function TestSwapDepositPanel({ vaultAddress, chainId, pauseAll, pauseDep
             fee: UNISWAP_POOL_FEE_WETH_USDC,
             recipient: address,
             amountIn: amountWei,
-            amountOutMinimum: 0n,
+            amountOutMinimum: quote.amountOutMinimum,
             sqrtPriceLimitX96: 0n,
           },
         ],
@@ -156,7 +168,10 @@ export function TestSwapDepositPanel({ vaultAddress, chainId, pauseAll, pauseDep
       });
       await waitSuccess(h5, "Deposit");
 
-      setStatus(`TEST OK — deposited ${formatUnits(usdcGain, TOKENS.USDC.decimals)} USDC (from ${formatEther(amountWei)} ETH path).`);
+      setStatus(
+        `TEST OK — deposited ${formatUnits(usdcGain, TOKENS.USDC.decimals)} USDC (from ${formatEther(amountWei)} ETH path). ` +
+          (quote.usedQuoter ? `Quoter + ${DEFAULT_SWAP_SLIPPAGE_BPS} bps slip.` : "Quoter unavailable — minOut was 0."),
+      );
       setAmountStr("");
       await invalidateVault();
     } catch (e) {
@@ -173,9 +188,10 @@ export function TestSwapDepositPanel({ vaultAddress, chainId, pauseAll, pauseDep
         TEST — ETH → USDC swap → deposit
       </h2>
       <p className="muted small">
-        <strong>Not production.</strong> Wraps your ETH, swaps <strong>WETH → USDC</strong> via Uniswap v3 router on Base Sepolia (
-        <span className="mono">fee={UNISWAP_POOL_FEE_WETH_USDC}</span>, <strong>minOut = 0</strong>
-        ), then <code>deposit(USDC)</code>. Fails if the pool has no liquidity. Connect in Deposit above first.
+        <strong>Not production.</strong>         Wraps your ETH, swaps <strong>WETH → USDC</strong> via Uniswap v3 router on Base Sepolia (
+        <span className="mono">fee={UNISWAP_POOL_FEE_WETH_USDC}</span>
+        ) with <strong>QuoterV2</strong> + slippage when the quote succeeds; otherwise <strong>minOut = 0</strong>. Then{" "}
+        <code>deposit(USDC)</code>. Fails if the pool has no liquidity. Connect in Deposit above first.
       </p>
 
       {!isConnected || !address ? (

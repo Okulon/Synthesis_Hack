@@ -2,6 +2,12 @@
   "name": "synthesis-hack",
   "private": true,
   "scripts": {
-    "agent": "node apps/agent/src/agent.mjs"
+    "agent": "node apps/agent/src/agent.mjs",
+    "plan": "npm run plan --prefix apps/agent",
+    "aggregate": "npm run aggregate --prefix apps/agent",
+    "quorum:check": "npm run quorum:check --prefix apps/agent",
+    "votes:export": "npm run votes:export --prefix apps/agent",
+    "rebalance": "npm run rebalance --prefix apps/agent",
+    "cycle:snapshot": "npm run cycle:snapshot --prefix apps/agent"
   }
 }

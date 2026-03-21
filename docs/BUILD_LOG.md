@@ -5,7 +5,7 @@
 - **Chronological sessions:** Each time you make a meaningful pass (planning, coding, pivots), add a **new section** with heading `## YYYY-MM-DD — Short title`. Same calendar day twice: use **another distinct title** (keep **oldest → newest** order in the file).
 - **Order:** **Oldest at the top**, **newest just above** [`Current state`](#current-state-update-every-session). Do **not** reorder or delete past sections—this is a timeline.
 - **Handoff:** **Start** each work session by reading **Current state** (bottom). **End** by (1) appending a new dated section and (2) rewriting **Current state**.
-- **Rules:** No secrets (API keys, tokens, private keys). Summarize decisions and commits—don’t paste full model dumps.
+- **Rules:** **Never paste secret values** — no API keys, bearer tokens, JWTs, **private keys** (hex or seed), **RPC URLs with embedded credentials**, or **`.env` contents**. Env **names** only (e.g. `BASESCAN_API_KEY`) are fine. Do not use **`sk-…`-style strings** even as fake examples (some scanners flag them). Refer generically to “Synthesis/Devfolio credential” or “team API access.” Summarize decisions and commits—don’t paste full model dumps.
 
 <details>
 <summary><strong>Template — copy when adding a session</strong></summary>
@@ -51,7 +51,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ### Context
 - **Hackathon:** [The Synthesis](https://synthesis.md/) — agentic × Ethereum; building starts March 13, 2026.
-- **Registration:** Completed via **web form** (confirmation received). API key (`sk-synth-…`) / Devfolio next steps TBD from email or Telegram (`https://nsb.dev/synthesis-updates`).
+- **Registration:** Completed via **web form** (confirmation received). **Synthesis/Devfolio API access** and next steps TBD from email or Telegram (`https://nsb.dev/synthesis-updates`).
 - **Team:** Solo human; **Cursor** is the dev agent. Model routing: **Cursor Auto** (note accurately in submission metadata later).
 - **Judged fields (for later):** `conversationLog` (this file feeds that), honest `submissionMetadata`, public `repoURL`, tracks via `GET https://synthesis.devfolio.co/catalog`, Moltbook post URL when submitting, self-custody for all team members before publish.
 
@@ -69,7 +69,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - At time of this entry: implementation not started; repo was early-stage only.
 
 ### Open questions / risks
-- Confirm path to **`sk-synth-…`** / team UUID if web registration doesn’t expose API automatically.
+- Confirm path to **Synthesis API access** / team UUID if web registration doesn’t expose credentials automatically.
 - Pick **chain** (e.g. Base) and **custody model** (vault vs smart account) early.
 - Legal/regulatory: pooled capital + performance narrative — document as **hackathon prototype**; no legal advice captured here.
 
@@ -132,7 +132,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ### Open questions / risks
 - Implement **Tier A vs B/C** for profit (time vs elegance); exact **`g(trust)`** and **snapshot set** (all holders vs cycle voters only).
-- `sk-synth-…` / team UUID / track UUIDs unchanged vs prior sessions.
+- Synthesis credential / team UUID / track UUIDs unchanged vs prior sessions.
 
 ### Next session
 1. **`git add` / commit / push** — README, STRUCTURE, `vault/`, spec + log updates.
@@ -161,7 +161,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **`git`:** `contracts/` **untracked**; several prior doc files still **modified** vs `origin/main` — **commit + push** pending.
 
 ### Open questions / risks
-- Same as earlier: **`sk-synth-…`**, team UUID, **track UUIDs** from `/catalog`.
+- Same as earlier: **Synthesis API access**, team UUID, **track UUIDs** from `/catalog`.
 - **Profit Tier A:** `closeCycle` trusts **owner-posted** `navStart`/`navEnd` — document honest operator / future constraints.
 
 ### Next session
@@ -749,6 +749,180 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-21 — Executor: QuoterV2 minOut, target-aware WETH sizing, band docs
+
+### Goal
+- Ship **Uniswap QuoterV2**-based **`amountOutMinimum`** on **`rebalance`**, **target-aware** swap sizing aligned with **`plan`**, **`PROJECT_SPEC` §7** closure in docs, and **band policy** edge-case documentation + tests.
+
+### Human decisions
+- **Drift / ε:** document **absolute_pp** as canonical; **relative** remains unimplemented (warn-only).
+- **Executor:** keep **EOA `executor`** + vault role; **Quoter** is off-chain read for minOut only.
+- **Sizing:** superseded — see **2026-03-21 (follow-up)** below (no **`REBALANCE_SIZING`** / **`REBALANCE_BPS`** split).
+
+### Agent / automation
+- **[`apps/agent/src/lib/bandPolicy.mjs`](../apps/agent/src/lib/bandPolicy.mjs)** + **[`planState.mjs`](../apps/agent/src/lib/planState.mjs)** — shared **`plan`** rows; **[`bandPolicy.test.mjs`](../apps/agent/src/lib/bandPolicy.test.mjs)** (`npm test` in `apps/agent`).
+- **[`rebalance.mjs`](../apps/agent/src/rebalance.mjs)** — **`quoteExactInputSingle`** via **`uniswap.quoter_v2`** in **`config/chain/base.yaml`** / **`base_sepolia.yaml`**; fallback to mid + fee fudge; target sizing + clear errors for underweight WETH / non-WETH **`would_trade`**.
+- **[`docs/BAND_POLICY.md`](./BAND_POLICY.md)**; **[`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §7** updated; **[`apps/agent/README.md`](../apps/agent/README.md)** + execution skill refreshed.
+
+### Reality checks
+- Superseded — bidirectional **`rebalance`** shipped same day (see below).
+
+### Next session
+1. Optional: **contract verify** on Basescan.
+
+---
+
+## 2026-03-21 — Rebalance: WETH↔USDC (no sizing env)
+
+### Goal
+- **`rebalance.mjs`** follows **`plan`** for **both** directions: sell **overweight WETH** (→ USDC) or **overweight USDC** (→ WETH). Remove **`REBALANCE_SIZING`** / **`REBALANCE_BPS`** / **`REBALANCE_EXCESS_BPS`** as user-facing controls.
+
+### Agent / automation
+- **[`rebalance.mjs`](../apps/agent/src/rebalance.mjs)** — NAV excess vs target per leg; **QuoterV2** + mid fudge for **either** `tokenIn`; errors if drift is only on **non–WETH/USDC** tracked assets.
+
+### Reality checks
+- Multi-token vaults still need **extra routes** beyond this pool.
+
+---
+
+## 2026-03-21 — Hub rebalance: optional third token (cbETH) on Base mainnet
+
+### Goal
+- Hackathon **minimum** for “more tokens”: **USDC hub** + **two-hop** `exactInput` (Quoter `quoteExactInput`), single-hop for **TOKEN/USDC** and **WETH/USDC**.
+
+### Agent / automation
+- **[`apps/agent/src/lib/uniswapPath.mjs`](../apps/agent/src/lib/uniswapPath.mjs)** (path encode), **[`rebalanceRoutes.mjs`](../apps/agent/src/lib/rebalanceRoutes.mjs)**; **[`rebalance.mjs`](../apps/agent/src/rebalance.mjs)** — pick **max overweight** vs **most underweight** among **`would_trade`** rows; **[`config/chain/base.yaml`](../config/chain/base.yaml)** adds **`cbETH`** + **`usdc_pool_fee: 500`**.
+
+### Reality checks
+- **Vault** must **allowlist** cbETH and have a **price**; **Base Sepolia** has no third token in yaml by default (add a pool + yaml when ready).
+
+---
+
+## 2026-03-21 — Session summary: rebalance stack (handoff)
+
+### Goal
+- One place to read how **`rebalance`** works after this session: **plan**-driven **overweight → underweight**, **QuoterV2** for **`minOut`**, optional **USDC hub** + third token on **Base mainnet**, without legacy **`REBALANCE_SIZING`** / **`REBALANCE_BPS`** knobs.
+
+### Human decisions
+- **Sizing:** always derived from **`npm run plan`** + **`bands.yaml`** (largest overweight vs most underweight among **`would_trade`**).
+- **Third token:** **cbETH** in **[`config/chain/base.yaml`](../config/chain/base.yaml)** with **`usdc_pool_fee: 500`**; **Sepolia** stays **WETH + USDC** until a real **TOKEN/USDC** pool + yaml block exist.
+- **Oracle guard:** only when the route touches the **WETH/USDC 0.3%** pool; other legs rely on **Quoter** (mid fallback **only** for **WETH↔USDC** single-hop).
+
+### Agent / automation
+- **[`rebalance.mjs`](../apps/agent/src/rebalance.mjs)** — **`exactInputSingle`** or **`exactInput`** (two-hop path); **`quoteExactInput`** / **`quoteExactInputSingle`**; **[`uniswapPath.mjs`](../apps/agent/src/uniswapPath.mjs)**, **[`rebalanceRoutes.mjs`](../apps/agent/src/lib/rebalanceRoutes.mjs)**.
+- **Shared plan:** **[`planState.mjs`](../apps/agent/src/lib/planState.mjs)** + **[`bandPolicy.mjs`](../apps/agent/src/lib/bandPolicy.mjs)**; **`npm test`** in **`apps/agent`** covers band + path encoding.
+- **Docs:** **[`BAND_POLICY.md`](./BAND_POLICY.md)**, **[`PROJECT_SPEC.md`](./PROJECT_SPEC.md) §7**, **[`apps/agent/README.md`](../apps/agent/README.md)**, execution skill; **CI** runs **`npm test`** in agent workflow.
+
+### Reality checks
+- **Governance** must **allowlist** any third token and wire **oracles**; multi-hop **reverts** if **Quoter** fails (no unsafe **`minOut`** on path).
+- **Four** separate **`2026-03-21`** sections above capture the same work in smaller steps; this block is the **consolidated** pointer.
+
+### Next session
+1. Optional: **contract verify** on Basescan; **Sepolia** third token when a pool + addresses are fixed.
+2. Submission / demo proof (explorer links, video) when ready — out of scope for this build log entry.
+
+---
+
+## 2026-03-22 — Single-asset redeem: QuoterV2 + vault `minAmountOut`
+
+### Goal
+- Close checklist **D — single-asset exit** / **C2 execution quality** on the **highest-traffic user path**: **Withdraw → single asset** no longer hardcodes **`minOut = 0`** when **QuoterV2** succeeds.
+
+### Agent / automation
+- **[`frontend/src/lib/redeemSwapSteps.ts`](../frontend/src/lib/redeemSwapSteps.ts)** — **`getSingleAssetRedeemPlan`**, **`quoteSingleAssetRedeem`** (RPC **QuoterV2** `quoteExactInputSingle`, **`DEFAULT_REDEEM_SLIPPAGE_BPS`** = 100); swap **`amountOutMinimum`** + vault **`minAmountOut`** = `sliceOut +` slippage-adjusted quoted output; quoter failure → **0** fallback (legacy demo).
+- **[`frontend/src/lib/contracts.ts`](../frontend/src/lib/contracts.ts)** — **`QUOTER_V2`**, **`DEFAULT_REDEEM_SLIPPAGE_BPS`**.
+- **[`WithdrawPanel.tsx`](../frontend/src/components/WithdrawPanel.tsx)** — async quote before **`redeemToSingleAsset`**.
+- **[`checklist.md`](../checklist.md)** — D items updated; **[`frontend/README.md`](../frontend/README.md)** withdraw section.
+
+### Reality checks
+- Superseded — **TEST** swap now uses the same Quoter pattern (see **2026-03-22 — TEST swap: QuoterV2 + shared `uniswapQuote`** below).
+
+### Next session
+1. **Proof pack** tx hashes for submission (**B / C2**).
+
+---
+
+## 2026-03-22 — TEST swap: QuoterV2 + shared `uniswapQuote`
+
+### Goal
+- Remove **`minOut = 0`** as the default on the **TEST** ETH → WETH → USDC → deposit path when **QuoterV2** succeeds (checklist **C2**).
+
+### Agent / automation
+- **[`frontend/src/lib/uniswapQuote.ts`](../frontend/src/lib/uniswapQuote.ts)** — **`quoteExactInputSingleOrZero`**, **`applySlippageFloor`**; used by **[`redeemSwapSteps.ts`](../frontend/src/lib/redeemSwapSteps.ts)** and **[`TestSwapDepositPanel.tsx`](../frontend/src/components/TestSwapDepositPanel.tsx)**.
+- **[`contracts.ts`](../frontend/src/lib/contracts.ts)** — **`DEFAULT_SWAP_SLIPPAGE_BPS`** (100); **`DEFAULT_REDEEM_SLIPPAGE_BPS`** alias.
+- **[`frontend/README.md`](../frontend/README.md)** TEST section updated.
+
+### Reality checks
+- Quoter **revert** → **`minOut = 0`** (same as before).
+
+### Next session
+1. **Proof pack** / explorer links for judges.
+
+---
+
+## 2026-03-22 — Proof pack scaffold + Profits raw draw column
+
+### Goal
+- **`docs/PROOF.md`:** single fill-in surface for **B / C2 / C3 / A** (explorer txs, URLs, submission fields) so evidence is gathered without hunting README threads.
+- **Process:** keep **`BUILD_LOG`** **Current state** + dated sessions updated as work lands (this entry).
+- **Functional:** **Profits** tab surfaces per-cycle **`testGainsRawSample1e18`** when **`TESTGAINS`** is active (checklist **F**).
+
+### Human decisions
+- **`PROOF.md`** lives under **`docs/`** (with **`BUILD_LOG`**, **`DEPLOY.md`**); root [**`README.md`**](../README.md) links it; [**`checklist.md`**](../checklist.md) **B / C2** point here.
+
+### Agent / automation
+- **[`docs/PROOF.md`](./PROOF.md)** — placeholders for chain, contracts, Uniswap proof pack (U1–U3), demo story txs, autonomy, hosting, video, Devfolio fields, disclosures, optional verify/delegations.
+- **[`frontend/src/components/ProfitsTab.tsx`](../frontend/src/components/ProfitsTab.tsx)** — **You** table column **Raw draw** when **`testGainsActive`**; **Everyone** → **Per cycle (TESTGAINS)** table (pool + raw pre-clamp) so judges see draws without connecting a wallet.
+- **[`frontend/README.md`](../frontend/README.md)** — Profits bullet updated.
+
+### Next session
+1. Fill **`PROOF.md`** with real hashes/URLs; optional **contract verify**; further product gaps from [**`checklist.md`**](../checklist.md) **D**.
+
+---
+
+## 2026-03-23 — Judge-facing README, autonomy doc, vault §6.6 (Tier A vs Tier B)
+
+### Goal
+- Close more **Synthesis checklist** items without new contracts: **C1** repo map + story, **C2** explicit Uniswap stack, **C3** autonomy + risk + demo-knob labeling, **B** disclosures, **E** vault P&L notes.
+- Keep **`BUILD_LOG`** as the handoff surface (this session + **Current state** below).
+
+### Agent / automation
+- **[`README.md`](../README.md)** — **Judge-facing (Synthesis)** section: table (**STRUCTURE**, **BUILD_LOG** Current state, **`PROOF.md`**, **`checklist.md`**), one-screen story, **SwapRouter02 + QuoterV2** stack and **not-claimed** paths (Permit2 / API / v4), **`npm run agent`** autonomy summary, risk bounds, testnet knobs, disclosures (Tier A vs Tier B pointer). Sponsor line: Uniswap **API** only if claimed.
+- **[`apps/agent/README.md`](../apps/agent/README.md)** — **Autonomy (Base / Synthesis)** — **`AGENT_INTERVAL_SEC`**, executor vs governance keys, **`AGENT_REBALANCE_FROZEN_PHASE_ONLY`**, pointer to **`agent.mjs`** header comment.
+- **[`vault/spec.md`](../vault/spec.md)** — **§6.6** — **`cycle-profits.json`** vs **Tier B** deposit/withdraw adjustments; redeem / illiquidity clarity.
+- **[`checklist.md`](../checklist.md)** — **C1 / C2 / C3 / B / E** items updated to match (submission **innovation** one-liner + **live** explorer proof still open).
+
+### Next session
+1. **`docs/PROOF.md`** — real txs + deployed URL; **C1** innovation copy; **video**.
+
+---
+
+## 2026-03-23 — Checklist as status + README reproducible cycle + innovation copy
+
+### Goal
+- Turn **[`checklist.md`](../checklist.md)** into a **single source of truth**: legend, **N/A** / **Decision** rows, unchecked only for real remaining work.
+- Ship **C1** innovation paragraph + **B** reproducible cycle + address wiring in root [**`README.md`**](../README.md).
+
+### Agent / automation
+- **[`README.md`](../README.md)** — **Innovation / impact** bullets; **Deployed addresses** line; **`### Reproducible demo cycle`** (numbered `aggregate` → `plan` → `votes:export` → `rebalance` + `npm run agent` note).
+- **[`package.json`](../package.json)** — root shims: **`npm run plan`**, **`aggregate`**, **`quorum:check`**, **`votes:export`**, **`rebalance`**, **`cycle:snapshot`** (delegate to **`apps/agent`**).
+- **[`checklist.md`](../checklist.md)** — rewritten sections **A–F**; **C4** defer, **C5** N/A, **C2** API N/A; **Next implementation targets** at bottom.
+
+### Next session
+1. Human: **A**, **B** explorer/video/**PROOF** fills; optional **D** verify / Telegram / Tier B.
+
+---
+
+## 2026-03-23 — Checklist: Done vs To do columns
+
+### Goal
+- **[`checklist.md`](../checklist.md)** reads as a **real checklist**: each section has **## Done** / **### Done** (all `- [x]`) and **## To do** / **### To do** (all `- [ ]`), plus a **summary** count (22/20).
+
+### Next session
+1. Tick items as **PROOF** / **Devfolio** land; keep counts in sync.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -757,12 +931,13 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Dev knobs:** `TESTWETHOCCILATOR` (synthetic WETH/USDC for dead testnet pools), `TESTBOOSTTRUST` (amplify bps), `TRUST_MIN_TIME_WEIGHT_FLOOR` (clamp late-vote time weight), `TESTGAINS` (**T** = NAV-scale bound; each exported close draws **uniform in `[-T/2, T]`**, pool **`max(0,·)`** instead of NAV Δ; **`cycle-profits.json`** carries **`testGainsRange`** + per-row raw sample).
 - **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
 - **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
-- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Withdraw** tab (**`redeemProRata`** basket exit + **`redeemToSingleAsset`** with auto **WETH↔USDC** **`SwapRouter02`** steps on Base Sepolia, **`minOut = 0`** demo) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** + table; **toggle charts** — **Trust** / **Profits** / **Balance** with **`/cycle-profits.json`** join by cycle id; **Balance** = cumulative **attributed** profit slices, not on-chain share balance) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**. **Optional deploy:** **Vercel** — **Root Directory** **`frontend`**, **`VITE_*`** in project env, **`frontend/vercel.json`** (frozen lockfile + SPA rewrites); share **production** **`.vercel.app`** (avoid login-gated **preview** deployment URLs / adjust **Deployment Protection**).
+- **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard when route touches **WETH/USDC 0.3%** + **`minOut` from QuoterV2** (`quoteExactInput` / `quoteExactInputSingle`; mid fallback for **WETH↔USDC** only); **`plan`**-aligned **overweight → underweight** with optional **USDC-hub** third token (e.g. **cbETH** in [`config/chain/base.yaml`](../config/chain/base.yaml)); [`docs/BAND_POLICY.md`](./BAND_POLICY.md) for band edge cases.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Withdraw** tab (**`redeemProRata`** basket exit + **`redeemToSingleAsset`** with auto **WETH↔USDC** **`SwapRouter02`** steps on Base Sepolia; **QuoterV2** + slippage for **`minOut`** when quote succeeds; **`minOut = 0`** fallback if quoter fails) + **TEST** swap-to-deposit (**`TestSwapDepositPanel`**, shared **`uniswapQuote.ts`**, same Quoter / fallback) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** + table; **toggle charts** — **Trust** / **Profits** / **Balance** with **`/cycle-profits.json`** join by cycle id; **Balance** = cumulative **attributed** profit slices, not on-chain share balance) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip + per-cycle **`testGainsRawSample1e18`** in **You** / **Everyone** tables when synthetic pools are on) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**. **Optional deploy:** **Vercel** — **Root Directory** **`frontend`**, **`VITE_*`** in project env, **`frontend/vercel.json`** (frozen lockfile + SPA rewrites); share **production** **`.vercel.app`** (avoid login-gated **preview** deployment URLs / adjust **Deployment Protection**).
 - **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** writes **`trust-scores.json`** + **`trust-history.json`**; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
 - **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.
-- **Blocked / polish:** optional **contract verify**; **target-aware** rebalance sizing + **Quoter**; multi-asset / reverse swap path (redeem UI still **WETH+USDC** auto path or **pro-rata**); **Synthesis** draft update with demo artifacts.
+- **Submission evidence:** **[`docs/PROOF.md`](./PROOF.md)** — placeholder tables for explorer txs, deployed URLs, autonomy notes, video/Devfolio fields; fill as you gather proof (**B / C2**). Update **`BUILD_LOG`** each meaningful pass (dated section + **Current state**). **Judge-facing** summary: **[`README.md`](../README.md#judge-facing-synthesis)** (story, Uniswap stack, autonomy, disclosures, **innovation**, **reproducible cycle**); **Tier A vs B:** [`vault/spec.md`](../vault/spec.md) **§6.6**. **Checklist status:** **[`checklist.md`](../checklist.md)** — **Done** vs **To do** + summary counts (keep counts in sync when ticking).
+- **Blocked / polish:** optional **contract verify**; **multi-asset** vaults need more **routes** than WETH/USDC; **Synthesis** draft update with demo artifacts.
 - **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent.
 - **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root — refine before publish.

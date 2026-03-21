@@ -20,3 +20,4 @@ tokens:
   USDC:
     address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
     decimals: 6
+  # No default third token on Sepolia (liquidity sparse). Add `tokens.<SYMBOL>` + `usdc_pool_fee` to enable hub routes.

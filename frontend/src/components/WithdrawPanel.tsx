@@ -13,9 +13,11 @@ import {
   useWriteContract,
 } from "wagmi";
 import { daovaultAbi } from "../lib/abi";
+import { DEFAULT_REDEEM_SLIPPAGE_BPS } from "../lib/contracts";
 import {
   buildSingleAssetRedeemSteps,
   computeRedeemSlices,
+  quoteSingleAssetRedeem,
 } from "../lib/redeemSwapSteps";
 import type { VaultSnapshot } from "../lib/vault";
 import { formatContractRevert } from "../lib/vaultWriteErrors";
@@ -147,30 +149,34 @@ export function WithdrawPanel({ snap }: Props) {
           setStatus(null);
           return;
         }
-        const built = buildSingleAssetRedeemSteps({
+        const slices = computeRedeemSlices(snap.assets, sharesWei, snap.totalSupply);
+        const quoted = await quoteSingleAssetRedeem({
+          publicClient,
           vault: vaultAddress,
           assetOut,
           assets: snap.assets,
-          slices: computeRedeemSlices(snap.assets, sharesWei, snap.totalSupply),
+          slices,
+          slippageBps: DEFAULT_REDEEM_SLIPPAGE_BPS,
         });
-        if (!built.ok) {
-          setErr(built.reason);
+        if (!quoted.ok) {
+          setErr(quoted.reason);
           setStatus(null);
           return;
         }
-        const stepTuples = built.steps.map(
-          (s) => [s.tokenIn, s.router, s.data] as const,
-        );
+        const stepTuples = quoted.steps.map((s) => [s.tokenIn, s.router, s.data] as const);
         const h = await writeContractAsync({
           address: vaultAddress,
           abi: daovaultAbi,
           functionName: "redeemToSingleAsset",
-          args: [sharesWei, assetOut, 0n, stepTuples],
+          args: [sharesWei, assetOut, quoted.minAmountOut, stepTuples],
           chainId: baseSepolia.id,
         });
         setStatus("Waiting for redeem…");
         await waitSuccess(h, "redeemToSingleAsset");
-        setStatus(`Redeemed ${formatUnits(sharesWei, 18)} ${snap.vaultSymbol} to one asset (minOut=0 testnet).`);
+        const qNote = quoted.usedQuoter
+          ? `Quoter minOut + ${DEFAULT_REDEEM_SLIPPAGE_BPS} bps slip`
+          : "minOut=0 (quoter unavailable)";
+        setStatus(`Redeemed ${formatUnits(sharesWei, 18)} ${snap.vaultSymbol} to one asset (${qNote}).`);
       }
       await refetchShares();
       await invalidateVault();
@@ -196,8 +202,9 @@ export function WithdrawPanel({ snap }: Props) {
       <p className="muted small">
         Burn vault shares and receive underlying tokens. <strong>Basket</strong> sends each tracked asset pro-rata.{" "}
         <strong>Single asset</strong> swaps other slices into your chosen token via allowlisted Uniswap{" "}
-        <code className="mono">SwapRouter02</code> (auto path only for WETH+USDC on Base Sepolia;{" "}
-        <code className="mono">minOut = 0</code> — testnet only).
+        <code className="mono">SwapRouter02</code> (auto path only for WETH+USDC on Base Sepolia). Uses{" "}
+        <strong>QuoterV2</strong> + slippage for <code className="mono">minOut</code> when the RPC quote succeeds;
+        otherwise falls back to <code className="mono">0</code> (testnet safety).
       </p>
 
       {snap.chainId !== baseSepolia.id ? (

@@ -213,7 +213,7 @@ function runRebalanceNudgeOnRollover() {
     console.warn("[agent] rebalance on rollover skipped — CHAIN_RPC_URL / VAULT_ADDRESS");
     return;
   }
-  console.log("[agent] rebalance (rollover nudge — set REBALANCE_BPS)…");
+  console.log("[agent] rebalance (rollover nudge)…");
   const r = runScript("src/rebalance.mjs");
   if (r.status !== 0) console.error("[agent] rebalance exit", r.status);
 }
@@ -347,7 +347,7 @@ function maybeStampPrices(managed, state) {
 
 /**
  * Repeatedly `plan` → `rebalance` until no asset is `would_trade` or step cap (continues across ticks).
- * MVP: `rebalance.mjs` only moves WETH→USDC; multi-asset targets may converge slowly or stall — see bands.yaml + REBALANCE_BPS.
+ * MVP: `rebalance.mjs` moves **WETH↔USDC** on the pool route; extra tracked tokens need more routes — see `bands.yaml`.
  */
 /** Sum of numeric weights in config/local/targets.json; 0 if missing/invalid/empty. */
 function localTargetsWeightSum() {

@@ -24,7 +24,7 @@ Open **http://localhost:1337**
 
 - **`redeemProRata`** — burn shares; receive each **tracked** asset in proportion (no swaps). `assetsHint` matches on-chain **`trackedAssets`** order (same as the dashboard table).
 - **`redeemToSingleAsset`** — burn shares; vault swaps non-output slices via allowlisted **`SwapRouter02`** + **`exactInputSingle`**. The UI only **auto-builds** swap calldata for a **two-asset WETH+USDC** vault on Base Sepolia (fee tier **3000**); otherwise use **basket** redeem or extend [`redeemSwapSteps.ts`](src/lib/redeemSwapSteps.ts).
-- **`minAmountOut = 0`** on single-asset path — **testnet / demo only** (same idea as the TEST deposit swap).
+- **Slippage:** [`quoteSingleAssetRedeem`](src/lib/redeemSwapSteps.ts) calls **Uniswap QuoterV2** (`QUOTER_V2` in [`contracts.ts`](src/lib/contracts.ts)), sets **`amountOutMinimum`** on the router call and **`minAmountOut`** on the vault using **`DEFAULT_REDEEM_SLIPPAGE_BPS`** (100). If the quoter reverts, the UI falls back to **`0`** mins (legacy testnet behavior).
 - Blocked when **`pauseAll`** (same as contract `whenRedeemOpen` for redeem).
 
 ## TEST (hackathon / QA only)
@@ -36,7 +36,7 @@ A separate **TEST** panel (warn-styled) runs a **multi-tx** path so you can fund
 3. **`exactInputSingle`** — **WETH → USDC** (v3 pool fee tier from repo config, typically **3000**)
 4. **Approve** vault for **USDC**, then **`vault.deposit(USDC, amount, receiver)`**
 
-**Not for production:** the swap uses **`amountOutMinimum: 0`** (no slippage protection). On testnet the pool can be missing or illiquid — the UI warns about that. The vault never receives native ETH; wrap + swap are **client-side** before `deposit`.
+**Not for production:** the swap uses **QuoterV2** + **`DEFAULT_SWAP_SLIPPAGE_BPS`** (100) when the RPC quote succeeds; otherwise **`amountOutMinimum: 0`**. On testnet the pool can be missing or illiquid — the UI warns about that. The vault never receives native ETH; wrap + swap are **client-side** before `deposit`. Shared helper: [`uniswapQuote.ts`](src/lib/uniswapQuote.ts).
 
 ## Env
 
@@ -98,7 +98,7 @@ Regenerate whenever `trust_cycle.csv` changes (agent rollover runs **`trust:expo
 **`frontend/public/cycle-profits.json`** is written when **`closeCycle`** succeeds (see **`apps/agent`**) or manually via **`npm run profit:export`**. The **Profits** tab shows:
 
 - **Your share** — cumulative attributed amount across closes (wallet or pasted address).
-- **Everyone by cycle** — profit pool per **`closeCycle`** (NAV delta, or per-close **random synthetic** from **`TESTGAINS`** = **T**: uniform in **`[-T/2, T]`**, pool **`max(0,·)`**) split **∝ trust_before × shares** over ballot voters in **`vote-store`** (same power model as aggregate). **TESTGAINS** badge tooltip reflects **`testGainsRange`** from JSON when present.
+- **Everyone by cycle** — profit pool per **`closeCycle`** (NAV delta, or per-close **random synthetic** from **`TESTGAINS`** = **T**: uniform in **`[-T/2, T]`**, pool **`max(0,·)`**) split **∝ trust_before × shares** over ballot voters in **`vote-store`** (same power model as aggregate). **TESTGAINS** badge tooltip reflects **`testGainsRange`** from JSON when present. When synthetic pools are on, the UI shows per-cycle **`testGainsRawSample1e18`** (pre-clamp draw) in the **You** table and in an **Everyone** summary table (no wallet required for the latter).
 
 ## Build
 

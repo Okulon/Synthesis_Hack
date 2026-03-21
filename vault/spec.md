@@ -144,6 +144,13 @@ For **positive `profit_cycle` only**, assign each participant a **profit weight*
 - **Profit-skew** is an **explicit** layer: either merged into vault accounting (Tier B) or **separate claim** (Tier C). Do **not** silently “tax” redeemers without documenting it.
 - **Trust values** used in §6.3 should be **snapshot** at cycle end and **verifiable** (hash commitments or on-chain storage in later versions).
 
+### 6.6 Tier A ledger vs deposits / withdrawals (this repo)
+
+**`cycle-profits.json`** (written when **`closeCycle`** succeeds or via **`npm run profit:export`**) attributes each cycle’s **profit pool** to ballot participants **∝ trust_before × shares** at the vote snapshot. The pool is **`NAV_end − NAV_start`** from the **`closeCycle`** boundary (or a **synthetic** uniform draw when **`TESTGAINS`** is set for testnet demos).
+
+- **Not Tier B:** the pool is **not** adjusted for **net deposits and withdrawals** mid-cycle (§6.2 “deposit/withdraw adjustments” remain backlog). Treat the JSON as **transparent attribution math** for governance/trust demos, not a regulated P&L statement.
+- **Redeem:** users still exit via **shares vs live vault balances** (§4); **illiquid** assets or failed swaps are **revert / user `minOut`**, not silent haircuts in this MVP.
+
 ---
 
 ## 7 — Access control summary

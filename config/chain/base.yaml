@@ -22,6 +22,8 @@ explorer:
 uniswap:
   v3_factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
   swap_router02: "0x2626664c2603336E57B271c5C0b26F421741e481"
+  # QuoterV2 — https://docs.uniswap.org/contracts/v3/reference/deployments/base-deployments
+  quoter_v2: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
 
 tokens:
   WETH:
@@ -30,3 +32,8 @@ tokens:
   USDC:
     address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
     decimals: 6
+  # Optional third asset — hub routing via USDC (WETH↔USDC↔cbETH). Pool fee verified on factory.
+  cbETH:
+    address: "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
+    decimals: 18
+    usdc_pool_fee: 500

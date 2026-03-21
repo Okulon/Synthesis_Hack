@@ -1,18 +1,14 @@
 /**
- * One-shot: executor calls DAOVault.rebalance with Uniswap V3 SwapRouter02 exactInputSingle (WETH → USDC).
- * Requires repo-root .env: CHAIN_RPC_URL, CHAIN_ID (optional), VAULT_ADDRESS, EXECUTOR_PRIVATE_KEY.
+ * Executor: DAOVault.rebalance via Uniswap V3 SwapRouter02.
  *
- * Protections (when enabled):
- * - Compare vault oracle WETH/USD vs pool mid implied USDC/WETH; abort if deviation too large.
- * - Set amountOutMinimum from pool mid (+ fee fudge) minus slippage bps — not a full Quoter simulation.
+ * - **WETH↔USDC** single-hop (`exactInputSingle`) when drift is only between those two.
+ * - **Hub routing** (hackathon minimum): optional third token in `config/chain/*.yaml` (e.g. cbETH on Base mainnet)
+ *   — **WETH↔USDC↔extra** via `exactInput` path when moving between WETH and the extra token.
  *
- * Env:
- * - CHAIN_ID: 84532 (Base Sepolia) or 8453 (Base mainnet) — uses `config/chain/base_sepolia.yaml` / `base.yaml`.
- * - REBALANCE_BPS (default 5000): fraction of vault WETH to swap.
- * - REBALANCE_DISABLE_ORACLE_POOL_GUARD: on Base Sepolia, defaults to off (skip guard) when unset; set `0` to enforce.
- * - REBALANCE_ORACLE_POOL_MAX_DEVIATION_BPS (default 2000): max |oracle-pool|/oracle, in bps.
- * - REBALANCE_SLIPPAGE_BPS (default 100): tightens amountOutMinimum vs mid estimate.
- * - REBALANCE_FEE_FUDGE_NUM/DEN (default 997/1000): ~0.3% v3 fee approximation on one hop.
+ * Sizing: same NAV math as `npm run plan` — sells the **most overweight** asset toward the **most underweight**
+ * among `would_trade` rows.
+ *
+ * Env: CHAIN_RPC_URL, VAULT_ADDRESS, EXECUTOR_PRIVATE_KEY, CHAIN_ID; REBALANCE_* guards/slippage/quoter as before.
  */
 import fs from "fs";
 import path from "path";
@@ -30,14 +26,28 @@ import { base, baseSepolia } from "viem/chains";
 
 import { repoRoot, requireEnv } from "./lib/env.mjs";
 import { sortTokens, sqrtPriceX96ToRatioToken1PerToken0, usdcPerEthFromRatio } from "./lib/poolMidPrice.mjs";
+import { loadBands, loadTargets, fetchPlanRows, valueOf1e18 } from "./lib/planState.mjs";
+import { encodeV3Path } from "./lib/uniswapPath.mjs";
+import { buildHubRoute, routeTouchesWethUsdc3000 } from "./lib/rebalanceRoutes.mjs";
 
-const FEE = 3000;
+const WETH_USDC_FEE = 3000;
+/** Fraction of overweight amount to trade this tx. */
+const EXCESS_BPS = 10_000n;
 
 const vaultAbi = parseAbi(["function rebalance((address tokenIn, address router, bytes data)[] steps) external"]);
-const erc20Abi = parseAbi(["function balanceOf(address) view returns (uint256)"]);
+const erc20Abi = parseAbi(["function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"]);
+const vaultPriceAbi = parseAbi(["function pricePerFullToken1e18(address) view returns (uint256)"]);
 
-const routerAbi = parseAbi([
+const routerSingleAbi = parseAbi([
   "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) payable returns (uint256 amountOut)",
+]);
+const routerPathAbi = parseAbi([
+  "function exactInput((bytes path, address recipient, uint256 amountIn, uint256 amountOutMinimum)) payable returns (uint256 amountOut)",
+]);
+
+const quoterAbi = parseAbi([
+  "function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)",
+  "function quoteExactInput(bytes path, uint256 amountIn) external returns (uint256 amountOut, uint160[] sqrtPriceX96AfterList, uint32[] initializedTicksCrossedList, uint256 gasEstimate)",
 ]);
 
 const factoryAbi = parseAbi([
@@ -52,21 +62,46 @@ function parsePk(raw) {
   return s.startsWith("0x") ? s : `0x${s}`;
 }
 
-/** Base (8453) or Base Sepolia (84532) — WETH/USDC + Uniswap from `config/chain/*.yaml`. */
-function loadRebalanceYaml(chainId) {
+function loadChainYaml(chainId) {
   const fname = chainId === 8453 ? "base.yaml" : chainId === 84532 ? "base_sepolia.yaml" : null;
   if (!fname) {
-    throw new Error(`rebalance.mjs: unsupported CHAIN_ID ${chainId} (supported: 8453 Base, 84532 Base Sepolia)`);
+    throw new Error(`rebalance.mjs: unsupported CHAIN_ID ${chainId} (supported: 8453, 84532)`);
   }
   const yamlPath = path.join(repoRoot, "config/chain", fname);
   const doc = parseYaml(fs.readFileSync(yamlPath, "utf8"));
   const factory = doc.uniswap?.v3_factory;
   const router = doc.uniswap?.swap_router02;
-  const weth = doc.tokens?.WETH?.address;
-  const usdc = doc.tokens?.USDC?.address;
+  const quoter = doc.uniswap?.quoter_v2;
+  const tokens = doc.tokens;
   if (!factory || !router) throw new Error(`${fname}: need uniswap.v3_factory + swap_router02`);
-  if (!weth || !usdc) throw new Error(`${fname}: need tokens.WETH.address + tokens.USDC.address`);
-  return { factory, router, WETH: getAddress(weth), USDC: getAddress(usdc), fname };
+  if (!tokens?.WETH?.address || !tokens?.USDC?.address) {
+    throw new Error(`${fname}: need tokens.WETH.address + tokens.USDC.address`);
+  }
+
+  const extras = [];
+  for (const [sym, meta] of Object.entries(tokens)) {
+    if (sym === "WETH" || sym === "USDC") continue;
+    if (!meta?.address) continue;
+    extras.push({
+      symbol: sym,
+      address: getAddress(meta.address),
+      decimals: Number(meta.decimals ?? 18),
+      usdcPoolFee: Number(meta.usdc_pool_fee ?? 3000),
+    });
+  }
+  if (extras.length > 1) {
+    console.warn("[rebalance] multiple extra tokens in yaml — using the first for hub routes only.");
+  }
+
+  return {
+    factory,
+    router: getAddress(router),
+    quoterV2: quoter ? getAddress(quoter) : null,
+    WETH: getAddress(tokens.WETH.address),
+    USDC: getAddress(tokens.USDC.address),
+    extra: extras[0] ?? null,
+    fname,
+  };
 }
 
 function pickViemChain(chainId) {
@@ -80,16 +115,46 @@ function explorerTxUrl(chainId, hash) {
   return `https://sepolia.basescan.org/tx/${hash}`;
 }
 
+function targetValue1e18(totalNAV, wTgt) {
+  const wScaled = BigInt(Math.round(Number(wTgt) * 1e12));
+  return (totalNAV * wScaled) / 1_000_000_000_000n;
+}
+
+function amountInForOverweight({ bal, price1e18, totalNAV, wTgt, decimals }) {
+  const v = valueOf1e18(bal, price1e18, decimals);
+  const tgtV = targetValue1e18(totalNAV, wTgt);
+  if (v <= tgtV) return 0n;
+  const excessValue = v - tgtV;
+  const dec = BigInt(decimals);
+  let amountIn = (excessValue * 10n ** dec) / price1e18;
+  if (amountIn > bal) amountIn = bal;
+  return (amountIn * EXCESS_BPS) / 10_000n;
+}
+
+function midUsdcOutFromWethIn(ratio, amountInWethWei, feeNum, feeDen, slipBps) {
+  if (ratio === 0n) return 0n;
+  const rawMidOut = (amountInWethWei * feeNum) / (feeDen * ratio);
+  return (rawMidOut * BigInt(10_000 - slipBps)) / 10_000n;
+}
+
+function midWethOutFromUsdcIn(ratio, amountInUsdcAtomic, feeNum, feeDen, slipBps) {
+  const rawMidOut = (amountInUsdcAtomic * ratio * feeNum) / feeDen;
+  return (rawMidOut * BigInt(10_000 - slipBps)) / 10_000n;
+}
+
+function humanAmount(tokenIn, amountIn, WETH, USDC, decimals) {
+  const t = tokenIn.toLowerCase();
+  if (t === WETH.toLowerCase()) return Number(amountIn) / 1e18;
+  if (t === USDC.toLowerCase()) return Number(amountIn) / 1e6;
+  return Number(amountIn) / 10 ** decimals;
+}
+
 async function main() {
   const rpcUrl = requireEnv("CHAIN_RPC_URL");
   const vault = requireEnv("VAULT_ADDRESS");
   const pk = parsePk(requireEnv("EXECUTOR_PRIVATE_KEY"));
   const chainId = Number(process.env.CHAIN_ID ?? "84532");
 
-  const bps = Number(process.env.REBALANCE_BPS ?? "5000");
-  if (bps <= 0 || bps > 10_000) throw new Error("REBALANCE_BPS must be 1..10000");
-
-  /** Base Sepolia: oracle vs pool often diverges — default guard off unless explicitly enabled with `=0`. */
   const guardEnv = process.env.REBALANCE_DISABLE_ORACLE_POOL_GUARD;
   const guardOff =
     guardEnv === "1" ||
@@ -99,13 +164,24 @@ async function main() {
   const slipBps = Number(process.env.REBALANCE_SLIPPAGE_BPS ?? "100");
   const feeNum = BigInt(process.env.REBALANCE_FEE_FUDGE_NUM ?? "997");
   const feeDen = BigInt(process.env.REBALANCE_FEE_FUDGE_DEN ?? "1000");
+  const useQuoter = process.env.REBALANCE_USE_QUOTER !== "0" && process.env.REBALANCE_USE_QUOTER !== "false";
 
   if (!guardOff && (maxDevBps < 0 || maxDevBps > 10_000)) {
     throw new Error("REBALANCE_ORACLE_POOL_MAX_DEVIATION_BPS must be 0..10000");
   }
   if (slipBps < 0 || slipBps >= 10_000) throw new Error("REBALANCE_SLIPPAGE_BPS must be 0..9999");
 
-  const { factory, router: SWAP_ROUTER02, WETH, USDC } = loadRebalanceYaml(chainId);
+  const chainYaml = loadChainYaml(chainId);
+  const { factory, router: SWAP_ROUTER02, quoterV2: quoterFromYaml, WETH, USDC, extra, fname } = chainYaml;
+  const quoterEnv = process.env.REBALANCE_QUOTER_ADDRESS?.trim();
+  const QUOTER = quoterEnv ? getAddress(quoterEnv) : quoterFromYaml;
+
+  const routeReg = {
+    WETH,
+    USDC,
+    extra: extra ? { address: extra.address, usdcPoolFee: extra.usdcPoolFee } : null,
+  };
+
   const chain = pickViemChain(chainId);
   const account = privateKeyToAccount(pk);
 
@@ -124,47 +200,106 @@ async function main() {
     );
   }
 
-  const wethPrice1e18 = await publicClient.readContract({
-    address: vault,
-    abi: parseAbi(["function pricePerFullToken1e18(address) view returns (uint256)"]),
-    functionName: "pricePerFullToken1e18",
-    args: [WETH],
+  const bands = loadBands();
+  if (bands.driftMetric !== "absolute_pp") {
+    console.warn(`[rebalance] drift_metric=${bands.driftMetric} — only absolute_pp is implemented.`);
+  }
+  const { targets } = loadTargets();
+  const { totalNAV, rows } = await fetchPlanRows(publicClient, vault, bands, targets);
+
+  const anyTrade = rows.some((r) => r.decision === "would_trade");
+  if (!anyTrade) {
+    throw new Error("Plan: all assets within bands — nothing to rebalance.");
+  }
+
+  /** @type {Array<{ row: object; bal: bigint; price: bigint; decimals: number; excess: bigint }>} */
+  const state = [];
+  for (const row of rows) {
+    const [bal, price, decimals] = await Promise.all([
+      publicClient.readContract({
+        address: row.asset,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [vault],
+      }),
+      publicClient.readContract({
+        address: vault,
+        abi: vaultPriceAbi,
+        functionName: "pricePerFullToken1e18",
+        args: [row.asset],
+      }),
+      publicClient.readContract({
+        address: row.asset,
+        abi: erc20Abi,
+        functionName: "decimals",
+      }),
+    ]);
+    if (price === 0n) {
+      throw new Error(`Vault oracle price is 0 for ${row.symbol} (${row.asset})`);
+    }
+    const v = valueOf1e18(bal, price, Number(decimals));
+    const tgtV = targetValue1e18(totalNAV, row.wTgt);
+    state.push({
+      row,
+      bal,
+      price,
+      decimals: Number(decimals),
+      excess: v - tgtV,
+    });
+  }
+
+  const tradeStates = state.filter((s) => s.row.decision === "would_trade");
+  const overs = tradeStates.filter((s) => s.excess > 0n);
+  const unders = tradeStates.filter((s) => s.excess < 0n);
+  if (overs.length === 0 || unders.length === 0) {
+    throw new Error(
+      "rebalance: need both an overweight and underweight asset with would_trade — check targets/bands.",
+    );
+  }
+
+  const sell = overs.reduce((a, b) => (b.excess > a.excess ? b : a));
+  const buy = unders.reduce((a, b) => (a.excess < b.excess ? a : b));
+
+  const route = buildHubRoute(sell.row.asset, buy.row.asset, routeReg);
+
+  const amountIn = amountInForOverweight({
+    bal: sell.bal,
+    price1e18: sell.price,
+    totalNAV,
+    wTgt: sell.row.wTgt,
+    decimals: sell.decimals,
   });
-
-  if (wethPrice1e18 === 0n) throw new Error("Vault oracle WETH price is 0 — fix feeds before rebalance");
-
-  const wethBal = await publicClient.readContract({
-    address: WETH,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [vault],
-  });
-
-  if (wethBal === 0n) throw new Error("Vault WETH balance is 0 — nothing to swap");
-
-  const amountIn = (wethBal * BigInt(bps)) / 10_000n;
-  if (amountIn === 0n) throw new Error(`Amount to swap rounds to 0 (balance ${wethBal}, bps ${bps})`);
+  if (amountIn === 0n) {
+    throw new Error("Overweight amount rounds to 0 — check NAV/oracles.");
+  }
 
   const [t0, t1] = sortTokens(USDC, WETH);
-  const pool = await publicClient.readContract({
+  const wethUsdcPool = await publicClient.readContract({
     address: factory,
     abi: factoryAbi,
     functionName: "getPool",
-    args: [t0, t1, FEE],
+    args: [t0, t1, WETH_USDC_FEE],
   });
-  if (pool === "0x0000000000000000000000000000000000000000") {
-    throw new Error("No Uniswap v3 pool for USDC/WETH at fee tier " + FEE);
+  if (wethUsdcPool === "0x0000000000000000000000000000000000000000") {
+    throw new Error("No Uniswap v3 pool for USDC/WETH at fee tier " + WETH_USDC_FEE);
   }
 
   const [sqrtPriceX96] = await publicClient.readContract({
-    address: pool,
+    address: wethUsdcPool,
     abi: poolAbi,
     functionName: "slot0",
   });
 
   const ratio = sqrtPriceX96ToRatioToken1PerToken0(sqrtPriceX96);
   const poolUsdcPerEth = usdcPerEthFromRatio(ratio);
-  const oracleUsdcPerEth = Number(wethPrice1e18) / 1e18;
+  const oracleUsdcPerEth = await publicClient
+    .readContract({
+      address: vault,
+      abi: vaultPriceAbi,
+      functionName: "pricePerFullToken1e18",
+      args: [WETH],
+    })
+    .then((p) => Number(p) / 1e18);
 
   let deviationBps = 0;
   if (oracleUsdcPerEth > 0 && poolUsdcPerEth > 0) {
@@ -173,39 +308,103 @@ async function main() {
     );
   }
 
-  if (!guardOff) {
-    if (deviationBps > maxDevBps) {
+  const applyOracleGuard = routeTouchesWethUsdc3000(route, { WETH, USDC }) && !guardOff;
+  if (applyOracleGuard && deviationBps > maxDevBps) {
+    throw new Error(
+      `Oracle vs pool divergence too high: oracle ~$${oracleUsdcPerEth.toFixed(2)}/ETH, pool mid ~$${poolUsdcPerEth.toFixed(2)}/ETH (${deviationBps} bps > max ${maxDevBps} bps). ` +
+        `Set REBALANCE_DISABLE_ORACLE_POOL_GUARD=1 to bypass (testnet only), or fix oracles / pool route.`,
+    );
+  }
+
+  let amountOutMinimum = 0n;
+  let minOutSource = "mid_fudge";
+  let steps;
+
+  if (route.mode === "single") {
+    if (useQuoter && QUOTER) {
+      try {
+        const q = await publicClient.readContract({
+          address: QUOTER,
+          abi: quoterAbi,
+          functionName: "quoteExactInputSingle",
+          args: [route.tokenIn, route.tokenOut, route.fee, amountIn, 0n],
+        });
+        const quotedOut = Array.isArray(q) ? q[0] : q.amountOut;
+        amountOutMinimum = (quotedOut * BigInt(10_000 - slipBps)) / 10_000n;
+        minOutSource = "quoter_v2";
+      } catch (e) {
+        console.warn("[rebalance] Quoter quoteExactInputSingle failed:", e?.message ?? e);
+      }
+    }
+
+    if (minOutSource === "mid_fudge" && ratio > 0n) {
+      if (route.tokenIn.toLowerCase() === WETH.toLowerCase() && route.tokenOut.toLowerCase() === USDC.toLowerCase()) {
+        amountOutMinimum = midUsdcOutFromWethIn(ratio, amountIn, feeNum, feeDen, slipBps);
+      } else if (
+        route.tokenIn.toLowerCase() === USDC.toLowerCase() &&
+        route.tokenOut.toLowerCase() === WETH.toLowerCase()
+      ) {
+        amountOutMinimum = midWethOutFromUsdcIn(ratio, amountIn, feeNum, feeDen, slipBps);
+      }
+    }
+    if (amountOutMinimum === 0n) {
       throw new Error(
-        `Oracle vs pool divergence too high: oracle ~$${oracleUsdcPerEth.toFixed(2)}/ETH, pool mid ~$${poolUsdcPerEth.toFixed(2)}/ETH (${deviationBps} bps > max ${maxDevBps} bps). ` +
-          `Set REBALANCE_DISABLE_ORACLE_POOL_GUARD=1 to bypass (testnet only), or fix oracles / pool route.`,
+        "Single-hop minOut is 0 — enable Quoter (REBALANCE_USE_QUOTER=1) or fix RPC; mid fallback only covers WETH↔USDC.",
       );
     }
+
+    const data = encodeFunctionData({
+      abi: routerSingleAbi,
+      functionName: "exactInputSingle",
+      args: [
+        {
+          tokenIn: route.tokenIn,
+          tokenOut: route.tokenOut,
+          fee: route.fee,
+          recipient: vault,
+          amountIn,
+          amountOutMinimum,
+          sqrtPriceLimitX96: 0n,
+        },
+      ],
+    });
+    steps = [{ tokenIn: route.tokenIn, router: SWAP_ROUTER02, data }];
+  } else {
+    const pathBytes = encodeV3Path(route.pathTokens, route.fees);
+    if (useQuoter && QUOTER) {
+      try {
+        const q = await publicClient.readContract({
+          address: QUOTER,
+          abi: quoterAbi,
+          functionName: "quoteExactInput",
+          args: [pathBytes, amountIn],
+        });
+        const quotedOut = Array.isArray(q) ? q[0] : q.amountOut;
+        amountOutMinimum = (quotedOut * BigInt(10_000 - slipBps)) / 10_000n;
+        minOutSource = "quoter_v2_path";
+      } catch (e) {
+        throw new Error(
+          `Quoter quoteExactInput failed for multi-hop (set REBALANCE_USE_QUOTER=0 only if you accept unsafe minOut): ${e?.message ?? e}`,
+        );
+      }
+    } else {
+      throw new Error("Multi-hop rebalance requires Quoter (REBALANCE_USE_QUOTER=1) for a safe amountOutMinimum.");
+    }
+
+    const data = encodeFunctionData({
+      abi: routerPathAbi,
+      functionName: "exactInput",
+      args: [
+        {
+          path: pathBytes,
+          recipient: vault,
+          amountIn,
+          amountOutMinimum,
+        },
+      ],
+    });
+    steps = [{ tokenIn: route.tokenIn, router: SWAP_ROUTER02, data }];
   }
-
-  // token0=USDC, token1=WETH: ratio = wei WETH per 1 micro-USDC; micro-USDC out ~ (amountIn * feeNum/feeDen) / ratio
-  let amountOutMinimum = 0n;
-  if (ratio > 0n) {
-    const rawMidOut = (amountIn * feeNum) / (feeDen * ratio);
-    amountOutMinimum = (rawMidOut * BigInt(10_000 - slipBps)) / 10_000n;
-  }
-
-  const data = encodeFunctionData({
-    abi: routerAbi,
-    functionName: "exactInputSingle",
-    args: [
-      {
-        tokenIn: WETH,
-        tokenOut: USDC,
-        fee: FEE,
-        recipient: vault,
-        amountIn,
-        amountOutMinimum,
-        sqrtPriceLimitX96: 0n,
-      },
-    ],
-  });
-
-  const steps = [{ tokenIn: WETH, router: SWAP_ROUTER02, data }];
 
   const hash = await walletClient.writeContract({
     address: vault,
@@ -221,22 +420,26 @@ async function main() {
         explorer: explorerTxUrl(chainId, hash),
         vault,
         executor: account.address,
+        chainYaml: fname,
+        sell: { asset: sell.row.asset, symbol: sell.row.symbol, excess1e18: sell.excess.toString() },
+        buy: { asset: buy.row.asset, symbol: buy.row.symbol, excess1e18: buy.excess.toString() },
+        route,
         guards: {
+          oraclePoolGuardChecked: applyOracleGuard,
           oraclePoolGuardDisabled: guardOff,
           oracleUsdcPerEth: oracleUsdcPerEth,
           poolMidUsdcPerEth: poolUsdcPerEth,
           deviationBps,
-          maxDeviationBps: guardOff ? null : maxDevBps,
+          maxDeviationBps: applyOracleGuard ? maxDevBps : null,
         },
         swap: {
-          tokenIn: WETH,
-          amountIn: amountIn.toString(),
-          amountInWeth: Number(amountIn) / 1e18,
-          bps,
           router: SWAP_ROUTER02,
+          quoter: QUOTER ?? null,
+          amountIn: amountIn.toString(),
+          amountInHuman: humanAmount(route.tokenIn, amountIn, WETH, USDC, sell.decimals),
           amountOutMinimum: amountOutMinimum.toString(),
           slippageBps: slipBps,
-          note: "amountOutMinimum from pool mid + fee fudge; use Uniswap Quoter for production tightness",
+          minOutSource,
         },
       },
       null,
