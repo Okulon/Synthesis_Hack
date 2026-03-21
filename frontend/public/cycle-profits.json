@@ -18,7 +18,7 @@
       "navStart1e18": "0",
       "navEnd1e18": "0",
       "navDelta1e18": "0",
-      "profitPool1e18": "168003282452268198",
+      "profitPool1e18": "821739145709166055",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 0,
@@ -27,7 +27,7 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "168003282452268198"
+      "testGainsRawSample1e18": "821739145709166055"
     },
     {
       "wallClockIndex": 21,
@@ -39,7 +39,7 @@
       "navStart1e18": "0",
       "navEnd1e18": "315000000000000000",
       "navDelta1e18": "315000000000000000",
-      "profitPool1e18": "607295405995199661",
+      "profitPool1e18": "0",
       "profitSource": "testgains",
       "navProfit1e18": "315000000000000000",
       "participantCount": 2,
@@ -51,7 +51,7 @@
           "shares1e18": null,
           "power": 3,
           "weight": 0.75,
-          "allocation1e18": "455471554496399746"
+          "allocation1e18": "0"
         },
         {
           "address": "0xcea4095e6036c22c7530b52c34ffcec0e36949c1",
@@ -59,13 +59,13 @@
           "shares1e18": null,
           "power": 1,
           "weight": 0.25,
-          "allocation1e18": "151823851498799915"
+          "allocation1e18": "0"
         }
       ],
-      "allocationSum1e18": "607295405995199661",
+      "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "607295405995199661"
+      "testGainsRawSample1e18": "-327298672081141872"
     },
     {
       "wallClockIndex": 22,
@@ -77,7 +77,7 @@
       "navStart1e18": "315000000000000000",
       "navEnd1e18": "315000000000000000",
       "navDelta1e18": "0",
-      "profitPool1e18": "987360765001933092",
+      "profitPool1e18": "0",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 2,
@@ -89,7 +89,7 @@
           "shares1e18": null,
           "power": 3,
           "weight": 0.5,
-          "allocation1e18": "493680382500966546"
+          "allocation1e18": "0"
         },
         {
           "address": "0xcea4095e6036c22c7530b52c34ffcec0e36949c1",
@@ -97,13 +97,13 @@
           "shares1e18": null,
           "power": 3,
           "weight": 0.5,
-          "allocation1e18": "493680382500966546"
+          "allocation1e18": "0"
         }
       ],
-      "allocationSum1e18": "987360765001933092",
+      "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "987360765001933092"
+      "testGainsRawSample1e18": "-31052843155886940"
     },
     {
       "wallClockIndex": 23,
@@ -115,7 +115,7 @@
       "navStart1e18": "315000000000000000",
       "navEnd1e18": "315000000000000000",
       "navDelta1e18": "0",
-      "profitPool1e18": "881311710470094269",
+      "profitPool1e18": "0",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 1,
@@ -127,13 +127,13 @@
           "shares1e18": null,
           "power": 3,
           "weight": 1,
-          "allocation1e18": "881311710470094269"
+          "allocation1e18": "0"
         }
       ],
-      "allocationSum1e18": "881311710470094269",
+      "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "881311710470094269"
+      "testGainsRawSample1e18": "-427785758802149312"
     },
     {
       "wallClockIndex": 24,
@@ -145,7 +145,7 @@
       "navStart1e18": "315000000000000000",
       "navEnd1e18": "1365000000000000000",
       "navDelta1e18": "1050000000000000000",
-      "profitPool1e18": "0",
+      "profitPool1e18": "242940891254061467",
       "profitSource": "testgains",
       "navProfit1e18": "1050000000000000000",
       "participantCount": 2,
@@ -157,7 +157,7 @@
           "shares1e18": null,
           "power": 3,
           "weight": 0.75,
-          "allocation1e18": "0"
+          "allocation1e18": "182205668440546101"
         },
         {
           "address": "0x8152ef1d01bbd0e4144ff388ebbdb34eeaf19c89",
@@ -165,13 +165,13 @@
           "shares1e18": null,
           "power": 1,
           "weight": 0.25,
-          "allocation1e18": "0"
+          "allocation1e18": "60735222813515366"
         }
       ],
-      "allocationSum1e18": "0",
+      "allocationSum1e18": "242940891254061467",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "-365914096429473253"
+      "testGainsRawSample1e18": "242940891254061467"
     },
     {
       "wallClockIndex": 25,
@@ -201,7 +201,7 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "-213131456021348203"
+      "testGainsRawSample1e18": "-22242727745734109"
     },
     {
       "wallClockIndex": 26,
@@ -222,7 +222,7 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "-128628571224189220"
+      "testGainsRawSample1e18": "-463022325444549232"
     },
     {
       "wallClockIndex": 27,
@@ -234,7 +234,7 @@
       "navStart1e18": "1365000000000000000",
       "navEnd1e18": "1365000000000000000",
       "navDelta1e18": "0",
-      "profitPool1e18": "94413470323519055",
+      "profitPool1e18": "33291219046629618",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 0,
@@ -243,7 +243,7 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "94413470323519055"
+      "testGainsRawSample1e18": "33291219046629618"
     },
     {
       "wallClockIndex": 28,
@@ -255,7 +255,7 @@
       "navStart1e18": "1365000000000000000",
       "navEnd1e18": "1227857142857145500",
       "navDelta1e18": "-137142857142854500",
-      "profitPool1e18": "0",
+      "profitPool1e18": "465787791859684594",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 0,
@@ -264,7 +264,7 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "-362676074215213083"
+      "testGainsRawSample1e18": "465787791859684594"
     },
     {
       "wallClockIndex": 29,
@@ -276,7 +276,7 @@
       "navStart1e18": "1227857142857145500",
       "navEnd1e18": "1227857142857145500",
       "navDelta1e18": "0",
-      "profitPool1e18": "190386839022205465",
+      "profitPool1e18": "737925643150918694",
       "profitSource": "testgains",
       "navProfit1e18": "0",
       "participantCount": 0,
@@ -285,12 +285,75 @@
       "allocationSum1e18": "0",
       "allocationMatchesPool": true,
       "resolveWarning": null,
-      "testGainsRawSample1e18": "190386839022205465"
+      "testGainsRawSample1e18": "737925643150918694"
+    },
+    {
+      "wallClockIndex": 30,
+      "voteStoreCycleKey": "30",
+      "onChainCycleIdBeforeClose": 28,
+      "onChainCycleIdAfterClose": 28,
+      "closedAt": "2026-03-21T00:55:49.117Z",
+      "txHash": "0x611766b70f82c4c9c5987d16fad6d29fa96a1bea6464211defd9c0c6f8bd1559",
+      "navStart1e18": "1227857142857145500",
+      "navEnd1e18": "1227857142857145500",
+      "navDelta1e18": "0",
+      "profitPool1e18": "0",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 0,
+      "totalPower": 0,
+      "participants": [],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "-195741364789834186"
+    },
+    {
+      "wallClockIndex": 31,
+      "voteStoreCycleKey": "31",
+      "onChainCycleIdBeforeClose": 29,
+      "onChainCycleIdAfterClose": 29,
+      "closedAt": "2026-03-21T01:05:49.381Z",
+      "txHash": "0x258ab11734e9157994e60bc49231ec9e5904f4b56650e588f975438d85ec59ca",
+      "navStart1e18": "1227857142857145500",
+      "navEnd1e18": "1227857142857145500",
+      "navDelta1e18": "0",
+      "profitPool1e18": "645733848552436100",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 0,
+      "totalPower": 0,
+      "participants": [],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "645733848552436100"
+    },
+    {
+      "wallClockIndex": 32,
+      "voteStoreCycleKey": "32",
+      "onChainCycleIdBeforeClose": 30,
+      "onChainCycleIdAfterClose": 30,
+      "closedAt": "2026-03-21T01:15:49.374Z",
+      "txHash": "0x24c92b4f8acd1e61490129c6fbd301d629489e39949d23f552c137fd25bde273",
+      "navStart1e18": "1227857142857145500",
+      "navEnd1e18": "1227857142857145500",
+      "navDelta1e18": "0",
+      "profitPool1e18": "0",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 0,
+      "totalPower": 0,
+      "participants": [],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "-103311076293020134"
     }
   ],
   "_meta": {
     "closeLogPath": "config/local/cycle-close-log.json",
-    "updatedAt": "2026-03-21T00:45:49.235Z",
+    "updatedAt": "2026-03-21T01:15:49.395Z",
     "note": "Regenerated by profit:export or automatically after closeCycle. Weights: trust_before × shares (or trust-only if no snapshot). TESTGAINS: each cycle gets an independent uniform draw in [-T/2, T]; profit pool = max(0, draw)."
   }
 }

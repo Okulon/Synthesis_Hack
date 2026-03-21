@@ -1,10 +1,10 @@
 {
   "kind": "vote-store",
-  "cycleId": 28,
-  "onChainCycleId": 28,
-  "cycleKey": "30",
-  "activeVoteCycleKey": "30",
-  "managedWindowIndex": 30,
+  "cycleId": 30,
+  "onChainCycleId": 30,
+  "cycleKey": "33",
+  "activeVoteCycleKey": "33",
+  "managedWindowIndex": 33,
   "voterCount": 0,
   "uniqueVoters": 0,
   "votingOpen": true,
@@ -21,21 +21,21 @@
     "durationSec": 600,
     "votingSec": 480,
     "frozenSec": 120,
-    "serverNowSec": 1774054366,
+    "serverNowSec": 1774055753,
     "live": {
-      "index": 30,
-      "cycleStartSec": 1774053900,
-      "cycleEndSec": 1774054500,
+      "index": 33,
+      "cycleStartSec": 1774055700,
+      "cycleEndSec": 1774056300,
       "phase": "voting",
       "votingSec": 480,
       "frozenSec": 120,
       "durationSec": 600,
       "genesisUnix": 1774035900,
-      "phaseEndsAtSec": 1774054380,
-      "secondsUntilPhaseEnd": 14,
-      "secondsUntilCycleEnd": 134,
-      "calendarCycleStartIso": "2026-03-21T00:45:00.000Z",
-      "calendarCycleEndIso": "2026-03-21T00:55:00.000Z"
+      "phaseEndsAtSec": 1774056180,
+      "secondsUntilPhaseEnd": 427,
+      "secondsUntilCycleEnd": 547,
+      "calendarCycleStartIso": "2026-03-21T01:15:00.000Z",
+      "calendarCycleEndIso": "2026-03-21T01:25:00.000Z"
     }
   },
   "governance": {
@@ -44,10 +44,10 @@
   },
   "_meta": {
     "votesSource": "config/local/vote-store.json",
-    "updatedAt": "2026-03-21T00:52:46.595Z",
+    "updatedAt": "2026-03-21T01:15:53.719Z",
     "note": "Regenerate: npm run votes:export (apps/agent). See docs/CYCLES_AND_VOTING.md.",
     "rawSum": 0,
     "trustMass": 0,
-    "cycleLabel": "Window 30 · 2026-03-21T00:45:00.000Z"
+    "cycleLabel": "Window 33 · 2026-03-21T01:15:00.000Z"
   }
 }

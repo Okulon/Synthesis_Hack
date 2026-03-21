@@ -11,6 +11,7 @@ frontend/.env.*.local
 config/local/
 
 # Common tool artifacts (tune when you add stacks)
+.pnpm-store/
 node_modules/
 dist/
 build/

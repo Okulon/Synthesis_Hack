@@ -10,7 +10,7 @@
     "csvRowCount": 15,
     "missingLocalCsv": false,
     "votersPendingTrustFinalize": [],
-    "updatedAt": "2026-03-21T00:45:45.617Z",
+    "updatedAt": "2026-03-21T01:15:45.791Z",
     "note": "Regenerate: npm run trust:export (apps/agent). votersPendingTrustFinalize = vote-store ballots not yet in trust_cycle.csv."
   }
 }
