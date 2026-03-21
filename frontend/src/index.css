@@ -1054,6 +1054,20 @@ td.mono.sm,
   letter-spacing: 0.04em;
 }
 
+.foot-row {
+  display: block;
+}
+
+.foot-row--docs {
+  margin-top: 0.5rem;
+}
+
+.foot-row--docs a {
+  color: var(--accent, #7eb8ff);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 code {
   font-family: var(--mono);
   font-size: 0.88em;

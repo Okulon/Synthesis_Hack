@@ -2,7 +2,20 @@
 
 **Purpose:** Single place to collect **explorer links**, **tx hashes**, **deployed URLs**, and **submission metadata** as you gather them. Replace every `_TODO_` / placeholder below; keep **private keys and API secrets out of git** (use env + local notes).
 
-**Related:** [`checklist.md`](../checklist.md) **§A–B, C2–C3**, [`docs/BUILD_LOG.md`](BUILD_LOG.md) **Current state**, [`TRACKS.md`](../TRACKS.md).
+**Local deploy artifact → address hints** (after `forge script … --broadcast`, `contracts/broadcast/` is gitignored):  
+`npm run proof:hints -- contracts/broadcast/<YourScript>/<chainId>/run-latest.json`
+
+**Related:** [`checklist.md`](../checklist.md) **§A–B, C2–C3**, [`docs/BUILD_LOG.md`](BUILD_LOG.md) **Current state**, [`TRACKS.md`](../TRACKS.md), [`HUMAN_ONLY.md`](HUMAN_ONLY.md) (what’s left for you).
+
+### Suggested fill order
+
+1. **§0–1** — Chain ID, explorer base, **public** contract addresses (from deploy / Basescan).
+2. **§2** — Uniswap proof txs (**U1** `rebalance`, **U2** user swap).
+3. **§3** — Demo story txs (deposit, ballot, `closeCycle`, rebalance, redeem).
+4. **§4** — Agent command + **live outcomes** links; edit testnet caveat if needed.
+5. **§5–6** — Production app URL + **video** link.
+6. **§7** — Repo URL, track UUIDs (`npm run synthesis:catalog` from repo root), paste from [`SUBMISSION_METADATA.md`](SUBMISSION_METADATA.md).
+7. **§8–10** — Reproducible artifacts, disclosure scratchpad, verify status.
 
 ---
 
@@ -81,7 +94,7 @@ Fill as many as you have; **B** asks at minimum deposit + ≥1 rebalance.
 | Field | Value |
 |--------|--------|
 | **CycleClosed** / NAV — link or block range | `_TODO_` |
-| **Testnet liquidity caveat** (if applicable) | `_TODO_ one sentence_` |
+| **Testnet liquidity caveat** (paste into video/README if using Base Sepolia) | **Default:** Pools on Base Sepolia can be thin or mispriced vs oracles; **NAV** uses governance oracles while **fills** use Uniswap — large divergence is expected on testnet. **Not** mainnet PnL. Edit if your run differs. |
 
 **Demo-only knobs** (label in video/README — not production alpha):
 
@@ -121,7 +134,7 @@ Fill as many as you have; **B** asks at minimum deposit + ≥1 rebalance.
 | **Public `repoURL`** | `_TODO_` |
 | **`conversationLog`** pointer | e.g. [`docs/BUILD_LOG.md`](BUILD_LOG.md) — `_TODO_ confirm_` |
 | **Track UUIDs** (from `GET https://synthesis.devfolio.co/catalog`) | Open `_TODO_`, Uniswap `_TODO_`, Base `_TODO_`, MetaMask `_TODO_` _(omit if not claiming)_ |
-| **Honest `submissionMetadata`** — tools / model / agent | `_TODO_` (e.g. Cursor, repo skills under `apps/agent/skills/`, …) |
+| **Honest `submissionMetadata`** — tools / model / agent | Start from [`docs/SUBMISSION_METADATA.md`](SUBMISSION_METADATA.md); paste into Devfolio |
 | **Self-custody** completed | `_TODO_` date / confirm |
 | **Draft → publish** | `_TODO_` |
 
@@ -155,7 +168,7 @@ Canonical judge copy lives in the root [**`README.md` — Judge-facing**](../REA
 
 | Item | Status |
 |------|--------|
-| **Contract verify** — [`docs/DEPLOY.md`](DEPLOY.md) | `_TODO_` |
+| **Contract verify** — [`docs/DEPLOY.md`](DEPLOY.md) §10 | Run after deploy; paste explorer “verified” status in §1 above |
 | **MetaMask Delegations** — tx or omit track | `_TODO_` |
 | **Telegram** bot demo URL | `_TODO_` |
 | **Uniswap API** on critical path | `_TODO_ only if claiming_` |

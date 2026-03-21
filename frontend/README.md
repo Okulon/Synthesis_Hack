@@ -2,6 +2,8 @@
 
 **React** dashboard for [`DAOVault`](../contracts/src/DAOVault.sol): NAV, share supply, pause flags, tracked assets, **Access Control**, **Users** / trust, **Voting**, **History**, **Profits**, **Withdraw** (redeem), **Trust leaderboard** (see below).
 
+Optional **`VITE_SOURCE_REPO_URL`** (public GitHub root, no trailing slash) adds **judge doc links** in the footer (**PROOF**, **BUILD_LOG**, **checklist**, [`HUMAN_ONLY.md`](../docs/HUMAN_ONLY.md)). See [`.env.example`](.env.example).
+
 ## Run (port **1337**)
 
 ```bash

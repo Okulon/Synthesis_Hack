@@ -1,6 +1,8 @@
 # Build checklist — DAO Agent (Synthesis)
 
-Use this as the **order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); vault mechanics in [`vault/spec.md`](../vault/spec.md) + [`vault/checklist.md`](../vault/checklist.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
+**Live status (what’s done vs open):** use **[`checklist.md`](../checklist.md)** at the repo root — **Done** / **To do** sections and counts.
+
+Use this file as a **historical order of operations**. Check boxes as you go. Details live in [`PROJECT_SPEC.md`](./PROJECT_SPEC.md); governance params in [`GOVERNANCE_VOTING.md`](./GOVERNANCE_VOTING.md); vault mechanics in [`vault/spec.md`](../vault/spec.md) + [`vault/checklist.md`](../vault/checklist.md); session narrative in [`BUILD_LOG.md`](./BUILD_LOG.md).
 
 - **§3** = what the **vault contract** already does (and small on-chain gaps).  
 - **§4** = the **DAO Agent product loop** still to wire end-to-end (votes, trust-weighted targets, cycles, executor swaps, single-token exit UX, profit path).  
@@ -25,7 +27,7 @@ _Last reviewed: 2026-03-20._
 ## 0 — Hackathon & identity
 
 - [x] **Initial registration** — web form submitted (confirm email / Telegram for follow-ups: [`BUILD_LOG.md`](./BUILD_LOG.md))
-- [ ] Obtain **`sk-synth-…`** (or documented web-only submission path) and **team UUID** when available
+- [ ] Obtain **Synthesis/Devfolio API access** (or documented web-only submission path) and **team UUID** when available
 - [ ] `GET https://synthesis.devfolio.co/catalog` — save **track UUIDs** you will claim (refresh before submit)
 - [ ] Wallet ready for **self-custody transfer** before publish (all team members — solo = you)
 

@@ -52,6 +52,8 @@ const ALLOCATION_VOTE_FROM_BLOCK = import.meta.env.VITE_ALLOCATION_VOTE_LOGS_FRO
   ? BigInt(import.meta.env.VITE_ALLOCATION_VOTE_LOGS_FROM_BLOCK)
   : undefined;
 
+const SOURCE_REPO = normalizeEnvString(import.meta.env.VITE_SOURCE_REPO_URL as string | undefined);
+
 function Setup() {
   return (
     <div className="panel setup">
@@ -381,26 +383,48 @@ export default function App() {
       ) : null}
 
       <footer className="foot">
-        Block {q.data?.blockNumber !== undefined ? String(q.data.blockNumber) : "—"}
-        {q.data?.roleLogScan ? (
-          <>
-            {" "}
-            · roles from logs {String(q.data.roleLogScan.fromBlock)}→{String(q.data.roleLogScan.toBlock)}
-          </>
-        ) : null}{" "}
-        {q.data?.holderLogScan ? (
-          <>
-            · holders from logs {String(q.data.holderLogScan.fromBlock)}→{String(q.data.holderLogScan.toBlock)}
-          </>
+        <div className="foot-row">
+          Block {q.data?.blockNumber !== undefined ? String(q.data.blockNumber) : "—"}
+          {q.data?.roleLogScan ? (
+            <>
+              {" "}
+              · roles from logs {String(q.data.roleLogScan.fromBlock)}→{String(q.data.roleLogScan.toBlock)}
+            </>
+          ) : null}{" "}
+          {q.data?.holderLogScan ? (
+            <>
+              · holders from logs {String(q.data.holderLogScan.fromBlock)}→{String(q.data.holderLogScan.toBlock)}
+            </>
+          ) : null}
+          {q.data?.allocationVoteLogScan ? (
+            <>
+              {" "}
+              · allocation ballots from logs {String(q.data.allocationVoteLogScan.fromBlock)}→
+              {String(q.data.allocationVoteLogScan.toBlock)}
+            </>
+          ) : null}{" "}
+          · wallet optional (deposit / withdraw tabs)
+        </div>
+        {SOURCE_REPO ? (
+          <div className="foot-row foot-row--docs muted small">
+            Judge docs:{" "}
+            <a href={`${SOURCE_REPO}/blob/main/docs/PROOF.md`} target="_blank" rel="noreferrer">
+              PROOF
+            </a>
+            {" · "}
+            <a href={`${SOURCE_REPO}/blob/main/docs/BUILD_LOG.md`} target="_blank" rel="noreferrer">
+              BUILD_LOG
+            </a>
+            {" · "}
+            <a href={`${SOURCE_REPO}/blob/main/checklist.md`} target="_blank" rel="noreferrer">
+              checklist
+            </a>
+            {" · "}
+            <a href={`${SOURCE_REPO}/blob/main/docs/HUMAN_ONLY.md`} target="_blank" rel="noreferrer">
+              your remaining steps
+            </a>
+          </div>
         ) : null}
-        {q.data?.allocationVoteLogScan ? (
-          <>
-            {" "}
-            · allocation ballots from logs {String(q.data.allocationVoteLogScan.fromBlock)}→
-            {String(q.data.allocationVoteLogScan.toBlock)}
-          </>
-        ) : null}{" "}
-        · wallet optional (deposit / withdraw tabs)
       </footer>
     </div>
   );

@@ -35,9 +35,11 @@ forge test
 
 **Fork test (Base mainnet):** `test/UniswapBaseFork.t.sol` — set `BASE_MAINNET_RPC_URL` in `.env` or the test **skips** (CI-friendly).
 
+**Slither (optional):** install [Slither](https://github.com/crytic/slither), then from `contracts/` run `slither . --filter-paths "lib/"` (or project default). Not run in CI; useful before mainnet.
+
 ## Deploy & verify (Base Sepolia)
 
-Full walkthrough: [`../docs/DEPLOY.md`](../docs/DEPLOY.md).
+Full walkthrough: [`../docs/DEPLOY.md`](../docs/DEPLOY.md). **Verify** after deploy: [`../docs/DEPLOY.md`](../docs/DEPLOY.md) §10.
 
 **One-shot deploy + configure** (mock oracles for USDC/WETH, allowlists, SwapRouter02, executor):
 

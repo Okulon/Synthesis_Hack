@@ -115,6 +115,8 @@ cd frontend && npm install && npm run dev
 
 Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.example.json) to `config/local/targets.json` and set real token addresses.
 
+**Synthesis track catalog** (needs network): `npm run synthesis:catalog` — use for **`trackUUIDs`** before submit (see [`TRACKS.md`](TRACKS.md)).
+
 **Deploy on Base Sepolia:** step-by-step [`docs/DEPLOY.md`](docs/DEPLOY.md) (recommended: `DeployConfigureDAOVault` one-shot). Then set `VAULT_ADDRESS` in `.env` and document addresses in [`config/chain/contracts.yaml`](config/chain/contracts.yaml). Contract commands: [`contracts/README.md`](contracts/README.md).
 
 **New to this?** Follow the hand-holding guide: [**`docs/STEP_BY_STEP.md`**](docs/STEP_BY_STEP.md).
@@ -131,13 +133,16 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Base Sepolia deploy + configure + agent wiring |
 | [docs/STEP_BY_STEP.md](docs/STEP_BY_STEP.md) | **Start here** if you’re new: wallet, RPC, deploy, `npm run plan` |
 | [vault/spec.md](vault/spec.md) | On-chain vault design (shares, redeem-to-one-asset, executor, pause) |
-| [TRACKS.md](TRACKS.md) | Synthesis prize tracks we target + fit notes |
+| [TRACKS.md](TRACKS.md) | Synthesis prize tracks + fit (`npm run synthesis:catalog` for UUIDs) |
 | [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md) | MVP, rebalance bands, backlog |
 | [docs/GOVERNANCE_VOTING.md](docs/GOVERNANCE_VOTING.md) | Parameter vs allocation votes, registry ideas |
 | [docs/BUILD_LOG.md](docs/BUILD_LOG.md) | Chronological human ↔ agent work log |
 | [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md) | Ordered checklist toward submission |
 | [checklist.md](checklist.md) | **Current status** — what’s done vs open (A–F); start here for submit |
 | [docs/PROOF.md](docs/PROOF.md) | **Judge proof pack** — explorer txs, URLs, submission placeholders (fill as you gather evidence) |
+| [docs/SUBMISSION_METADATA.md](docs/SUBMISSION_METADATA.md) | **Devfolio paste** — tools, model, skills, repo URL (edit `YOUR_*`; no secrets) |
+| [docs/HUMAN_ONLY.md](docs/HUMAN_ONLY.md) | **What only you can do** after automation (PROOF, publish, video) |
+| [docs/TRUST_RPC_AND_BALLOTS.md](docs/TRUST_RPC_AND_BALLOTS.md) | Ballot stamps + sync (agent env) |
 | [docs/VAULT_ORACLE_AND_GOVERNANCE.md](docs/VAULT_ORACLE_AND_GOVERNANCE.md) | Oracle stack, roles, feed sunset / manual override |
 
 ---

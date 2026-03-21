@@ -2,7 +2,7 @@
 
 synthesis:
   catalog_base_url: https://synthesis.devfolio.co
-  # Optional env: SYNTHESIS_API_KEY (sk-synth-...) for draft/publish automation
+  # Optional env: SYNTHESIS_API_KEY — Devfolio-issued credential; never commit the value
   api_key_env: SYNTHESIS_API_KEY
   # Feature flags for agent tooling
   flags:

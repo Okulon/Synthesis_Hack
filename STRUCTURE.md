@@ -29,27 +29,30 @@ Synthesis_Hack/
 │   ├── integrations/         # e.g. Synthesis catalog URL
 │   ├── logging/
 │   └── security/             # Allowed chain IDs, key env var names
+├── contracts/                # Foundry — `DAOVault`, tests, deploy scripts — contracts/README.md
+├── apps/                     # `apps/agent` Node worker; optional `apps/bot` — apps/agent/README.md
+├── vault/                    # On-chain intent — vault/spec.md, vault/checklist.md
+├── checklist.md              # Hackathon **status** — Done vs To do (start here for submit)
+├── scripts/                  # `print-broadcast-hints.mjs` — local PROOF §1 hints from `run-latest.json`
 └── docs/
     ├── PROJECT_SPEC.md       # MVP, mechanics, backlog
     ├── GOVERNANCE_VOTING.md # How params vs allocation votes work
     ├── CYCLES_AND_VOTING.md # Cycle-keyed vote-store + trust × share aggregation
-    ├── BUILD_LOG.md         # Chronological build narrative
-    ├── BUILD_CHECKLIST.md   # Ordered tasks to submission
-    └── DEPLOY.md             # Base Sepolia deploy + agent wiring
+    ├── BUILD_LOG.md         # Chronological build narrative + **Current state**
+    ├── BUILD_CHECKLIST.md   # Ordered historical tasks (see root **checklist.md** for live status)
+    ├── DEPLOY.md             # Base Sepolia deploy + agent wiring + **§10 verify**
+    ├── PROOF.md              # Judge evidence placeholders (txs, URLs)
+    ├── SUBMISSION_METADATA.md # Devfolio paste — tools, model, pitch
+    ├── BAND_POLICY.md        # ε / band edge cases
+    ├── HUMAN_ONLY.md         # Remaining human steps (PROOF, Devfolio, video)
+    ├── TRUST_RPC_AND_BALLOTS.md # Agent stamp + ballot sync vs RPC
+    └── …                     # STEP_BY_STEP, VAULT_ORACLE_AND_GOVERNANCE, etc.
 ```
 
-**In progress**
+**Optional / stub**
 
 ```
-vault/
-├── spec.md                   # Vault technical intent (on-chain behavior)
-└── checklist.md              # Implementation checklist
-
-contracts/                    # Foundry — `src/DAOVault.sol`, tests, deploy script
-frontend/                     # Vite React dashboard — NAV, deposit, Users; TEST = WETH→USDC swap + USDC deposit (see frontend/README.md)
-apps/agent/                   # Node (viem): `plan` | `aggregate` | `trust` | `quote` — see apps/agent/README.md
-apps/agent/skills/            # Agent task playbooks: rebalancing, execution (rebalance tx)
-apps/bot/     (optional)     # Telegram webhook / long-poll service
+apps/bot/README.md            # Telegram stub + config pointer — see [`telegram/bot.yaml`](../config/telegram/bot.yaml)
 ```
 
 ---

@@ -5,7 +5,7 @@
 - **Chronological sessions:** Each time you make a meaningful pass (planning, coding, pivots), add a **new section** with heading `## YYYY-MM-DD — Short title`. Same calendar day twice: use **another distinct title** (keep **oldest → newest** order in the file).
 - **Order:** **Oldest at the top**, **newest just above** [`Current state`](#current-state-update-every-session). Do **not** reorder or delete past sections—this is a timeline.
 - **Handoff:** **Start** each work session by reading **Current state** (bottom). **End** by (1) appending a new dated section and (2) rewriting **Current state**.
-- **Rules:** **Never paste secret values** — no API keys, bearer tokens, JWTs, **private keys** (hex or seed), **RPC URLs with embedded credentials**, or **`.env` contents**. Env **names** only (e.g. `BASESCAN_API_KEY`) are fine. Do not use **`sk-…`-style strings** even as fake examples (some scanners flag them). Refer generically to “Synthesis/Devfolio credential” or “team API access.” Summarize decisions and commits—don’t paste full model dumps.
+- **Rules:** **Never paste secret values** — no API keys, bearer tokens, JWTs, **private keys** (hex or seed), **RPC URLs with embedded credentials**, or **`.env` contents**. Env **names** only (e.g. `BASESCAN_API_KEY`) are fine. Do not paste **placeholder key strings** that mimic real vendor formats (secret scanners may flag them). Refer generically to “Synthesis/Devfolio credential” or “team API access.” Summarize decisions and commits—don’t paste full model dumps.
 
 <details>
 <summary><strong>Template — copy when adding a session</strong></summary>
@@ -195,7 +195,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Commit/push** still pending for `contracts/` + new docs (see Current state).
 
 ### Open questions / risks
-- Same as prior: **`sk-synth-…`**, team UUID, **track UUIDs** from `/catalog`.
+- Same as prior: **Synthesis API access**, team UUID, **track UUIDs** from `/catalog`.
 - **Emergency pause** without vote: **guardian griefing** — mitigate with **multisig**, **policy**, optional **social** removal of `GUARDIAN_ROLE` via governance.
 
 ### Next session
@@ -923,6 +923,85 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-23 — BUILD_LOG: no secret-shaped placeholders
+
+### Goal
+- Keep **`BUILD_LOG`** safe for git: strengthen **Rules** (no API keys, JWTs, credentialed RPC URLs, **`.env`** pastes); remove **fake key-shaped** placeholder text from historical entries (secret scanners); align **[`checklist.md`](../checklist.md)**, **[`docs/BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md)**, **[`config/integrations/synthesis.yaml`](../config/integrations/synthesis.yaml)**.
+
+### Next session
+1. Same as prior — **PROOF** / submit.
+
+---
+
+## 2026-03-23 — Submission metadata template + DEPLOY verify §10 + checklist advance
+
+### Goal
+- Move **[`checklist.md`](../checklist.md)** forward without on-chain secrets: **A** submission copy, **C2** optional depth **N/A**, **C3** testnet caveat, **D** verify **procedure** vs **run** split.
+
+### Agent / automation
+- **[`docs/SUBMISSION_METADATA.md`](../docs/SUBMISSION_METADATA.md)** — Devfolio paste: tools, Cursor/skills pointer, **`conversationLog`** → **BUILD_LOG**, pitch, catalog curl.
+- **[`docs/DEPLOY.md`](./DEPLOY.md)** — **§10** Basescan verify (`forge verify-contract` or UI; `BASESCAN_API_KEY` in `.env` only).
+- **[`docs/PROOF.md`](./PROOF.md)** — default **testnet liquidity** caveat in §4; §7 / §10 links to **SUBMISSION_METADATA** + verify.
+- **[`checklist.md`](../checklist.md)** — **31** done / **19** open; **[`README.md`](../README.md)** + **[`contracts/README.md`](../contracts/README.md)** link **SUBMISSION_METADATA** / **DEPLOY** §10.
+
+### Next session
+1. Human: **PROOF** hashes, **Devfolio** publish, **forge verify** on deployed contracts.
+
+---
+
+## 2026-03-24 — Docs pass: PROOF fill order, TRACKS honesty, STRUCTURE, `synthesis:catalog`
+
+### Goal
+- Automate what does **not** need wallets: navigation, catalog fetch, optional **Slither** / fork pointers, honest **Uniswap** track wording.
+
+### Agent / automation
+- **[`docs/PROOF.md`](./PROOF.md)** — **Suggested fill order** (§0 → §10).
+- **[`TRACKS.md`](../TRACKS.md)** — Uniswap row matches **router + Quoter** proof (not Dev Platform API unless added); **Base** row; MetaMask **deferred**; **`npm run synthesis:catalog`**.
+- **[`STRUCTURE.md`](../STRUCTURE.md)** — **`contracts/`**, **`apps/`**, **`vault/`**, **`checklist.md`**, expanded **`docs/`** list; stub **`apps/bot`** only under optional.
+- **[`docs/BUILD_CHECKLIST.md`](./BUILD_CHECKLIST.md)** — points to root **[`checklist.md`](../checklist.md)** for live status.
+- **[`contracts/README.md`](../contracts/README.md)** — optional **Slither** one-liner.
+- **[`package.json`](../package.json)** — **`npm run synthesis:catalog`** → `curl` catalog (needs network).
+- **[`README.md`](../README.md)** — catalog script in quick path; **TRACKS** doc table.
+- **[`checklist.md`](../checklist.md)** — **E** docs map; **F** fork + Slither done; counts **29 / 17**.
+
+### Next session
+1. Human: **PROOF** txs, **Vercel** URL, **video**, **publish**.
+
+---
+
+## 2026-03-24 — Human-only doc, judge footer, trust/Telegram closure, `proof:hints`
+
+### Goal
+- Close every checklist item that does **not** require a human wallet, Devfolio login, or video recording.
+
+### Agent / automation
+- **[`docs/HUMAN_ONLY.md`](./HUMAN_ONLY.md)** — single list of what **you** must still do.
+- **[`docs/TRUST_RPC_AND_BALLOTS.md`](./TRUST_RPC_AND_BALLOTS.md)** — **`AGENT_STAMP_PRICES`**, rollover ballot sync (checklist **D** trust row).
+- **[`apps/bot/README.md`](../apps/bot/README.md)** — Telegram **stub** + [`config/telegram/bot.yaml`](../config/telegram/bot.yaml) (checklist **D** Telegram row).
+- **[`scripts/print-broadcast-hints.mjs`](../scripts/print-broadcast-hints.mjs)** + **`npm run proof:hints`** — local **`run-latest.json`** → PROOF §1 hints ([`package.json`](../package.json)).
+- **[`docs/PROOF.md`](./PROOF.md)** — link to script + **HUMAN_ONLY**.
+- **Frontend:** optional **`VITE_SOURCE_REPO_URL`** — footer links to **PROOF**, **BUILD_LOG**, **checklist**, **HUMAN_ONLY** ([`App.tsx`](../frontend/src/App.tsx), [`index.css`](../frontend/src/index.css), [`.env.example`](../frontend/.env.example)).
+- **[`checklist.md`](../checklist.md)** — **34** done / **17** open (remaining = **HUMAN_ONLY** + optional Tier B / knobs / ENS).
+
+### Next session
+1. Follow **[`docs/HUMAN_ONLY.md`](./HUMAN_ONLY.md)** only.
+
+---
+
+## 2026-03-24 — Clarify: 17 open ≠ 17 tasks
+
+### Goal
+- Reduce confusion: checklist **open** count **duplicates** the same human work across sections; **three** rows are **optional backlog**.
+
+### Agent / automation
+- **[`docs/HUMAN_ONLY.md`](./HUMAN_ONLY.md)** — table: bundle vs checklist rows; **minimum** vs **skip**; **~5–6** actions for minimal submit.
+- **[`checklist.md`](../checklist.md)** — note under summary table pointing to **HUMAN_ONLY**.
+
+### Next session
+1. Human: minimum **PROOF** + **Devfolio** + optional verify.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -937,7 +1016,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
 - **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.
-- **Submission evidence:** **[`docs/PROOF.md`](./PROOF.md)** — placeholder tables for explorer txs, deployed URLs, autonomy notes, video/Devfolio fields; fill as you gather proof (**B / C2**). Update **`BUILD_LOG`** each meaningful pass (dated section + **Current state**). **Judge-facing** summary: **[`README.md`](../README.md#judge-facing-synthesis)** (story, Uniswap stack, autonomy, disclosures, **innovation**, **reproducible cycle**); **Tier A vs B:** [`vault/spec.md`](../vault/spec.md) **§6.6**. **Checklist status:** **[`checklist.md`](../checklist.md)** — **Done** vs **To do** + summary counts (keep counts in sync when ticking).
-- **Blocked / polish:** optional **contract verify**; **multi-asset** vaults need more **routes** than WETH/USDC; **Synthesis** draft update with demo artifacts.
+- **Submission evidence:** **[`docs/PROOF.md`](./PROOF.md)** — placeholders + **`npm run proof:hints`** (local broadcast); **[`docs/HUMAN_ONLY.md`](./HUMAN_ONLY.md)** (remaining human steps); **[`docs/SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)**; **`npm run synthesis:catalog`**. **Judge-facing:** **[`README.md`](../README.md#judge-facing-synthesis)**. **Tier A vs B:** [`vault/spec.md`](../vault/spec.md) **§6.6**. **Checklist:** **[`checklist.md`](../checklist.md)** (**34** done / **17** open). **Optional footer:** **`VITE_SOURCE_REPO_URL`** in **`frontend/.env.local`**. **Trust / Telegram docs:** **[`TRUST_RPC_AND_BALLOTS.md`](./TRUST_RPC_AND_BALLOTS.md)**, **[`apps/bot/README.md`](../apps/bot/README.md)**.
+- **Blocked / polish:** run **`forge verify`** / Basescan UI per **[`DEPLOY.md`](./DEPLOY.md) §10** (procedure documented); **multi-asset** vaults need more **routes** than WETH/USDC; **Synthesis** draft update with demo artifacts; **[`SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)** for Devfolio paste.
 - **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent.
 - **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root — refine before publish.

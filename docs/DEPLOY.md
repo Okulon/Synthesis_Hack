@@ -96,3 +96,13 @@ See [`contracts/script/BaseSepolia.sol`](../contracts/script/BaseSepolia.sol) an
 
 - Broadcasting `forge script` (needs `PRIVATE_KEY`).
 - Basescan verification (needs `BASESCAN_API_KEY` + successful deploy).
+
+## 10. Verify on Basescan (if `--verify` missed or failed)
+
+Prefer **`--verify`** on the same `forge script … --broadcast` run (§2–3). If a contract is **unverified** afterward:
+
+1. Set **`BASESCAN_API_KEY`** in `.env` (never commit it).
+2. Use **`forge verify-contract`** with the **deployed address**, **compiler version**, and **constructor arguments** matching the broadcast artifact — see [Foundry book — verify](https://book.getfoundry.sh/reference/forge/forge-verify-contract).
+3. Alternatively, **Basescan → Contract → Verify & Publish** using the **Standard JSON** input from `forge build` / your artifact output.
+
+Paste **public** verified links into [`docs/PROOF.md`](PROOF.md) §1 — not API keys.
