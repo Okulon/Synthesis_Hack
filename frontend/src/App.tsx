@@ -34,6 +34,8 @@ import {
   type TrustForAddressOpts,
 } from "./lib/trustScores";
 import { VotingHistoryTab } from "./components/VotingHistoryTab";
+import { ProfitsTab } from "./components/ProfitsTab";
+import { TrustLeaderboardTab } from "./components/TrustLeaderboardTab";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -128,14 +130,6 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: Rea
       <span className="metric-value">{value}</span>
       {sub ? <span className="metric-sub">{sub}</span> : null}
     </div>
-  );
-}
-
-function PausePill({ on, label }: { on: boolean; label: string }) {
-  return (
-    <span className={`pill ${on ? "on" : "off"}`}>
-      {label}: {on ? "ON" : "off"}
-    </span>
   );
 }
 
@@ -244,7 +238,9 @@ function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
 }
 
 export default function App() {
-  const [view, setView] = useState<"dashboard" | "users" | "voting" | "history">("dashboard");
+  const [view, setView] = useState<
+    "dashboard" | "users" | "voting" | "history" | "profits" | "leaderboard"
+  >("dashboard");
   if (!RPC) {
     return (
       <div className="shell">
@@ -322,6 +318,20 @@ export default function App() {
             >
               History
             </button>
+            <button
+              type="button"
+              className={`btn ${view === "profits" ? "btn-primary" : ""}`}
+              onClick={() => setView("profits")}
+            >
+              Profits
+            </button>
+            <button
+              type="button"
+              className={`btn ${view === "leaderboard" ? "btn-primary" : ""}`}
+              onClick={() => setView("leaderboard")}
+            >
+              Trust leaderboard
+            </button>
           </div>
           {q.data ? (
             <ExplorerLink chainId={q.data.chainId} path={`/address/${q.data.vault}`}>
@@ -351,8 +361,12 @@ export default function App() {
           <UsersPage snap={q.data} />
         ) : view === "voting" ? (
           <VotingPage snap={q.data} />
-        ) : (
+        ) : view === "history" ? (
           <VotingHistoryTab snap={q.data} />
+        ) : view === "profits" ? (
+          <ProfitsTab snap={q.data} />
+        ) : (
+          <TrustLeaderboardTab snap={q.data} />
         )
       ) : null}
 
@@ -383,7 +397,19 @@ export default function App() {
 }
 
 function Dashboard({ snap }: { snap: VaultSnapshot }) {
-  const explorer = explorerBase(snap.chainId);
+  const navPieSegments = useMemo((): PieSegment[] => {
+    const t = snap.totalNAV1e18;
+    if (t === 0n || snap.assets.length === 0) return [];
+    const tn = Number(t);
+    if (!Number.isFinite(tn) || tn <= 0) return [];
+    return snap.assets.map((a, i) => ({
+      key: a.address,
+      label: a.symbol || a.name || shortAddr(a.address, 4),
+      fraction: Number(a.valueNav1e18) / tn,
+      colorIndex: i,
+    }));
+  }, [snap.assets, snap.totalNAV1e18]);
+
   return (
     <>
       <DepositPanel
@@ -419,36 +445,29 @@ function Dashboard({ snap }: { snap: VaultSnapshot }) {
         />
       </section>
 
-      <section className="panel">
-        <h2>Pause flags</h2>
-        <div className="pause-row">
-          <PausePill on={snap.pauseAll} label="pauseAll" />
-          <PausePill on={snap.pauseTrading} label="pauseTrading" />
-          <PausePill on={snap.pauseDeposits} label="pauseDeposits" />
+      <section className="panel dashboard-access-row">
+        <div className="dashboard-access-row__half">
+          <h2>Access control</h2>
+          <RolesTable snap={snap} />
         </div>
-        <p className="muted small">
-          When <code>pauseAll</code> is on, deposits and rebalances stop; redemptions follow vault rules. See{" "}
-          <code>DAOVault.sol</code> modifiers.
-        </p>
-      </section>
-
-      <section className="panel">
-        <h2>Access control</h2>
-        <RolesTable snap={snap} />
+        <div className="dashboard-access-row__half dashboard-access-row__pie">
+          <h2>Pool allocation</h2>
+          {navPieSegments.length > 0 ? (
+            <AllocationPieChart
+              segments={navPieSegments}
+              title="By NAV"
+              size={200}
+              className="dashboard-nav-pie"
+            />
+          ) : (
+            <p className="muted small dashboard-access-row__empty">No NAV-weighted assets to chart yet.</p>
+          )}
+        </div>
       </section>
 
       <section className="panel">
         <h2>Tracked assets</h2>
         <AssetsTable snap={snap} />
-      </section>
-
-      <section className="panel mono">
-        <h2>Contract</h2>
-        <p>
-          <a className="ext" href={`${explorer}/address/${snap.vault}`} target="_blank" rel="noreferrer">
-            {snap.vault}
-          </a>
-        </p>
       </section>
     </>
   );
@@ -664,17 +683,22 @@ function VotingTables({
   allocationVoters?: Array<{ address: string; trust: number }>;
 }) {
   const onChainAgg = useMemo(() => computeOnChainTargets(snap, trustMap, trustOpts), [snap, trustMap, trustOpts]);
-  const targetEntries = useMemo(
-    () => Object.entries(onChainAgg.targets).sort((a, b) => b[1] - a[1]),
-    [onChainAgg.targets],
-  );
+  /** Same order as `ballotAssets` / Cast ballot — keeps pie colors and table rows aligned */
+  const ballotOrderedTargets = useMemo(() => {
+    const t = onChainAgg.targets;
+    return snap.ballotAssets.map((a, i) => {
+      const w = t[a.address.toLowerCase()] ?? 0;
+      return { addr: a.address, w, slot: i };
+    });
+  }, [snap.ballotAssets, onChainAgg.targets]);
   const aggregatePieSegments = useMemo((): PieSegment[] => {
-    return targetEntries.map(([addr, w]) => ({
+    return ballotOrderedTargets.map(({ addr, w, slot }) => ({
       key: addr.toLowerCase(),
       label: assetSymbolForAddress(snap, addr),
       fraction: w,
+      colorIndex: slot,
     }));
-  }, [targetEntries, snap]);
+  }, [ballotOrderedTargets, snap]);
   const holderRows = useMemo(
     () => buildHolderVoteRows(snap, trustMap, trustOpts, allocationVoters),
     [snap, trustMap, trustOpts, allocationVoters],
@@ -701,7 +725,7 @@ function VotingTables({
             </p>
           ) : null}
           <div className="voting-aggregate-split">
-            {targetEntries.length > 0 ? (
+            {ballotOrderedTargets.some((x) => x.w > 0) ? (
               <AllocationPieChart
                 segments={aggregatePieSegments}
                 title="On-chain blend"
@@ -718,14 +742,14 @@ function VotingTables({
                   </tr>
                 </thead>
                 <tbody>
-                  {targetEntries.length === 0 ? (
+                  {ballotOrderedTargets.length === 0 ? (
                     <tr>
                       <td colSpan={2} className="muted mono">
                         —
                       </td>
                     </tr>
                   ) : (
-                    targetEntries.map(([addr, w]) => (
+                    ballotOrderedTargets.map(({ addr, w }) => (
                       <tr key={addr}>
                         <td>
                           <span className="asset-name">

@@ -1,6 +1,6 @@
 # DAO Agent — off-chain worker
 
-_Last reviewed: 2026-03-20 (pm)._
+_Last reviewed: 2026-03-20._
 
 Reads config + chain state; **no private keys** in `plan` / `quote` / `aggregate` / `trust` (read-only).
 
@@ -56,7 +56,8 @@ cp apps/agent/fixtures/trust_cycle.example.csv config/local/trust_cycle.csv
 | Script | Purpose |
 |--------|---------|
 | `npm run agent` | **All-in-one loop** — sync, trust stamp/finalize, **`closeCycle`** on rollover if gov key set, aggregate→**`targets.json`** (only if **allocation quorum** met, unless **`AGENT_REQUIRE_QUORUM_FOR_TARGETS=0`**), votes export, optional auto-rebalance ([`src/agent.mjs`](./src/agent.mjs)) |
-| `npm run close-cycle` | Governance **`closeCycle`** once (NAV snapshot in `config/local/agent-close-cycle-state.json`) |
+| `npm run close-cycle` | Governance **`closeCycle`** once (NAV snapshot in `config/local/agent-close-cycle-state.json`); appends **`config/local/cycle-close-log.json`**; refreshes **`frontend/public/cycle-profits.json`**. Optional **`CLOSE_CYCLE_WALL_KEY=<n>`** to tie the close to wall-clock window **`n`** (agent sets automatically). |
+| `npm run profit:export` | Rebuild **`frontend/public/cycle-profits.json`** from close log + vote-store + trust CSV (no chain call) |
 | `npm run plan` | Current vault weights vs `targets.json` + band policy → JSON (`would_trade` / `skip`) |
 | `npm run aggregate` | **Trust × snapshot shares × weights** (vote-store) or legacy trust-only → `targets` for `targets.json` |
 | `npm run quorum:check` | RPC: holders + on-chain ballots for `onChainCycleId` → JSON + exit `0` if quorum met, `2` if below ([`src/check-quorum-for-targets.mjs`](./src/check-quorum-for-targets.mjs)) — same math as dashboard **quorum tower**. Used **only** before writing **`config/local/targets.json`** (executor / `plan`). Does **not** change **`allocation-votes.json`** / UI “voted blend”. |
@@ -110,6 +111,7 @@ Deploy: [`docs/DEPLOY.md`](../../docs/DEPLOY.md).
 | `TESTWETH_OSCILLATOR_NOISE_BPS` | `50` | Random jitter per call (basis points). |
 | `TESTBOOSTTRUST` | `1` | Multiplier on effective return before bps rounding in trust-finalize-window. E.g. `100000` turns tiny returns into visible bps. |
 | `TRUST_MIN_TIME_WEIGHT_FLOOR` | off | 0..1; clamps time weight up so late-cycle votes still get non-zero effective return. E.g. `0.25`. |
+| `TESTGAINS` | off | When set to **T** (bigint string, **1e18 NAV units**), each close in **`cycle-profits.json`** draws **uniform random** in **`[-T/2, T]`**, then **`profit pool = max(0, draw)`** (demo); otherwise **`max(0, navEnd − navStart)`**. |
 
 ## Next
 

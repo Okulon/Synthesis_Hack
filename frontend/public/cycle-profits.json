@@ -1,0 +1,212 @@
+{
+  "unit": "vault totalNAV scale (1e18 fixed-point)",
+  "testGainsActive": true,
+  "testGains1e18": "1000000000000000000",
+  "testGainsRange": {
+    "min1e18": "-500000000000000000",
+    "max1e18": "1000000000000000000",
+    "poolClamp": "max(0, sample)"
+  },
+  "cycles": [
+    {
+      "wallClockIndex": null,
+      "voteStoreCycleKey": "20",
+      "onChainCycleIdBeforeClose": 18,
+      "onChainCycleIdAfterClose": 18,
+      "closedAt": "2026-03-20T23:15:58.758Z",
+      "txHash": "0xc80a8221ec92249a5059801dd1d7521db0f12e3cb825d2ea3d0ed5561f3058a1",
+      "navStart1e18": "0",
+      "navEnd1e18": "0",
+      "navDelta1e18": "0",
+      "profitPool1e18": "720799377126329130",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 0,
+      "totalPower": 0,
+      "participants": [],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "720799377126329130"
+    },
+    {
+      "wallClockIndex": 21,
+      "voteStoreCycleKey": "21",
+      "onChainCycleIdBeforeClose": 19,
+      "onChainCycleIdAfterClose": 19,
+      "closedAt": "2026-03-20T23:25:56.510Z",
+      "txHash": "0xf0f0f8ebe7930adb79ea013142b3dbc469dbf98efcd8ebae78ab4bdabfa6f770",
+      "navStart1e18": "0",
+      "navEnd1e18": "315000000000000000",
+      "navDelta1e18": "315000000000000000",
+      "profitPool1e18": "462739206585473345",
+      "profitSource": "testgains",
+      "navProfit1e18": "315000000000000000",
+      "participantCount": 2,
+      "totalPower": 4,
+      "participants": [
+        {
+          "address": "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 0.75,
+          "allocation1e18": "347054404939105009"
+        },
+        {
+          "address": "0xcea4095e6036c22c7530b52c34ffcec0e36949c1",
+          "trustBefore": 1,
+          "shares1e18": null,
+          "power": 1,
+          "weight": 0.25,
+          "allocation1e18": "115684801646368336"
+        }
+      ],
+      "allocationSum1e18": "462739206585473345",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "462739206585473345"
+    },
+    {
+      "wallClockIndex": 22,
+      "voteStoreCycleKey": "22",
+      "onChainCycleIdBeforeClose": 20,
+      "onChainCycleIdAfterClose": 20,
+      "closedAt": "2026-03-20T23:35:56.377Z",
+      "txHash": "0x32a9f1bf57120d592ecce0066dc973d021411e5ed1abeeceb3a1a4e169cb6872",
+      "navStart1e18": "315000000000000000",
+      "navEnd1e18": "315000000000000000",
+      "navDelta1e18": "0",
+      "profitPool1e18": "0",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 2,
+      "totalPower": 6,
+      "participants": [
+        {
+          "address": "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 0.5,
+          "allocation1e18": "0"
+        },
+        {
+          "address": "0xcea4095e6036c22c7530b52c34ffcec0e36949c1",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 0.5,
+          "allocation1e18": "0"
+        }
+      ],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "-292770433597486213"
+    },
+    {
+      "wallClockIndex": 23,
+      "voteStoreCycleKey": "23",
+      "onChainCycleIdBeforeClose": 21,
+      "onChainCycleIdAfterClose": 21,
+      "closedAt": "2026-03-20T23:45:50.883Z",
+      "txHash": "0x776b66f8a13b6b3ae9af013d533ca0198df607c7017411523fb8ba0340528eac",
+      "navStart1e18": "315000000000000000",
+      "navEnd1e18": "315000000000000000",
+      "navDelta1e18": "0",
+      "profitPool1e18": "779058254482485703",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 1,
+      "totalPower": 3,
+      "participants": [
+        {
+          "address": "0xcea4095e6036c22c7530b52c34ffcec0e36949c1",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 1,
+          "allocation1e18": "779058254482485703"
+        }
+      ],
+      "allocationSum1e18": "779058254482485703",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "779058254482485703"
+    },
+    {
+      "wallClockIndex": 24,
+      "voteStoreCycleKey": "24",
+      "onChainCycleIdBeforeClose": 22,
+      "onChainCycleIdAfterClose": 22,
+      "closedAt": "2026-03-20T23:55:49.496Z",
+      "txHash": "0xa8371800bde4842c90f91ad306c59ef666d3999ff7327698b07ccf1e82420e49",
+      "navStart1e18": "315000000000000000",
+      "navEnd1e18": "1365000000000000000",
+      "navDelta1e18": "1050000000000000000",
+      "profitPool1e18": "640636929071555091",
+      "profitSource": "testgains",
+      "navProfit1e18": "1050000000000000000",
+      "participantCount": 2,
+      "totalPower": 4,
+      "participants": [
+        {
+          "address": "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 0.75,
+          "allocation1e18": "480477696803666319"
+        },
+        {
+          "address": "0x8152ef1d01bbd0e4144ff388ebbdb34eeaf19c89",
+          "trustBefore": 1,
+          "shares1e18": null,
+          "power": 1,
+          "weight": 0.25,
+          "allocation1e18": "160159232267888772"
+        }
+      ],
+      "allocationSum1e18": "640636929071555091",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "640636929071555091"
+    },
+    {
+      "wallClockIndex": 25,
+      "voteStoreCycleKey": "25",
+      "onChainCycleIdBeforeClose": 23,
+      "onChainCycleIdAfterClose": 23,
+      "closedAt": "2026-03-21T00:05:49.249Z",
+      "txHash": "0x0419794bc8147f62b760095b7d9c3ac41f78e91b7a5229715613ff4883ab3bb9",
+      "navStart1e18": "1365000000000000000",
+      "navEnd1e18": "1365000000000000000",
+      "navDelta1e18": "0",
+      "profitPool1e18": "0",
+      "profitSource": "testgains",
+      "navProfit1e18": "0",
+      "participantCount": 1,
+      "totalPower": 3,
+      "participants": [
+        {
+          "address": "0x7fb7bf5dcecc731aca64f8431c5dfcfa3adfdb92",
+          "trustBefore": 3,
+          "shares1e18": null,
+          "power": 3,
+          "weight": 1,
+          "allocation1e18": "0"
+        }
+      ],
+      "allocationSum1e18": "0",
+      "allocationMatchesPool": true,
+      "resolveWarning": null,
+      "testGainsRawSample1e18": "-179344081452201579"
+    }
+  ],
+  "_meta": {
+    "closeLogPath": "config/local/cycle-close-log.json",
+    "updatedAt": "2026-03-21T00:05:49.265Z",
+    "note": "Regenerated by profit:export or automatically after closeCycle. Weights: trust_before × shares (or trust-only if no snapshot). TESTGAINS: each cycle gets an independent uniform draw in [-T/2, T]; profit pool = max(0, draw)."
+  }
+}

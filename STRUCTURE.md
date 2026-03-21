@@ -17,7 +17,7 @@ Synthesis_Hack/
 ├── .env.example              # Secret *names* only; copy to .gitignored `.env`
 ├── .gitignore
 ├── .github/workflows/        # Foundry CI + apps/agent CI
-├── frontend/                 # Vite dashboard (port 1337): reads, deposit, TEST swap path, public/trust-scores.json + trust-history.json + allocation-votes.json — frontend/README.md
+├── frontend/                 # Vite dashboard (port 1337): reads, deposit, TEST swap path; public JSON: trust-scores + trust-history + cycle-profits (NAV Δ or TESTGAINS random synthetic per close) + allocation-votes — frontend/README.md
 ├── config/                   # Non-secret YAML defaults (see config/README.md)
 │   ├── agent/                # Worker loop, execution limits
 │   ├── chain/                # Base metadata, contract env keys

@@ -2,7 +2,7 @@
 
 ## How this file works
 
-- **Chronological sessions:** Each time you make a meaningful pass (planning, coding, pivots), add a **new section** with heading `## YYYY-MM-DD — Short title` (add `(pm)` or a second date if you log twice in one day).
+- **Chronological sessions:** Each time you make a meaningful pass (planning, coding, pivots), add a **new section** with heading `## YYYY-MM-DD — Short title`. Same calendar day twice: use **another distinct title** (keep **oldest → newest** order in the file).
 - **Order:** **Oldest at the top**, **newest just above** [`Current state`](#current-state-update-every-session). Do **not** reorder or delete past sections—this is a timeline.
 - **Handoff:** **Start** each work session by reading **Current state** (bottom). **End** by (1) appending a new dated section and (2) rewriting **Current state**.
 - **Rules:** No secrets (API keys, tokens, private keys). Summarize decisions and commits—don’t paste full model dumps.
@@ -503,7 +503,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
-## 2026-03-20 (pm) — Trust pipeline fixes, WETH oscillator, quorum, on-chain ballot sync
+## 2026-03-20 — Trust pipeline fixes, WETH oscillator, quorum, on-chain ballot sync
 
 ### Goal
 - Make **trust scores actually move** off default 1.0 after a cycle closes — end-to-end, no manual steps.
@@ -591,16 +591,95 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-21 — Profit split after closeCycle + Profits tab
+
+### Goal
+- Show **per-cycle profit distribution** by **trust × shares** (voting power) after each **`closeCycle`**; optional **`TESTGAINS`** for synthetic profit pools in demos (random draw semantics in **TESTGAINS random pool + cycle-profits metadata**, below).
+
+### Human decisions
+- **Tier A off-chain:** append **`closeCycle`** NAV bounds to **`config/local/cycle-close-log.json`**; export **`frontend/public/cycle-profits.json`** for the UI (no Merkle / no on-chain distribution in this pass).
+- **`TESTGAINS`:** NAV-scale (**1e18** units); when set, synthetic pool instead of **`max(0, navEnd − navStart)`** (per-cycle draw documented in later session).
+
+### Agent / automation
+- **`close-cycle.mjs`:** logs **`onChainCycleId` before/after**, optional **`CLOSE_CYCLE_WALL_KEY`**; appends close log; runs **`writeCycleProfitsArtifact()`**.
+- **`agent.mjs`:** passes **`CLOSE_CYCLE_WALL_KEY=<closed window>`** into **`close-cycle`** on rollover.
+- **`lib/profitExportCore.mjs` + `profit-export-frontend.mjs`:** **`npm run profit:export`**; weights **∝ trust_before × shares** (trust-only if no snapshot), **BigInt** split with remainder sweep; maps manual closes via **`onChainCycleId`** ↔ vote-store when wall key absent.
+- **Frontend:** **`ProfitsTab.tsx`** + **`/cycle-profits.json`** — “Your share” + per-cycle cards with bars/charts (full UI polish in **Trust leaderboard, dashboard layout, voting visual parity, Profits tab v2**, below); **`.env.example`** **`TESTGAINS`**; docs (**`CYCLES_AND_VOTING`**, READMEs, **STRUCTURE**).
+
+### Reality checks
+- **Principal / NAV** still follows share redemption on-chain; this JSON is **attribution / demo accounting** until a claim path exists.
+- **`cycle-close-log.json`** is gitignored like other **`config/local/`** — fresh clones need at least one **`closeCycle`** (or hand-built log) to populate the tab.
+
+### Next session
+1. Optional: on-chain **yield accrual** or **Merkle claim** if scope allows.
+2. Optional: distribute remainder to **treasury** when there are no ballots.
+
+---
+
+## 2026-03-21 — Trust leaderboard, dashboard layout, voting visual parity, Profits tab v2
+
+### Goal
+- **Leaderboard:** graphical **trust / share / power** ranking with **you** highlighted and readable formatting for huge **trust × shares** values.
+- **Dashboard:** less noise — drop **Pause** / **Contract** blocks; pair **Access control** with a **NAV allocation** donut.
+- **Voting:** **Cast ballot** vs **Aggregate targets** use the **same asset order** as on-chain **`ballotAssets`** and **consistent pie slice colors** per slot.
+- **Profits:** tighter UX — real **charts / stats**, less wall-of-text, remove confusing **podium**-style duplicate bars, **compact Power**; **[`cycleProfits.ts`](../frontend/src/lib/cycleProfits.ts)** types aligned with exported JSON (including later **`testGainsRange`** fields).
+
+### Human decisions
+- **Order:** aggregate display follows **`ballotAssets` enumeration** (including zero-weight slots) so the UI matches **`castAllocationBallot(weightsBps)`** indexing.
+- **Colors:** donut segments use explicit **`colorIndex`** (ballot slot) so preview and aggregate pies don’t diverge after sorting.
+
+### Frontend
+- **[`TrustLeaderboardTab.tsx`](../frontend/src/components/TrustLeaderboardTab.tsx)** + **[`App.tsx`](../frontend/src/App.tsx)** **`leaderboard`** view — sort toggles (**Trust / Share % / Power**), bar chart, row highlight for connected or pasted **`0x…`** address.
+- **[`App.tsx`](../frontend/src/App.tsx)** dashboard: **`navPieSegments`** + **[`AllocationPieChart.tsx`](../frontend/src/components/AllocationPieChart.tsx)** beside access control (~half-width layout); removed dashboard **Pause flags** and **Contract** sections from the main surface.
+- **Voting:** **`ballotOrderedTargets`** in **`App.tsx`** — aggregate table + pie in **`ballotAssets`** order; **`colorIndex: slot`** on segments. **[`AllocationPieChart.tsx`](../frontend/src/components/AllocationPieChart.tsx)** maps **`colorIndex`** → **`DEFAULT_COLORS[ci % n]`**. **[`AllocationBallotPanel.tsx`](../frontend/src/components/AllocationBallotPanel.tsx)** preview passes per-row **`colorIndex`**.
+- **Profits:** **[`ProfitsTab.tsx`](../frontend/src/components/ProfitsTab.tsx)** — charts/stats, copy trim, podium removal, compact power strings; bar heights computed in **`Number`** space for **`tsc`**.
+
+### Agent / data
+- Builds on **Profit split after closeCycle + Profits tab** (**`cycle-profits.json`** / **`close-cycle`** wiring); **`TESTGAINS`** random pool + JSON metadata in **TESTGAINS random pool + cycle-profits metadata** (below).
+
+### Reality checks
+- Legacy vaults without **`ballotAssets`** still fall back to **tracked**-only ballots; ordering parity applies when the registry is on-chain.
+
+### Next session
+1. Optional: show per-cycle **`testGainsRawSample1e18`** in Profits rows (JSON already has it).
+
+---
+
+## 2026-03-21 — TESTGAINS random pool + cycle-profits metadata
+
+### Goal
+- Vary demo profit pools **per close**: uniform draw in **`[-T/2, T]`** (**T** = **`TESTGAINS`**, NAV **1e18** scale), then **`profit pool = max(0, draw)`**; document and expose the range in the UI.
+
+### Human decisions
+- Keep **NAV Δ** path unchanged when **`TESTGAINS`** is unset; synthetic path is **export-time** (re-run **`profit:export`** → new draws).
+
+### Agent / automation
+- **`apps/agent/src/lib/profitExportCore.mjs`:** `node:crypto` **`randomBytes`** → **`randomBigIntInclusive`** / **`sampleTestGainsPool1e18`** per exported cycle row; JSON top-level **`testGainsRange`** (`min1e18` / `max1e18` / `poolClamp` note) plus per-row **`testGainsRawSample1e18`** and **`profitPool1e18`** (clamped pool).
+
+### Frontend
+- **`ProfitsTab.tsx`:** **TESTGAINS** badge **`title`** tooltip built from **`testGainsRange`** when present.
+
+### Docs
+- **`.env.example`**, **`frontend/README.md`**, **`STRUCTURE.md`**, **`docs/BUILD_CHECKLIST.md`**, **`docs/CYCLES_AND_VOTING.md`** — align wording with random draw + clamp; **`BUILD_LOG`**: **Profit split after closeCycle + Profits tab** bullets corrected for **`TESTGAINS`**; **Trust leaderboard, dashboard layout, voting visual parity, Profits tab v2** documents the same day’s **dashboard / voting / leaderboard / Profits UI** so it is not only implied by **Current state**.
+
+### Reality checks
+- **`testGains1e18`** in JSON remains **T** (the bound); actual pool per cycle is the clamped draw.
+
+### Next session
+1. Optional: show per-cycle **raw sample** in the Profits UI (data already in JSON).
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
 - **Shipped in repo:** **`DAOVault`** (+ **`ballotAssets`**); **DeployConfigure** / **Configure** + **`BaseSepolia`** libs; **mock oracles**; **agent:** `plan`, `aggregate`, `trust`, `quote`, **`rebalance`**, **`npm run agent`** (orchestrator), **quorum check**, **on-chain ballot sync**, **trust finalize pipeline**; **[`DEPLOY.md`](./DEPLOY.md)**; **`config/chain/base.yaml`** + **`base_sepolia.yaml`**; **CI:** Foundry + [`agent.yml`](../.github/workflows/agent.yml).
 - **Trust pipeline (working end-to-end):** On rollover: **sync on-chain ballots** (preserves vote-time `priceMarksUsdc`) → **stamp prices** (fills missing; uses **WETH oscillator** on testnet when `TESTWETHOCCILATOR` set) → **finalize** (time-weighted portfolio return × `TESTBOOSTTRUST` amplifier) → **trust scoring** (`trust.mjs` applies `scoring.yaml` rule) → **export** (`trust-scores.json`). Trust confirmed moving off 1.0 (e.g. 0.1 floor or 3.0 ceiling depending on oscillator direction).
-- **Dev knobs:** `TESTWETHOCCILATOR` (synthetic WETH/USDC for dead testnet pools), `TESTBOOSTTRUST` (amplify bps), `TRUST_MIN_TIME_WEIGHT_FLOOR` (clamp late-vote time weight).
+- **Dev knobs:** `TESTWETHOCCILATOR` (synthetic WETH/USDC for dead testnet pools), `TESTBOOSTTRUST` (amplify bps), `TRUST_MIN_TIME_WEIGHT_FLOOR` (clamp late-vote time weight), `TESTGAINS` (**T** = NAV-scale bound; each exported close draws **uniform in `[-T/2, T]`**, pool **`max(0,·)`** instead of NAV Δ; **`cycle-profits.json`** carries **`testGainsRange`** + per-row raw sample).
 - **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
 - **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
 - **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — dashboard + **History** tab (**trust over cycles** chart + per-window table from **`/trust-history.json`**) + voting **pie charts**, **Voted/Pending** ballot status, trust scores with **†/◆** markers, legacy **allowlist** banner, **NAV weight %** on tracked assets; voting schedule JSON **polls**.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** — trust trajectory + vote/benchmark bps + weights) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**.
 - **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** writes **`trust-scores.json`** + **`trust-history.json`**; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.

@@ -34,6 +34,8 @@ After clone: **`npm run agent`** from repo root (or `cycle:daemon` for sync+expo
 | `config/local/trust_cycle.csv` + `config/trust/scoring.yaml` | Trust multipliers (same as `npm run trust`). |
 | `frontend/public/allocation-votes.json` | Dashboard **Voting** tab (`npm run votes:export`). Includes aggregate **`targets`** for display (not quorum-gated). |
 | `frontend/public/trust-history.json` | Dashboard **History** tab — per-voter, per-cycle trust steps + vote/benchmark bps + ballot weights (`npm run trust:export`, written alongside `trust-scores.json`). |
+| `config/local/cycle-close-log.json` | Append-only **closeCycle** NAV boundaries + optional wall-clock index (gitignored). Source for profit splits. |
+| `frontend/public/cycle-profits.json` | Dashboard **Profits** tab — per close: profit pool (NAV Δ or random synthetic from **`TESTGAINS`** = **T**: uniform in **`[-T/2, T]`**, **`profitPool1e18 = max(0, draw)`**) split **∝ trust_before × shares**. When synthetic: JSON includes **`testGainsRange`**, per-row **`testGainsRawSample1e18`**. Written by `close-cycle.mjs` or `npm run profit:export` (re-export redraws pools). |
 | `config/local/targets.json` | **`plan` / rebalance** input only (gitignored). Quorum-gated when agent writes (see **Display vs execution targets** above). |
 
 ## Cycle record (`vote-store`)

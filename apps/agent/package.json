@@ -22,6 +22,7 @@
     "trust:stamp-prices": "node src/trust-stamp-prices.mjs",
     "trust:finalize-window": "node src/trust-finalize-window.mjs",
     "trust:export": "node src/trust-export-frontend.mjs",
+    "profit:export": "node src/profit-export-frontend.mjs",
     "rebalance": "node src/rebalance.mjs",
     "close-cycle": "node src/close-cycle.mjs"
   },

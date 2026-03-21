@@ -4,6 +4,8 @@ export type PieSegment = {
   key: string;
   label: string;
   fraction: number;
+  /** Ballot slot index — keeps swatch colors aligned with Cast ballot when slice order changes after normalization */
+  colorIndex?: number;
 };
 
 const DEFAULT_COLORS = [
@@ -68,12 +70,17 @@ export function AllocationPieChart({ segments, title, size = 176, className = ""
       const start = angle;
       const end = angle + sweep;
       angle = end;
-      return { seg, start, end, i, color: DEFAULT_COLORS[i % DEFAULT_COLORS.length] };
+      const ci = seg.colorIndex ?? i;
+      return { seg, start, end, i, color: DEFAULT_COLORS[ci % DEFAULT_COLORS.length] };
     });
   }, [normalized]);
 
   const singleFull =
     normalized.length === 1 && normalized[0] != null && normalized[0].fraction >= 1 - 1e-6;
+  const singleColor =
+    singleFull && normalized[0]
+      ? DEFAULT_COLORS[(normalized[0].colorIndex ?? 0) % DEFAULT_COLORS.length]
+      : DEFAULT_COLORS[0];
 
   if (normalized.length === 0) {
     return (
@@ -98,7 +105,7 @@ export function AllocationPieChart({ segments, title, size = 176, className = ""
         >
           {singleFull ? (
             <>
-              <circle cx={cx} cy={cy} r={r} fill={DEFAULT_COLORS[0]} />
+              <circle cx={cx} cy={cy} r={r} fill={singleColor} />
               <circle cx={cx} cy={cy} r={innerR} fill="var(--bg1)" />
             </>
           ) : (
@@ -122,17 +129,20 @@ export function AllocationPieChart({ segments, title, size = 176, className = ""
           )}
         </svg>
         <ul className="allocation-pie__legend">
-          {normalized.map((seg, i) => (
+          {normalized.map((seg, i) => {
+            const ci = seg.colorIndex ?? i;
+            return (
             <li key={seg.key} className="allocation-pie__legend-row">
               <span
                 className="allocation-pie__swatch"
-                style={{ background: DEFAULT_COLORS[i % DEFAULT_COLORS.length] }}
+                style={{ background: DEFAULT_COLORS[ci % DEFAULT_COLORS.length] }}
                 aria-hidden
               />
               <span className="allocation-pie__legend-label">{seg.label}</span>
               <span className="mono sm allocation-pie__legend-pct">{(seg.fraction * 100).toFixed(1)}%</span>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
     </div>

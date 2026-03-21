@@ -3,6 +3,8 @@
  * Used by `npm run agent` when wall-clock window rolls so the UI "Voted" state resets for the new period.
  *
  * Env: CHAIN_RPC_URL, VAULT_ADDRESS, GOVERNANCE_PRIVATE_KEY, optional CHAIN_ID (84532 default)
+ * Optional: CLOSE_CYCLE_WALL_KEY — wall-clock window index that just ended (agent sets on rollover).
+ *   Used with vote-store + trust CSV to compute off-chain profit splits in frontend/public/cycle-profits.json.
  *
  * NAV bookkeeping: `config/local/agent-close-cycle-state.json` stores last navEnd as navStart for the next close.
  */
@@ -13,13 +15,35 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 
 import { repoRoot, requireEnv } from "./lib/env.mjs";
+import { writeCycleProfitsArtifact } from "./lib/profitExportCore.mjs";
 
 const vaultAbi = parseAbi([
   "function closeCycle(uint256 navStart, uint256 navEnd)",
   "function totalNAV() view returns (uint256)",
+  "function cycleId() view returns (uint256)",
   "function GOVERNANCE_ROLE() view returns (bytes32)",
   "function hasRole(bytes32 role, address account) view returns (bool)",
 ]);
+
+function closeLogPath() {
+  return path.join(repoRoot, "config/local/cycle-close-log.json");
+}
+
+function appendCloseLogEntry(entry) {
+  const p = closeLogPath();
+  let log = { version: 1, entries: [] };
+  if (fs.existsSync(p)) {
+    try {
+      const j = JSON.parse(fs.readFileSync(p, "utf8"));
+      log = { version: 1, entries: Array.isArray(j.entries) ? j.entries : [] };
+    } catch {
+      log = { version: 1, entries: [] };
+    }
+  }
+  log.entries.push(entry);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(log, null, 2));
+}
 
 function parsePk(raw) {
   const s = raw.trim();
@@ -89,9 +113,19 @@ async function main() {
     functionName: "totalNAV",
   });
 
+  const cycleIdBefore = await publicClient.readContract({
+    address: vault,
+    abi: vaultAbi,
+    functionName: "cycleId",
+  });
+
   const st = loadNavState();
   const navStart =
     st.lastNavEnd1e18 != null && st.lastNavEnd1e18 !== "" ? BigInt(st.lastNavEnd1e18) : navEnd;
+
+  const wallRaw = process.env.CLOSE_CYCLE_WALL_KEY;
+  const wallClockIndex =
+    wallRaw !== undefined && wallRaw !== "" && !Number.isNaN(Number(wallRaw)) ? Number(wallRaw) : null;
 
   const hash = await walletClient.writeContract({
     address: vault,
@@ -106,11 +140,35 @@ async function main() {
     throw new Error(`closeCycle tx reverted on-chain (status=${receipt.status}) hash=${hash}`);
   }
 
+  const cycleIdAfter = await publicClient.readContract({
+    address: vault,
+    abi: vaultAbi,
+    functionName: "cycleId",
+  });
+
   saveNavState({
     lastNavEnd1e18: navEnd.toString(),
     lastCloseAt: new Date().toISOString(),
     lastTxHash: hash,
   });
+
+  const closedAt = new Date().toISOString();
+  appendCloseLogEntry({
+    wallClockIndex,
+    onChainCycleIdBeforeClose: Number(cycleIdBefore),
+    onChainCycleIdAfterClose: Number(cycleIdAfter),
+    navStart1e18: navStart.toString(),
+    navEnd1e18: navEnd.toString(),
+    navDelta1e18: (navEnd - navStart).toString(),
+    closedAt,
+    txHash: hash,
+  });
+
+  try {
+    writeCycleProfitsArtifact();
+  } catch (e) {
+    console.warn("[close-cycle] profit export:", e?.message ?? e);
+  }
 
   console.log(
     JSON.stringify(
@@ -120,6 +178,8 @@ async function main() {
         status: receipt.status,
         navStart: navStart.toString(),
         navEnd: navEnd.toString(),
+        wallClockIndex,
+        onChainCycleIdAfterClose: cycleIdAfter.toString(),
         signer: account.address,
       },
       null,

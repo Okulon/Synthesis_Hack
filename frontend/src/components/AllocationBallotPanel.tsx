@@ -176,6 +176,7 @@ export function AllocationBallotPanel({ snap, trustMap, trustOpts }: Props) {
       key: a.address,
       label: a.symbol,
       fraction: Number(bps[i]!) / 10_000,
+      colorIndex: i,
     }));
   }, [n, pctStr, snap.ballotAssets]);
 

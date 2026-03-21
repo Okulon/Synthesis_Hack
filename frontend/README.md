@@ -82,6 +82,17 @@ After **`npm run trust:export`**, the agent also writes **`frontend/public/trust
 
 Regenerate whenever `trust_cycle.csv` changes (agent rollover runs **`trust:export`** when trust pipeline is on).
 
+## Trust leaderboard
+
+**Trust leaderboard** tab: holders ranked with a bar chart (metric follows active sort), **Trust / Share % / Power** sort toggles, and **your rank** when the wallet matches (or paste `0x…`).
+
+## Profits tab (cycle upside split)
+
+**`frontend/public/cycle-profits.json`** is written when **`closeCycle`** succeeds (see **`apps/agent`**) or manually via **`npm run profit:export`**. The **Profits** tab shows:
+
+- **Your share** — cumulative attributed amount across closes (wallet or pasted address).
+- **Everyone by cycle** — profit pool per **`closeCycle`** (NAV delta, or per-close **random synthetic** from **`TESTGAINS`** = **T**: uniform in **`[-T/2, T]`**, pool **`max(0,·)`**) split **∝ trust_before × shares** over ballot voters in **`vote-store`** (same power model as aggregate). **TESTGAINS** badge tooltip reflects **`testGainsRange`** from JSON when present.
+
 ## Build
 
 ```bash

@@ -23,6 +23,7 @@
  *   AGENT_CLOSE_CYCLE_ON_ROLLOVER — default: on if GOVERNANCE_PRIVATE_KEY set, else off; set 0 to force off.
  *     Calls DAOVault.closeCycle after each closed wall window; if it fails, lastManagedIndex is NOT advanced (retries).
  *     AGENT_CLOSE_CYCLE_RETRIES — attempts per rollover (default 3, max 10).
+ *     Passes CLOSE_CYCLE_WALL_KEY to attribute NAV delta to the closed wall-clock window (profit split in cycle-profits.json).
  *     Trust finalize (off-chain) runs once per closed window even when closeCycle fails, so trust CSV still updates.
  *   AGENT_REBALANCE_ON_ROLLOVER — if AGENT_REBALANCE_TO_TARGET is off: one `rebalance.mjs` per rollover. Set 0 to disable.
  */
@@ -135,9 +136,10 @@ function envRebalanceFrozenPhaseOnly() {
 const CLOSE_CYCLE_MAX_ATTEMPTS = Math.max(1, Math.min(10, Number(process.env.AGENT_CLOSE_CYCLE_RETRIES ?? "3")));
 
 /**
+ * @param {number | string | null} closedWallIndex — wall-clock window that just ended (for profit attribution)
  * @returns {boolean} false = must retry (closeCycle was required and failed or misconfigured)
  */
-function runCloseCycleIfEnabled() {
+function runCloseCycleIfEnabled(closedWallIndex) {
   if (!envCloseCycleOnRollover()) return true;
   if (!process.env.GOVERNANCE_PRIVATE_KEY) {
     console.error(
@@ -150,9 +152,14 @@ function runCloseCycleIfEnabled() {
     return false;
   }
 
+  const extraEnv =
+    closedWallIndex !== undefined && closedWallIndex !== null
+      ? { CLOSE_CYCLE_WALL_KEY: String(closedWallIndex) }
+      : {};
+
   for (let attempt = 1; attempt <= CLOSE_CYCLE_MAX_ATTEMPTS; attempt += 1) {
     console.log(`[agent] closeCycle (on-chain period) attempt ${attempt}/${CLOSE_CYCLE_MAX_ATTEMPTS}…`);
-    const r = runScript("src/close-cycle.mjs");
+    const r = runScript("src/close-cycle.mjs", extraEnv);
     if (r.status === 0) {
       return true;
     }
@@ -301,7 +308,7 @@ function handleWindowRoll(managed, state) {
       saveState(s);
     }
 
-    if (!runCloseCycleIfEnabled()) {
+    if (!runCloseCycleIfEnabled(prev)) {
       console.warn(
         "[agent] on-chain closeCycle not completed — will retry next tick; wall-clock cursor unchanged until close succeeds",
       );

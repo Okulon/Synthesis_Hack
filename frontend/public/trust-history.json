@@ -65,12 +65,136 @@
           "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
           "0x4200000000000000000000000000000000000006": 0.5
         }
+      },
+      {
+        "cycle_id": "16",
+        "vote_return_bps": 209931327,
+        "benchmark_return_bps": 24,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "17",
+        "vote_return_bps": 138559668,
+        "benchmark_return_bps": 33,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "21",
+        "vote_return_bps": 13182692,
+        "benchmark_return_bps": 23,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.3,
+          "0x4200000000000000000000000000000000000006": 0.7
+        }
+      },
+      {
+        "cycle_id": "22",
+        "vote_return_bps": 240579805,
+        "benchmark_return_bps": 35,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.4,
+          "0x4200000000000000000000000000000000000006": 0.6
+        }
+      },
+      {
+        "cycle_id": "24",
+        "vote_return_bps": 63,
+        "benchmark_return_bps": 7,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      },
+      {
+        "cycle_id": "25",
+        "vote_return_bps": 2024,
+        "benchmark_return_bps": 26,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      }
+    ],
+    "0xcea4095e6036c22c7530b52c34ffcec0e36949c1": [
+      {
+        "cycle_id": "21",
+        "vote_return_bps": 109892689,
+        "benchmark_return_bps": 27,
+        "trust_before": 1,
+        "trust_after": 3,
+        "delta_trust": 2,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.2,
+          "0x4200000000000000000000000000000000000006": 0.8
+        }
+      },
+      {
+        "cycle_id": "22",
+        "vote_return_bps": 329640599,
+        "benchmark_return_bps": 58,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0,
+          "0x4200000000000000000000000000000000000006": 1
+        }
+      },
+      {
+        "cycle_id": "23",
+        "vote_return_bps": 0,
+        "benchmark_return_bps": 10,
+        "trust_before": 3,
+        "trust_after": 3,
+        "delta_trust": 0,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.5,
+          "0x4200000000000000000000000000000000000006": 0.5
+        }
+      }
+    ],
+    "0x8152ef1d01bbd0e4144ff388ebbdb34eeaf19c89": [
+      {
+        "cycle_id": "24",
+        "vote_return_bps": 389,
+        "benchmark_return_bps": 13,
+        "trust_before": 1,
+        "trust_after": 1.0389,
+        "delta_trust": 0.038899999999999935,
+        "weights": {
+          "0x036cbd53842c5426634e7929541ec2318f3dcf7e": 0.1,
+          "0x4200000000000000000000000000000000000006": 0.9
+        }
       }
     ]
   },
   "_meta": {
     "csvSource": "config/local/trust_cycle.csv",
-    "updatedAt": "2026-03-20T22:17:19.152Z",
+    "updatedAt": "2026-03-21T00:05:45.829Z",
     "note": "Per-cycle trust + vote_return_bps. vote_return_bps = time-weighted portfolio return × 10000 (scaled by TESTBOOSTTRUST in finalize if set). Weights from vote-store when available."
   }
 }
