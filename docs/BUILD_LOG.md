@@ -725,6 +725,30 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-23 — Vercel hosting (frontend) + shareable URL
+
+### Goal
+- Host the **Vite dashboard** on **Vercel (Hobby)** so judges can open a **public URL** without running `pnpm dev`.
+
+### Human decisions
+- **GitHub → Vercel:** import monorepo with **Root Directory** = **`frontend`**; set **`VITE_*`** env vars in the Vercel project (mirror **`frontend/.env.example`** / local **`frontend/.env`** — **never** commit secrets).
+- **Billing:** stay on **Hobby** without a card unless upgrading intentionally — no metered overage charges without payment on file.
+- **Link to share:** use the **production** **`<project>.vercel.app`** domain from the project **Overview**, **not** long **per-deployment** hostnames (those are often **Preview** URLs).
+
+### Agent / automation
+- **`frontend/vercel.json`:** **`pnpm install --frozen-lockfile`** + SPA **`rewrites`** → **`index.html`** for client routing fallback.
+- **Root `.gitignore`:** **`.pnpm-store/`** so the pnpm content store is never committed.
+
+### Reality checks
+- **Preview** deployments may require **Vercel login** (**Deployment Protection** / team defaults). **Incognito** hits that wall — fix via **Settings → Deployment Protection** (public production) and/or share **production** only.
+- **Hobby** is **non-commercial** per Vercel fair-use wording; fine for typical hackathon demo framing.
+
+### Next session
+1. Confirm **production** URL works signed-out; add that URL to **README** / submission when ready.
+2. Re-copy **`VITE_*`** if RPC or vault address changes.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -734,7 +758,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **Allocation quorum:** `check-quorum-for-targets.mjs` gates `targets.json` writes; `AGENT_REQUIRE_QUORUM_FOR_TARGETS` (default on). Plan/rebalance skip cleanly when targets are empty.
 - **Wall-clock:** **[`config/agent/cycles.yaml`](../config/agent/cycles.yaml)** = schedule source; **[`config/local/cycle-clock.json`](../config/local/cycle-clock.json)** = genesis unix (v2); see [`cycleClock.mjs`](../apps/agent/src/lib/cycleClock.mjs).
 - **Agent skills:** [`apps/agent/skills/rebalancing/`](../apps/agent/skills/rebalancing/), [`apps/agent/skills/execution/`](../apps/agent/skills/execution/) + **`poolMidPrice`** helper; **rebalance** preflight: **oracle vs pool** guard + **minOut** from mid.
-- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Withdraw** tab (**`redeemProRata`** basket exit + **`redeemToSingleAsset`** with auto **WETH↔USDC** **`SwapRouter02`** steps on Base Sepolia, **`minOut = 0`** demo) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** + table; **toggle charts** — **Trust** / **Profits** / **Balance** with **`/cycle-profits.json`** join by cycle id; **Balance** = cumulative **attributed** profit slices, not on-chain share balance) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**.
+- **Frontend (Vite):** **`frontend/`** @ **http://localhost:1337** — **dashboard** (access control ~half width + **NAV allocation** donut; **no** main-surface **Pause flags** / **Contract** blocks) + **Withdraw** tab (**`redeemProRata`** basket exit + **`redeemToSingleAsset`** with auto **WETH↔USDC** **`SwapRouter02`** steps on Base Sepolia, **`minOut = 0`** demo) + **Trust leaderboard** tab (sort **Trust / Share % / Power**, bar chart, **you** highlight, compact power formatting) + **History** tab (**`/trust-history.json`** + table; **toggle charts** — **Trust** / **Profits** / **Balance** with **`/cycle-profits.json`** join by cycle id; **Balance** = cumulative **attributed** profit slices, not on-chain share balance) + **Profits** tab (**`/cycle-profits.json`** — per-**`closeCycle`** split **∝ trust_before × shares**, charts/stats, compact power, **TESTGAINS** tooltip from **`testGainsRange`**) + **Voting**: **Cast** vs **Aggregate** in **`ballotAssets`** order with **shared `colorIndex` pie colors**; **Voted/Pending** ballot status; trust scores **†/◆**; legacy **allowlist** banner; **NAV weight %** on tracked assets; schedule JSON **polls**. **Optional deploy:** **Vercel** — **Root Directory** **`frontend`**, **`VITE_*`** in project env, **`frontend/vercel.json`** (frozen lockfile + SPA rewrites); share **production** **`.vercel.app`** (avoid login-gated **preview** deployment URLs / adjust **Deployment Protection**).
 - **Allocation voting (end-to-end):** **`vote-store`** + **`cycle:sync`** → **`cycle:snapshot`** → trust-weighted **`aggregate`** + **`votes:export`** → **`allocation-votes.json`**; **`trust:export`** writes **`trust-scores.json`** + **`trust-history.json`**; **`castAllocationBallot`** on **`DAOVault`**. **Rollover:** **`closeCycle`** + full trust pipeline when keys + env allow.
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
