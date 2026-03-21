@@ -37,6 +37,7 @@ import { VotingHistoryTab } from "./components/VotingHistoryTab";
 import { ProfitsTab } from "./components/ProfitsTab";
 import { TrustLeaderboardTab } from "./components/TrustLeaderboardTab";
 import { WithdrawPanel } from "./components/WithdrawPanel";
+import { ExplanationTab } from "./components/ExplanationTab";
 
 const RPC = normalizeEnvString(import.meta.env.VITE_RPC_URL as string | undefined);
 const VAULT_PARSED = parseVaultAddress(import.meta.env.VITE_VAULT_ADDRESS as string | undefined);
@@ -242,8 +243,15 @@ function assetSymbolForAddress(snap: VaultSnapshot, addr: string): string {
 
 export default function App() {
   const [view, setView] = useState<
-    "dashboard" | "users" | "voting" | "history" | "profits" | "withdraw" | "leaderboard"
-  >("dashboard");
+    | "dashboard"
+    | "explanation"
+    | "users"
+    | "voting"
+    | "history"
+    | "profits"
+    | "withdraw"
+    | "leaderboard"
+  >("explanation");
   if (!RPC) {
     return (
       <div className="shell">
@@ -302,6 +310,13 @@ export default function App() {
             </button>
             <button
               type="button"
+              className={`btn ${view === "explanation" ? "btn-primary" : ""}`}
+              onClick={() => setView("explanation")}
+            >
+              Explanation
+            </button>
+            <button
+              type="button"
               className={`btn ${view === "users" ? "btn-primary" : ""}`}
               onClick={() => setView("users")}
             >
@@ -354,17 +369,17 @@ export default function App() {
         </div>
       </header>
 
-      {q.isError ? (
+      {view === "explanation" ? (
+        <ExplanationTab />
+      ) : q.isError ? (
         <div className="panel error">
           <strong>Could not load vault</strong>
           <pre>{q.error instanceof Error ? q.error.message : String(q.error)}</pre>
           <p className="hint">Check RPC URL, chain id, and vault address.</p>
         </div>
-      ) : null}
-
-      {q.isLoading ? <div className="panel loading">Reading chain…</div> : null}
-
-      {q.data ? (
+      ) : q.isLoading ? (
+        <div className="panel loading">Reading chain…</div>
+      ) : q.data ? (
         view === "dashboard" ? (
           <Dashboard snap={q.data} />
         ) : view === "users" ? (
