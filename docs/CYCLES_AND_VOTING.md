@@ -4,7 +4,7 @@ End-to-end model for **target-weight** votes keyed by cycle, with **trust × sha
 
 ## Wall-clock windows (agent-managed)
 
-Default in repo: **15 minutes** per allocation window ([`config/agent/cycles.yaml`](../config/agent/cycles.yaml)): **12 min voting**, **3 min frozen** (snapshot / export prep). Adjust `duration_minutes` / voting+frozen there; the next **`cycle:sync`** (or **`npm run agent`**) re-pins genesis if the clock file is missing or invalid. This is **off-chain**; vault `cycleId` still only advances on `closeCycle`.
+Default in repo: **5 minutes** per allocation window ([`config/agent/cycles.yaml`](../config/agent/cycles.yaml)): **4 min voting**, **1 min frozen** (snapshot / export prep). Adjust `duration_minutes` / voting+frozen there; the next **`cycle:sync`** (or **`npm run agent`**) re-pins genesis if the clock file is missing or invalid. This is **off-chain**; vault `cycleId` still only advances on `closeCycle`.
 
 | Command | Purpose |
 |---------|---------|

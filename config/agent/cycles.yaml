@@ -3,7 +3,7 @@
 # Single source of truth for window length + voting/frozen split. Do not duplicate in `cycle-clock.json`
 # (that file only stores the pinned genesis unix — see `apps/agent/src/lib/cycleClock.mjs`).
 cycle_clock:
-  duration_minutes: 10
+  duration_minutes: 5
   # First N minutes accept ballot edits; remainder is "frozen" (snapshot / tally prep).
-  voting_minutes: 8
-  frozen_minutes: 2
+  voting_minutes: 4
+  frozen_minutes: 1
