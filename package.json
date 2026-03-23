@@ -10,6 +10,8 @@
     "rebalance": "npm run rebalance --prefix apps/agent",
     "cycle:snapshot": "npm run cycle:snapshot --prefix apps/agent",
     "synthesis:catalog": "curl -sS https://synthesis.devfolio.co/catalog",
+    "synthesis:set-video": "node scripts/synthesis-set-video.mjs",
+    "synthesis:publish": "node scripts/synthesis-publish.mjs",
     "proof:hints": "node scripts/print-broadcast-hints.mjs"
   }
 }

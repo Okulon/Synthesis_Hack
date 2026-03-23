@@ -194,7 +194,7 @@
   },
   "_meta": {
     "csvSource": "config/local/trust_cycle.csv",
-    "updatedAt": "2026-03-21T01:15:45.803Z",
+    "updatedAt": "2026-03-23T06:20:01.462Z",
     "note": "Per-cycle trust + vote_return_bps. vote_return_bps = time-weighted portfolio return × 10000 (scaled by TESTBOOSTTRUST in finalize if set). Weights from vote-store when available."
   }
 }

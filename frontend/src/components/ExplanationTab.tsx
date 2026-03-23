@@ -11,14 +11,14 @@ export function ExplanationTab() {
           DAO Agent — pooled treasury, voter targets, and bounded automation
         </h1>
         <p className="whitepaper__abstract">
-          <strong>Abstract.</strong> We describe a vault on Base where depositors hold pro-rata shares of a shared
-          portfolio. Each allocation cycle, stakeholders submit target weights over an allowlisted asset set; votes are
-          aggregated with power proportional to <em>share × trust</em>. An autonomous executor moves holdings toward the
-          blended target only when drift exceeds configurable bands—reducing churn and gas—while swaps remain subject to
-          on-chain allowlists and slippage floors. Trust updates from retrospective portfolio performance vs a benchmark;
-          positive cycle profits can be attributed with trust-skewed weights, while losses impair everyone through the
-          share price. This interface is a read/write dashboard for deposits, ballots, history, and exits; the agent and
-          trust pipeline run off-chain with auditable exports.
+          <strong>Abstract.</strong> We describe a vault on <strong>Base</strong> where depositors hold pro-rata shares of
+          a shared portfolio. Each allocation cycle, stakeholders submit target weights over an allowlisted asset set;
+          votes are aggregated with power proportional to <em>share × trust</em>. An autonomous executor moves holdings
+          toward the blended target only when drift exceeds configurable bands—reducing churn and gas—while swaps remain
+          subject to on-chain allowlists and slippage floors. Trust updates from retrospective portfolio performance vs a
+          benchmark; positive cycle profits can be attributed with trust-skewed weights, while losses impair everyone
+          through the share price. This interface is a read/write dashboard for deposits, ballots, history, and exits; the
+          agent and trust pipeline run off-chain with auditable exports.
         </p>
       </header>
 
@@ -28,9 +28,8 @@ export function ExplanationTab() {
         </h2>
         <p>
           Passive holders rarely rebalance; one-person-one-vote ignores track record; dollar-weighted voting ignores
-          governance quality. A pooled vehicle with <strong>transparent rules</strong>, <strong>snapshot voting</strong>,
-          and <strong>delegated execution</strong> under caps addresses all three—without giving the bot unchecked
-          custody of arbitrary assets.
+          governance quality. A pooled vehicle with transparent rules, snapshot voting, and delegated execution under
+          caps addresses all three—without giving the bot unchecked custody of arbitrary assets.
         </p>
       </section>
 
@@ -80,10 +79,11 @@ export function ExplanationTab() {
         </h2>
         <p>
           Each ballot carries normalized weights; off-chain aggregation blends ballots using voting power ≈{" "}
-          <strong>shares × trust multiplier</strong>. The UI shows per-asset targets as a pie chart consistent with
-          on-chain ballot ordering. <strong>Trust</strong> is computed in a pipeline (CSV / JSON exports) from how each
-          voter&apos;s proposed portfolio would have performed vs the benchmark path documented for the build; scores feed
-          the leaderboard and the aggregate.
+          <strong>shares × trust multiplier</strong> — so both <strong>skin in the game</strong> and{" "}
+          <strong>demonstrated judgment</strong> shape the blended target. The UI shows per-asset targets as a pie chart
+          consistent with on-chain ballot ordering. <strong>Trust</strong> is computed in a pipeline (CSV / JSON exports)
+          from how each voter&apos;s proposed portfolio would have performed vs the benchmark path documented for the
+          build; scores feed the leaderboard and the aggregate.
         </p>
       </section>
 

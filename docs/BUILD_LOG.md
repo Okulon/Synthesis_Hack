@@ -1002,6 +1002,42 @@ Insert the filled block **immediately above** `## Current state`, then update **
 
 ---
 
+## 2026-03-24 — PROOF reconstruction + submission fields + Vercel URL
+
+### Goal
+- Close the gap between **on-chain activity** and **[`docs/PROOF.md`](./PROOF.md)** for hackathon judges; fill whatever can be sourced from the repo, RPC, explorers, and **`GET /catalog`** without wallets or Devfolio.
+
+### Agent / automation
+- **[`docs/PROOF.md`](./PROOF.md)** — **§0–4** filled: Base Sepolia **84532**; **DAOVault** + canonical **Uniswap** addresses + **WETH/USDC 0.3% pool** (`getPool` on factory); **U1/U2/U3** and **D1–D5b** tx hashes with Basescan links (sources: **Blockscout** `txlist` on the vault from deploy block **39039142**, **`forge inspect`** selectors, **`frontend/.env`** `VITE_VAULT_ADDRESS` for vault hex — **`.env` stays gitignored**); pointer to **12** `closeCycle` rows in committed [`frontend/public/cycle-profits.json`](../frontend/public/cycle-profits.json); **§4** schedule (**[`agent.yml`](../.github/workflows/agent.yml)** vs **`npm run agent`**); **TESTGAINS** = **yes** from `cycle-profits` metadata; **TESTWETH** / **TESTBOOST** = env-only / unknown in git.
+- **[`docs/PROOF.md`](./PROOF.md)** — **§5** production dashboard **[https://synthesis-hack.vercel.app/](https://synthesis-hack.vercel.app/)** (Vercel production hostname); reminder to verify **signed-out** access (Deployment Protection).
+- **[`docs/PROOF.md`](./PROOF.md)** — **§7** **`repoURL`** from **`git remote`**: `https://github.com/Okulon/Synthesis_Hack`; **track UUIDs** from paginated **`https://synthesis.devfolio.co/catalog?page=1&limit=50`** (Open, Uniswap *Agentic Finance…*, Base *Autonomous Trading Agent*; MetaMask **omitted**); note to **re-fetch catalog** before final publish; honest wording vs Uniswap **API** prize name vs **router + Quoter** proof.
+- **[`docs/SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)** — same **`repoURL`**, UUID table, **catalog pagination** note (`npm run synthesis:catalog` alone only returns first page unless query params added).
+- **Changelog** in **PROOF** — removed stray placeholder row; stacked dated entries.
+
+### Next session
+1. Human: **demo video** + URL in **PROOF §6**; **Moltbook** if required; **Devfolio** self-custody → **publish**; **`forge verify`** then flip **PROOF §1** verified; **D6** `plan` skip screenshot; optional **`VITE_SOURCE_REPO_URL`** on Vercel for judge footer links.
+
+---
+
+## 2026-03-23 — Synthesis: draft finalized + **published**
+
+### Goal
+- Ship **Devfolio/Synthesis** submission: **deployed URL**, **tracks**, **conversationLog**, **publish**; add **`npm run synthesis:set-video`** for **`videoURL`** after demo recording.
+
+### Agent / automation
+- **API:** `POST /projects/038081098f4a4a758268ad23834672bd` — **`deployedURL`** https://synthesis-hack.vercel.app/, **`repoURL`** canonical, **`trackUUIDs`** = Open + Autonomous Trading Agent + Agentic Finance (Uniswap); **removed** MetaMask Delegations track (not claimed).
+- **API:** `POST .../publish` — **`status: publish`** (slug `vaultdao-governance-bounded-treasury-agent-9164`).
+- **API:** second `POST` with full **`conversationLog`** (restored long BUILD narrative + submission note).
+- **[`docs/SUBMIT.md`](./SUBMIT.md)** — submit status + **`VIDEO_URL=... npm run synthesis:set-video`**.
+- **[`scripts/synthesis-set-video.mjs`](../scripts/synthesis-set-video.mjs)** + **`package.json`** **`synthesis:set-video`**.
+- **[`draft.md`](../draft.md)** — rewritten as **published** reference (not stale draft JSON).
+- **[`docs/PROOF.md`](./PROOF.md)** §6–7, **[`checklist.md`](../checklist.md)**, **[`README.md`](../README.md)** — aligned.
+
+### Next session
+1. Human: **`videoURL`** on project; optional **Moltbook**; **`forge verify`**.
+
+---
+
 ## Current state (update every session)
 
 - **Branch / commit:** `main` — sync `origin` after your latest commit.
@@ -1016,7 +1052,7 @@ Insert the filled block **immediately above** `## Current state`, then update **
 - **On-chain:** deploy + executor **`rebalance`** evidence on explorer — **hashes and contract addresses stay out of this log**.
 - **Config:** [`config/rebalancing/bands.yaml`](../config/rebalancing/bands.yaml); **`config/local/targets.json`** gitignored — from **aggregate** for **`plan`**; **[`config/trust/scoring.yaml`](../config/trust/scoring.yaml)** drives trust multipliers.
 - **Tests:** **`DAOVault.t.sol`** **18** tests; fork test optional.
-- **Submission evidence:** **[`docs/PROOF.md`](./PROOF.md)** — placeholders + **`npm run proof:hints`** (local broadcast); **[`docs/HUMAN_ONLY.md`](./HUMAN_ONLY.md)** (remaining human steps); **[`docs/SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)**; **`npm run synthesis:catalog`**. **Judge-facing:** **[`README.md`](../README.md#judge-facing-synthesis)**. **Tier A vs B:** [`vault/spec.md`](../vault/spec.md) **§6.6**. **Checklist:** **[`checklist.md`](../checklist.md)** (**34** done / **17** open). **Optional footer:** **`VITE_SOURCE_REPO_URL`** in **`frontend/.env.local`**. **Trust / Telegram docs:** **[`TRUST_RPC_AND_BALLOTS.md`](./TRUST_RPC_AND_BALLOTS.md)**, **[`apps/bot/README.md`](../apps/bot/README.md)**.
-- **Blocked / polish:** run **`forge verify`** / Basescan UI per **[`DEPLOY.md`](./DEPLOY.md) §10** (procedure documented); **multi-asset** vaults need more **routes** than WETH/USDC; **Synthesis** draft update with demo artifacts; **[`SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)** for Devfolio paste.
-- **Tracks (provisional):** Open + Uniswap + MetaMask Delegations + Autonomous Trading Agent.
-- **Synthesis status:** registration + team access verified; **project draft** online (**draft** status), **four** tracks attached; **`draft.md`** in repo root — refine before publish.
+- **Submission evidence:** **[`docs/PROOF.md`](./PROOF.md)** — **§0–5, §7**; **§6** — demo **recorded**; **`videoURL`** on Devfolio = run **`npm run synthesis:set-video`** ([`docs/SUBMIT.md`](./SUBMIT.md)); **Moltbook** optional; **§7** publish **done**; **self-custody** **done**; **D6** / **verify** optional. **`npm run proof:hints`**; **[`docs/SUBMISSION_METADATA.md`](./SUBMISSION_METADATA.md)**; **`npm run synthesis:catalog`**. **Judge-facing:** **[`README.md`](../README.md#judge-facing-synthesis)**. **Tier A vs B:** [`vault/spec.md`](../vault/spec.md) **§6.6**. **Checklist:** **[`checklist.md`](../checklist.md)**. **Optional footer:** **`VITE_SOURCE_REPO_URL`** on **Vercel**. **Trust / Telegram docs:** **[`TRUST_RPC_AND_BALLOTS.md`](./TRUST_RPC_AND_BALLOTS.md)**, **[`apps/bot/README.md`](../apps/bot/README.md)**.
+- **Blocked / polish:** **`forge verify`** per **[`DEPLOY.md`](./DEPLOY.md) §10**; **multi-asset** routes beyond WETH/USDC.
+- **Tracks (on published project):** **Synthesis Open** + **Autonomous Trading Agent** + **Agentic Finance (Uniswap)** — **MetaMask** omitted.
+- **Synthesis status:** **Published** **2026-03-23** — project UUID **`038081098f4a4a758268ad23834672bd`**; **[`draft.md`](../draft.md)** + **[`docs/SUBMIT.md`](./SUBMIT.md)** — submit runbook; **`videoURL`** still **null** until set via CLI or Devfolio UI.

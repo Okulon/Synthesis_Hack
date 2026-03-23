@@ -17,6 +17,7 @@
     "cycle:status": "node src/cycle-status.mjs",
     "cycle:sync": "node src/cycle-sync.mjs",
     "cycle:daemon": "node src/cycle-daemon.mjs",
+    "vote-store:prefill": "node src/vote-store-prefill-cycles.mjs",
     "trust": "node src/trust.mjs",
     "sync:ballots-chain": "node src/sync-allocation-ballots-from-chain.mjs",
     "trust:stamp-prices": "node src/trust-stamp-prices.mjs",

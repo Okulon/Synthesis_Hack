@@ -140,6 +140,8 @@ Copy [`apps/agent/fixtures/targets.example.json`](apps/agent/fixtures/targets.ex
 | [docs/BUILD_CHECKLIST.md](docs/BUILD_CHECKLIST.md) | Ordered checklist toward submission |
 | [checklist.md](checklist.md) | **Current status** — what’s done vs open (A–F); start here for submit |
 | [docs/PROOF.md](docs/PROOF.md) | **Judge proof pack** — explorer txs, URLs, submission placeholders (fill as you gather evidence) |
+| [docs/SUBMIT.md](docs/SUBMIT.md) | **Synthesis submit** — published project status, **`videoURL`** one-liner, last steps |
+| [docs/DEMO_VIDEO.md](docs/DEMO_VIDEO.md) | **Hackathon demo video** — step-by-step record → Basescan → `npm run plan` → upload + PROOF §6 |
 | [docs/SUBMISSION_METADATA.md](docs/SUBMISSION_METADATA.md) | **Devfolio paste** — tools, model, skills, repo URL (edit `YOUR_*`; no secrets) |
 | [docs/HUMAN_ONLY.md](docs/HUMAN_ONLY.md) | **What only you can do** after automation (PROOF, publish, video) |
 | [docs/TRUST_RPC_AND_BALLOTS.md](docs/TRUST_RPC_AND_BALLOTS.md) | Ballot stamps + sync (agent env) |

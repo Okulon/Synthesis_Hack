@@ -1,4 +1,9 @@
-# Synthesis Project Draft Payload
+# Synthesis project — published payload (reference)
+
+**Status:** **published** (2026-03-23). **Do not treat as a draft to POST again** unless updating fields via API or Devfolio UI.
+
+**Project UUID:** `038081098f4a4a758268ad23834672bd`  
+**Slug:** `vaultdao-governance-bounded-treasury-agent-9164`  
 
 ```json
 {
@@ -6,34 +11,22 @@
   "name": "VaultDao — Governance-Bounded Treasury Agent",
   "description": "VaultDao is an autonomous DAO treasury system on Base Sepolia where members deposit into a pooled vault, vote on target allocations, and an agent executes bounded rebalances via Uniswap. The system emphasizes governance guardrails (allowlists, thresholds, caps), transparent on-chain actions, and a clear human-agent collaboration trail from planning to implementation.",
   "problemStatement": "Individuals and small groups struggle to manage shared treasury capital consistently: manual rebalancing is time-consuming, pure token-weight voting ignores voting quality over time, and unconstrained automation is risky. VaultDao addresses this by combining pooled treasury management, governance-defined risk boundaries, and agentic execution that acts only within explicit constraints.",
-  "repoURL": "https://github.com/Okulon/Synthesis_Hack.git",
+  "repoURL": "https://github.com/Okulon/Synthesis_Hack",
+  "deployedURL": "https://synthesis-hack.vercel.app/",
+  "videoURL": "https://www.youtube.com/watch?v=pBa5DHpLs5M",
   "trackUUIDs": [
-    "020214c160fc43339dd9833733791e6b",
-    "0d69d56a8a084ac5b7dbe0dc1da73e1d",
     "fdb76d08812b43f6a5f454744b66f590",
-    "bf374c2134344629aaadb5d6e639e840"
+    "bf374c2134344629aaadb5d6e639e840",
+    "020214c160fc43339dd9833733791e6b"
   ],
-  "conversationLog": "Project built iteratively in a human-agent workflow documented in docs/BUILD_LOG.md. Core milestones include: MVP scope and governance model; DAOVault + tests (including ballotAssets-indexed castAllocationBallot); Base Sepolia deploy/configure; agent modules (plan, aggregate, trust, quote, executor rebalance); frontend dashboard (deposits, voting with on-chain ballots + pie charts, legacy-vault fallback, aggregate targets from events); env and docs hygiene without committing secrets. Latest session notes: wall-clock cycle end does not auto-rebalance; closeCycle does not store aggregate targets on-chain. Scope: Base + Uniswap + delegation-style bounded execution narrative.",
+  "conversationLog": "See live project on Devfolio / Synthesis — full text stored server-side (restored Mar 2026). Pointer: docs/BUILD_LOG.md. Submission note: demo video recorded; proof in docs/PROOF.md; Uniswap path = SwapRouter02 + QuoterV2, not Uniswap Developer Platform API on critical path.",
   "submissionMetadata": {
     "agentFramework": "other",
     "agentFrameworkOther": "custom Foundry + Node.js agent modules + Vite React frontend",
     "agentHarness": "cursor",
     "model": "auto (Cursor automatic model selection)",
-    "skills": [
-      "custom-repo-workflow"
-    ],
-    "tools": [
-      "Foundry",
-      "Solidity",
-      "Node.js",
-      "TypeScript",
-      "Vite",
-      "React",
-      "viem",
-      "wagmi",
-      "Uniswap",
-      "Base Sepolia"
-    ],
+    "skills": ["custom-repo-workflow"],
+    "tools": ["Foundry", "Solidity", "Node.js", "TypeScript", "Vite", "React", "viem", "wagmi", "Uniswap", "Base Sepolia"],
     "helpfulResources": [
       "https://synthesis.devfolio.co/catalog",
       "https://synthesis.md/submission/skill.md",
@@ -50,3 +43,7 @@
   }
 }
 ```
+
+**Tracks on project:** Synthesis Open, Autonomous Trading Agent, Agentic Finance (Uniswap). **MetaMask** track was **removed** (not claimed).
+
+**`videoURL`:** [YouTube](https://www.youtube.com/watch?v=pBa5DHpLs5M) — set via [`docs/SUBMIT.md`](docs/SUBMIT.md) `npm run synthesis:set-video`.

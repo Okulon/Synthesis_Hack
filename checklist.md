@@ -8,8 +8,8 @@
 
 | | Items | Status |
 |--|------|--------|
-| **Checked off** | 34 | see **Done** blocks below |
-| **Still open** | 17 | see **To do** blocks below |
+| **Checked off** | ~46 | see **Done** blocks below |
+| **Still open** | ~8 | see **To do** blocks below |
 
 ---
 
@@ -18,17 +18,18 @@
 ### Done
 
 - [x] **Submission metadata template** — [`docs/SUBMISSION_METADATA.md`](docs/SUBMISSION_METADATA.md) (tools, model, skills path, pitch — **paste into Devfolio**; set public repo URL there)
+- [x] **Synthesis API** — `SYNTHESIS_API_KEY` in `.env`; project UUID `038081098f4a4a758268ad23834672bd`
+- [x] **Catalog / tracks** — Open + Base + Uniswap agentic finance ([`docs/PROOF.md`](docs/PROOF.md) §7); **MetaMask** track removed on project (deferred)
+- [x] **Self-custody** — completed before publish (**2026-03-23**)
+- [x] **Public `repoURL`** — `https://github.com/Okulon/Synthesis_Hack`
+- [x] **Draft → publish** + **`conversationLog`** — **published** **2026-03-23**; see [`docs/SUBMIT.md`](docs/SUBMIT.md)
+- [x] **`deployedURL`** — https://synthesis-hack.vercel.app/
+- [x] **`videoURL`** — [YouTube](https://www.youtube.com/watch?v=pBa5DHpLs5M) (`npm run synthesis:set-video`, **2026-03-23**)
 
 ### To do
 
-- [ ] Confirm **Synthesis/Devfolio API access**, **team UUID**, and submission path if anything is still TBD
-- [ ] Refresh catalog: `GET https://synthesis.devfolio.co/catalog` — align **track UUIDs** (**Open + Uniswap + Base**)
-- [ ] **Self-custody** for everyone on the team before **publish**
-- [ ] **Public `repoURL`**
-- [ ] Draft → **publish**; polish **`conversationLog`** / metadata from [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md)
-- [ ] **Moltbook** post + `moltbookPostURL`
-- [ ] Finalize honest **`submissionMetadata`** in **Devfolio** (start from [`docs/SUBMISSION_METADATA.md`](docs/SUBMISSION_METADATA.md))
-- [ ] Final pass on [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md) **Current state** vs what you ship
+- [ ] **Moltbook** post + `moltbookPostURL` — if rules require
+- [ ] Final pass on [`docs/BUILD_LOG.md`](docs/BUILD_LOG.md) **Current state** vs ship (optional polish)
 
 ---
 
@@ -42,11 +43,11 @@
 - [x] **One reproducible cycle** — [**README — Reproducible demo cycle**](README.md#reproducible-demo-cycle)
 - [x] **Dashboard judge links** — optional **`VITE_SOURCE_REPO_URL`** in [`frontend/.env.example`](frontend/.env.example) → footer links to **PROOF**, **BUILD_LOG**, **checklist**, [`HUMAN_ONLY.md`](docs/HUMAN_ONLY.md)
 
-### To do
+### Done (evidence)
 
-- [ ] **Explorer links** in [`docs/PROOF.md`](docs/PROOF.md): **deposit**, ≥1 **`rebalance`**, optional **redeem**
-- [ ] **Production** deployed URL on submission (not preview-only / login-gated)
-- [ ] **Video** (2–5 min): problem → vote/aggregate → rebalance → (optional) “below ε, no swap”; **BaseScan** tabs
+- [x] **Explorer links** in [`docs/PROOF.md`](docs/PROOF.md): **deposit**, **`rebalance`**, optional **redeem**
+- [x] **Production** URL — https://synthesis-hack.vercel.app/ (on submission)
+- [x] **Video** — [YouTube](https://www.youtube.com/watch?v=pBa5DHpLs5M) (problem → Basescan txs per [`docs/DEMO_VIDEO.md`](docs/DEMO_VIDEO.md))
 
 ---
 
@@ -73,10 +74,7 @@ _(nothing — C1 complete)_
 - [x] **Explicit stack** — [**README — Uniswap stack**](README.md#judge-facing-synthesis)
 - [x] **Uniswap API on critical path** — **N/A** (not claiming; router + Quoter only)
 - [x] **Optional depth (Permit2 / quote API)** — **N/A** for this submit
-
-#### To do
-
-- [ ] **Proof pack** — [`docs/PROOF.md`](docs/PROOF.md) §2: tx hashes for **`rebalance`** + user-path swap
+- [x] **Proof pack** — [`docs/PROOF.md`](docs/PROOF.md) §2: **`rebalance`** + user-path swap hashes
 
 ### C3 — Base (Autonomous Trading Agent)
 
@@ -86,10 +84,7 @@ _(nothing — C1 complete)_
 - [x] **Demo knobs** — labeled in README; repeat in **video**
 - [x] **Risk bounds** — README + [`vault/spec.md`](vault/spec.md) §5 / §7
 - [x] **Testnet / liquidity caveat text** — [`docs/PROOF.md`](docs/PROOF.md) §4 (edit if needed; say in **video** too)
-
-#### To do
-
-- [ ] **Live outcomes proof** — explorer links + **`CycleClosed` / NAV** in [`docs/PROOF.md`](docs/PROOF.md) §3–4 *(caveat sentence ready; hashes are yours)*
+- [x] **Live outcomes proof** — [`docs/PROOF.md`](docs/PROOF.md) §3–4 + [`frontend/public/cycle-profits.json`](frontend/public/cycle-profits.json)
 
 ### C4 — MetaMask Delegations
 
@@ -164,5 +159,5 @@ _(nothing)_
 
 ## Next up (priority)
 
-1. **[`docs/HUMAN_ONLY.md`](docs/HUMAN_ONLY.md)** — only you can do the rest (PROOF txs, publish, video, verify).
-2. Optional backlog: **Tier B**, on-chain **`maxSlippageBps`**, full Telegram service.
+1. **Moltbook** — only if hackathon rules require it ([`docs/SUBMIT.md`](docs/SUBMIT.md)).
+2. Optional: **`forge verify`** ([`docs/DEPLOY.md`](docs/DEPLOY.md) §10), **`VITE_SOURCE_REPO_URL`** on Vercel, **BUILD_LOG** polish, **D6** plan-skip capture, **Tier B** / backlog in §D–F.

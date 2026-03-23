@@ -1774,6 +1774,20 @@ code {
   margin-top: 0.65rem;
 }
 
+.whitepaper__h3 {
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin: 1.35rem 0 0.5rem;
+}
+
+.whitepaper__section > .whitepaper__h3:first-of-type {
+  margin-top: 0;
+}
+
 .whitepaper__code {
   font-family: var(--mono);
   font-size: 0.84em;

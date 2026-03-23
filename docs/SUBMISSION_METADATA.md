@@ -32,7 +32,7 @@
 
 ## Public repository
 
-- **`repoURL`:** `YOUR_PUBLIC_GITHUB_URL` (e.g. `https://github.com/<org>/<repo>`)
+- **`repoURL`:** `https://github.com/Okulon/Synthesis_Hack` _(from `git remote`; keep repo **public** for judges)_
 
 ---
 
@@ -44,7 +44,17 @@ From repo root (needs network):
 npm run synthesis:catalog
 ```
 
-Same as `curl -sS https://synthesis.devfolio.co/catalog`. Align **Open**, **Uniswap**, **Base** with what you demo; **omit** MetaMask / Locus UUIDs unless you claim those paths ([`checklist.md`](../checklist.md) **C4**, **C5**). Track names in [`TRACKS.md`](../TRACKS.md).
+Default `curl` without query params returns **page 1, limit 20** only — for a full list use e.g. `curl -sS 'https://synthesis.devfolio.co/catalog?page=1&limit=50'`. Align **Open**, **Uniswap**, **Base** with what you demo; **omit** MetaMask / Locus UUIDs unless you claim those paths ([`checklist.md`](../checklist.md) **C4**, **C5**). Track names in [`TRACKS.md`](../TRACKS.md).
+
+**Snapshot 2026-03-24** (paste into Devfolio `trackUUIDs` after re-validating):
+
+| Track (catalog name) | UUID |
+|----------------------|------|
+| Synthesis Open Track | `fdb76d08812b43f6a5f454744b66f590` |
+| Agentic Finance (Best Uniswap API Integration) | `020214c160fc43339dd9833733791e6b` |
+| Autonomous Trading Agent | `bf374c2134344629aaadb5d6e639e840` |
+
+Honesty note for Uniswap row: proof is **on-chain SwapRouter02 + QuoterV2** ([`docs/PROOF.md`](PROOF.md) §2), **not** Uniswap Developer Platform API on the critical path — say so in submission copy ([README](../README.md#judge-facing-synthesis)).
 
 ---
 
